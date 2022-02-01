@@ -18,7 +18,8 @@ end
 function data()
 
 	return { 
-		type = "ASSET_TRACK",
+		-- type = "ASSET_TRACK",
+		type = "ASSET_DEFAULT",
 		description = {
 			name = _("Dynamic Arrivals Summary Board"),
 			description = _("A digital display showing approaching trains to all terminals at the nearest station"),
@@ -33,7 +34,7 @@ function data()
 		params = makeParams(),
 		
 		updateFn = function(params)
-			print('LOLLO params =') debugPrint(params)
+			-- print('LOLLO params =') debugPrint(params)
 			local result = { }
 			result.models = {}
 
@@ -77,9 +78,13 @@ function data()
 			result.groundFaces = {}
 
       -- specifically to make the game treat this as a construction
-			-- result.personCapacity = { type = "RESIDENTIAL", capacity = 1, }
+	  -- makes this thing easier to select in game; capacity must be > 0
+	  -- it also makes it bulldozable with the bulldozer, instead of the eraser brush,
+	  -- so we can catch the event, which we otherwise cannot.
+	  -- LOLLO TODO see if we can get rid of this bodge
+			result.personCapacity = { type = "RESIDENTIAL", capacity = 1, }
 
-			print('LOLLO result =') debugPrint(result)
+			-- print('LOLLO result =') debugPrint(result)
 			return result
 		end
 	}

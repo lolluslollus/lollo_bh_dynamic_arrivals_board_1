@@ -7,38 +7,38 @@ local guiEngine = require "bh_dynamic_arrivals_board/bh_gui_engine"
 stateManager.ensureState()
 
 local function errorHandler(error)
-  print(error)
+  print('bh_dynamic_arrivals_board ERROR') debugPrint(error)
 end
 
 function data()
-return {
+  return {
 
------------------ State exchange
+  ----------------- State exchange
 
-save = function()
-  return stateManager.getState()
-end,
+  save = function()
+    return stateManager.getState()
+  end,
 
-load = function(loadedstate)
-  stateManager.loadState(loadedstate)
-end,
+  load = function(loadedstate)
+    stateManager.loadState(loadedstate)
+  end,
 
 
------------------- Engine state
+  ------------------ Engine state
 
-update = function()
-  xpcall(engine.update, errorHandler)
-end,
+  update = function()
+    xpcall(engine.update, errorHandler)
+  end,
 
-handleEvent = function(src, id, name, param)
-  xpcall(function() engine.handleEvent(src, id, name, param) end, errorHandler)
-end,
+  handleEvent = function(src, id, name, param)
+    xpcall(function() engine.handleEvent(src, id, name, param) end, errorHandler)
+  end,
 
--------------- GUI state
+  -------------- GUI state
 
-guiHandleEvent = function(id, name, param)
-  xpcall(function() guiEngine.handleEvent(id, name, param) end, errorHandler)
-end,
+  guiHandleEvent = function(id, name, param)
+    xpcall(function() guiEngine.handleEvent(id, name, param) end, errorHandler)
+  end,
 
-}
+  }
 end
