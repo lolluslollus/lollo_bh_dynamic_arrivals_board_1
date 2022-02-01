@@ -555,7 +555,7 @@ local function update()
           -- log.print('newCon =') log.debugPrint(newCon)
         end
       else -- signCon does not exist
-        stateManager.removeStatePlacedSign(signConId) -- it might skip one, never mind: it will come at the next tick
+        stateManager.removePlacedSign(signConId) -- it might skip one, never mind: it will come at the next tick
       end
     end
   end)
@@ -584,14 +584,14 @@ local function handleEvent(src, id, name, args)
 
   if name == constants.events.remove_display_construction then
     -- log.print('state before =') log.debugPrint(stateManager.loadState())
-    stateManager.removeStatePlacedSign(args.boardConstructionId)
+    stateManager.removePlacedSign(args.boardConstructionId)
     -- local state = stateManager.getState()
     -- state.placed_signs[args] = nil
     -- log.print("Removed display construction id ") log.debugPrint(args)
     -- log.print('state after =') log.debugPrint(stateManager.loadState())
   elseif name == constants.events.join_board_to_station then
     -- log.print('state before =') log.debugPrint(stateManager.loadState())
-    stateManager.setStatePlacedSign(args.boardConstructionId, {['stationConId'] = args.stationConId})
+    stateManager.setPlacedSign(args.boardConstructionId, {['stationConId'] = args.stationConId})
     -- log.print("Added display construction id ") log.debugPrint(args)
     -- log.print('state after =') log.debugPrint(stateManager.loadState())
   -- elseif name == "select_object" then

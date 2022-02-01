@@ -24,7 +24,7 @@ local function getState()
   return persistent_state
 end
 
-local function removeStatePlacedSign(key)
+local function removePlacedSign(key)
   if not(key) then return end
 
   if persistent_state.placed_signs == nil then
@@ -33,7 +33,7 @@ local function removeStatePlacedSign(key)
   persistent_state.placed_signs[key] = nil
 end
 
-local function setStatePlacedSign(key, value)
+local function setPlacedSign(key, value)
   if not(key) and not(value) then return end
 
   if persistent_state.placed_signs == nil then
@@ -46,6 +46,6 @@ return {
   loadState = loadState,
   getState = getState,
   ensureState = ensureState,
-  removeStatePlacedSign = removeStatePlacedSign,
-  setStatePlacedSign = setStatePlacedSign,
+  removePlacedSign = removePlacedSign,
+  setPlacedSign = setPlacedSign,
 }
