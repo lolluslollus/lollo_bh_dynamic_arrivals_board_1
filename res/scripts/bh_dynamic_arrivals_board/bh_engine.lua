@@ -260,6 +260,8 @@ local function getNextArrivals(stationTerminal, numArrivals, time)
 end
 
 local function getNextArrivals4Station(stationId, numArrivals, time)
+  -- TODO some arrivals are from the station itself, their origin is not displayed correctly - if we are talking destinations
+  -- We should make a twin construction for departures
   -- despite how many we want to return, we actually need to look at every vehicle on every line stopping here before we can sort and trim
   local arrivals = {}
 
