@@ -420,8 +420,8 @@ local function update()
   local time = api.engine.getComponent(api.engine.util.getWorld(), api.type.ComponentType.GAME_TIME).gameTime
   if not(time) then log.message("cannot get time!") return end
 
-  if math.fmod(time, constants.refreshCount) ~= 0 then log.print('skipping') return end
-  log.print('doing it')
+  if math.fmod(time, constants.refreshCount) ~= 0 then --[[ log.print('skipping') ]] return end
+  -- log.print('doing it')
 
   local speed = api.engine.getComponent(api.engine.util.getWorld(), api.type.ComponentType.GAME_SPEED).speedup
   if not speed then speed = 1 end
