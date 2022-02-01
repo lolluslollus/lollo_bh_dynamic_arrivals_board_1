@@ -1,0 +1,87 @@
+local constructionutil = require "constructionutil"
+local transf = require "transf"
+local utils = require "bh_dynamic_arrivals_board/bh_utils"
+
+local function configKey(name)
+	return "bh_summary_display_" .. name
+end
+
+local function makeParams()
+	local params = {}
+
+	utils.makeRotateParams(params, configKey)
+	utils.makeOffsetParams(params, configKey)
+
+	return params
+end
+
+function data()
+
+	return { 
+		type = "ASSET_TRACK",
+		description = {
+			name = _("Dynamic Arrivals Summary Board"),
+			description = _("A digital display showing approaching trains to all terminals at the nearest station"),
+			icon = "ui/construction/asset/bh_dynamic_arrivals_board/bh_digital_summary_construction@2x.tga"
+		},
+		availability = {},
+		buildMode = "SINGLE",
+		categories = { "badgerrhax" },
+		order = 13,
+		skipCollision = true,
+		autoRemovable = false,
+		params = makeParams(),
+		
+		updateFn = function(params)
+			print('LOLLO params =') debugPrint(params)
+			local result = { }
+			result.models = {}
+
+			local rotate = utils.readRotateParams(params, configKey)
+			rotate.x = rotate.x + math.pi / 2
+
+			local offset = utils.readOffsetParams(params, configKey)
+			offset.y = offset.y - 4.95
+			offset.z = offset.z + 0.54
+
+      local model = "bh_dynamic_arrivals_board/bh_dynamic_tall_board.mdl"
+      result.models[#result.models + 1] = {
+        id = model, transf = constructionutil.rotateTransf(params, transf.rotZYXTransl(rotate, offset))
+      }
+
+			local labelValues = {}
+			for i = 1, 29 do
+				labelValues[i] = ""
+			end
+
+			labelValues[1] = "Destination"
+			labelValues[2] = "Plat"
+			labelValues[3] = "Time"
+			labelValues[28] = params[configKey("time_string")]
+
+			local numArrivals = params[configKey("num_arrivals")] or 0
+			if numArrivals > 0 then
+				for i = 1, numArrivals do
+					local labelIndexStart = 3 * i + 1
+					labelValues[labelIndexStart] = params[configKey("arrival_" .. i .. "_dest")]
+					labelValues[labelIndexStart+1] = tostring(params[configKey("arrival_" .. i .. "_terminal")])
+					labelValues[labelIndexStart+2] = params[configKey("arrival_" .. i .. "_time")]
+				end
+			end
+
+			result.labelText = {
+				[#result.models-1] = labelValues
+			}
+
+			result.terrainAlignmentLists = { { type = "EQUAL", faces = {} }}
+			result.groundFaces = {}
+
+      -- specifically to make the game treat this as a construction
+			-- result.personCapacity = { type = "RESIDENTIAL", capacity = 1, }
+
+			print('LOLLO result =') debugPrint(result)
+			return result
+		end
+	}
+
+end
