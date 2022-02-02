@@ -126,7 +126,9 @@ local function tryJoinBoard(boardConstructionId)
   -- logger.print('conTransf =') logger.debugPrint(boardTransf_lua)
   local nearbyStationCons = getNearbyStationCons(boardTransf_lua, _constants.searchRadius4NearbyStation2Join, true)
   -- logger.print('#nearbyStationCons =', #nearbyStationCons)
-  if #nearbyStationCons == 0 then return false
+  if #nearbyStationCons == 0 then
+    guiHelpers.showWarningWindowWithMessage(_('CannotFindStationToJoin'))
+    return false
   elseif #nearbyStationCons == 1 then
     joinBoardBase(boardConstructionId, nearbyStationCons[1].id)
   else

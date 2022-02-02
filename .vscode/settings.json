@@ -12,7 +12,8 @@
         "api",
         "debugPrint",
         "game",
-        "data"
+        "data",
+        "_"
     ],
     "Lua.diagnostics.disable": [
         "unused-local"

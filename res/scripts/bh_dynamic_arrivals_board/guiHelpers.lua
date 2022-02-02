@@ -4,6 +4,7 @@ local stringUtils = require('bh_dynamic_arrivals_board.stringUtils')
 
 local _stationPickerWindowId = 'bh_arrivals_manager_picker_window'
 local _warningWindowWithGotoId = 'bh_arrivals_manager_warning_window_with_goto'
+local _warningWindowWithMessageId = 'bh_arrivals_manager_warning_window_with_message'
 local _warningWindowWithStateId = 'bh_arrivals_manager_warning_window_with_state'
 
 local _texts = {
@@ -172,6 +173,31 @@ guiHelpers.showWarningWindowWithGoto = function(text, wrongObjectId, similarObje
     local position = api.gui.util.getMouseScreenPos()
     window:setPosition(position.x + _windowXShift, position.y)
     window:addHideOnCloseHandler()
+end
+
+guiHelpers.showWarningWindowWithMessage = function(text)
+    guiHelpers.isShowingWarning = true
+    local layout = api.gui.layout.BoxLayout.new('VERTICAL')
+    local window = api.gui.util.getById(_warningWindowWithMessageId)
+    if window == nil then
+        window = api.gui.comp.Window.new(_texts.warningWindowTitle, layout)
+        window:setId(_warningWindowWithMessageId)
+    else
+        window:setContent(layout)
+        window:setVisible(true, false)
+    end
+
+    layout:addItem(api.gui.comp.TextView.new(text))
+
+    window:setHighlighted(true)
+    local position = api.gui.util.getMouseScreenPos()
+    window:setPosition(position.x + _windowXShift, position.y)
+    -- window:addHideOnCloseHandler()
+    window:onClose(
+        function()
+            window:setVisible(false, false)
+        end
+    )
 end
 
 guiHelpers.showWarningWindowWithState = function(text)
