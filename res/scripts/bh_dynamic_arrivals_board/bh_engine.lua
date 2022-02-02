@@ -2,12 +2,14 @@ local vec3 = require "vec3"
 
 local bhm = require "bh_dynamic_arrivals_board/bh_maths"
 local stateManager = require "bh_dynamic_arrivals_board/bh_state_manager"
-local construction = require "bh_dynamic_arrivals_board/bh_construction_hooks"
+local constructionHooks = require "bh_dynamic_arrivals_board/bh_construction_hooks"
 
 local log = require "bh_dynamic_arrivals_board/bh_log"
 local arrayUtils = require('bh_dynamic_arrivals_board.arrayUtils')
 local constants = require('bh_dynamic_arrivals_board.constants')
 local edgeUtils = require('bh_dynamic_arrivals_board.edgeUtils')
+local stationUtils = require('bh_dynamic_arrivals_board.stationUtils')
+local transfUtilsUG = require('transf')
 
 local function bulldozeConstruction(conId)
   if not(edgeUtils.isValidAndExistingId(conId)) then return end
@@ -583,7 +585,7 @@ local function update()
       local stationIds = api.engine.getComponent(signProps.stationConId, api.type.ComponentType.CONSTRUCTION).stations
       -- log.print('signCon =') log.debugPrint(signCon)
       if signCon then
-        local config = construction.getRegisteredConstructions()[signCon.fileName]
+        local config = constructionHooks.getRegisteredConstructions()[signCon.fileName]
         -- log.print('config =') log.debugPrint(config)
         if not config then
           print('bh_dynamic_arrivals_board WARNING: cannot read the constructionconfig, conId =', signConId)
@@ -719,7 +721,23 @@ local function handleEvent(src, id, name, args)
     log.print('state after =') log.debugPrint(stateManager.getState())
   elseif name == constants.events.join_board_to_station then
     log.print('state before =') log.debugPrint(stateManager.getState())
-    stateManager.setPlacedSign(args.boardConstructionId, {['stationConId'] = args.stationConId})
+    if not(args) or not(edgeUtils.isValidAndExistingId(args.boardConstructionId)) then return end
+
+    local boardCon = api.engine.getComponent(args.boardConstructionId, api.type.ComponentType.CONSTRUCTION)
+    if not(boardCon) then return end
+
+    local config = constructionHooks.getRegisteredConstructions()[boardCon.fileName]
+    if not(config) then return end
+
+    if config.singleTerminal then
+      local terminalId = stationUtils.getNearestTerminalId(
+        transfUtilsUG.new(boardCon.transf:cols(0), boardCon.transf:cols(1), boardCon.transf:cols(2), boardCon.transf:cols(3)),
+        args.stationConId
+      )
+      stateManager.setPlacedSign(args.boardConstructionId, {stationConId = args.stationConId, terminalId = terminalId})
+    else
+      stateManager.setPlacedSign(args.boardConstructionId, {stationConId = args.stationConId})
+    end
     log.print('state after =') log.debugPrint(stateManager.getState())
   end
 end
