@@ -338,8 +338,6 @@ end
 local function getNextArrivals4Station(stationId, numArrivals, time)
   -- log.print('getNextArrivals4Station starting')
   -- TODO We should make a twin construction for arrivals, this is for departures
-  -- TODO if a terminal is skipped, for example 3, the display will show 3 instead of 4, 4 instead of 5, and so on
-  -- This may have to do with the way the freestyle station works
 
   -- despite how many we want to return, we actually need to look at every vehicle on every line stopping here before we can sort and trim
   local arrivals = {}
@@ -354,7 +352,7 @@ local function getNextArrivals4Station(stationId, numArrivals, time)
     -- log.print('terminal.tag =', terminal.tag or 'NIL', ', terminalId =', terminalId or 'NIL')
     local lineIds = api.engine.system.lineSystem.getLineStopsForTerminal(stationId, terminal.tag)
     for _, lineId in pairs(lineIds) do
-      -- log.print('lineId =', lineId or 'NIL')
+      log.print('lineId =', lineId or 'NIL')
       local lineData = api.engine.getComponent(lineId, api.type.ComponentType.LINE)
       if lineData then
         local vehicles = api.engine.system.transportVehicleSystem.getLineVehicles(lineId)
@@ -373,9 +371,12 @@ local function getNextArrivals4Station(stationId, numArrivals, time)
           -- alternative calculation for line duration, I don't like mixing the old and the new api tho
           -- vehicle hasn't run a full route yet, so fall back to less accurate (?) method
           -- calculate line duration by multiplying the number of vehicles by the line frequency
-          --   local lineEntity = game.interface.getEntity(lineId)
-          --   lineDuration = (1 / lineEntity.frequency) * #vehicles
-          local averageSectionTimeToDestinations = getAverageSectionTimeToDestinations(vehicles, nStops, lineData.waitingTime / nStops)
+          local lineEntity = game.interface.getEntity(lineId)
+          local fallbackLineDuration = lineEntity.frequency > 0 and (1 / lineEntity.frequency) --[[ * #vehicles ]] or lineData.waitingTime
+          -- local fallbackLineDuration2 = lineData.waitingTime -- not reliable, it is always 180
+          log.print('fallbackLineDuration =', fallbackLineDuration)
+          -- log.print('fallbackLineDuration2 =', fallbackLineDuration2)
+          local averageSectionTimeToDestinations = getAverageSectionTimeToDestinations(vehicles, nStops, fallbackLineDuration)
           log.print('averageSectionTimeToDestinations =') log.debugPrint(averageSectionTimeToDestinations)
           -- log.print('#averageSectionTimeToDestinations =', #averageSectionTimeToDestinations or 'NIL') -- ok
           -- log.print('time =', time)
