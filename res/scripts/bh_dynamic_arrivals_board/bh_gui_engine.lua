@@ -1,4 +1,4 @@
--- State is pretty much read-only here
+-- NOTE that the state must be read-only here coz we are in the GUI thread
 local stateManager = require "bh_dynamic_arrivals_board/bh_state_manager"
 local construction = require "bh_dynamic_arrivals_board/bh_construction_hooks"
 local arrayUtils = require('bh_dynamic_arrivals_board.arrayUtils')
@@ -11,13 +11,9 @@ local transfUtils = require('bh_dynamic_arrivals_board.transfUtils')
 local transfUtilsUG = require('transf')
 
 
-local _constants = {
-  searchRadius4NearbyStation2Join = 50,
-}
-
 local function getNearbyStationCons(transf, searchRadius, isOnlyPassengers)
   if type(transf) ~= 'table' then return {} end
-  if tonumber(searchRadius) == nil then searchRadius = _constants.searchRadius4NearbyStation2Join end
+  if tonumber(searchRadius) == nil then searchRadius = constants.searchRadius4NearbyStation2Join end
 
   -- LOLLO NOTE in the game and in this mod, there is one train station for each station group
   -- and viceversa. Station groups hold some information that stations don't, tho.
@@ -41,7 +37,6 @@ local function getNearbyStationCons(transf, searchRadius, isOnlyPassengers)
   end
   -- logger.print('_stationIds =') logger.debugPrint(_stationIds)
 
-  -- local _stationIds = edgeUtils.getNearbyObjectIds(transf, searchRadius, api.type.ComponentType.STATION)
   local _station2ConstructionMap = api.engine.system.streetConnectorSystem.getStation2ConstructionMap()
   local _resultsIndexed = {}
   for _, stationId in pairs(_stationIds) do
@@ -50,7 +45,6 @@ local function getNearbyStationCons(transf, searchRadius, isOnlyPassengers)
           if edgeUtils.isValidAndExistingId(conId) then
               -- logger.print('getNearbyFreestyleStationsList has found conId =', conId)
               local con = api.engine.getComponent(conId, api.type.ComponentType.CONSTRUCTION)
-              -- if con ~= nil and type(con.fileName) == 'string' and con.fileName == _constants.stationConFileName then
               -- logger.print('construction.name =') logger.debugPrint(con.name) -- nil
               local isCargo = api.engine.getComponent(stationId, api.type.ComponentType.STATION).cargo or false
               -- logger.print('isCargo =', isCargo)
@@ -83,7 +77,6 @@ local function getNearbyStationCons(transf, searchRadius, isOnlyPassengers)
                       position = position
                   }
               end
-              -- end
           end
       end
   end
@@ -124,7 +117,7 @@ local function tryJoinBoard(boardConstructionId, tentativeStationConId)
   if boardTransf_lua == nil then return false end
 
   -- logger.print('conTransf =') logger.debugPrint(boardTransf_lua)
-  local nearbyStationCons = getNearbyStationCons(boardTransf_lua, _constants.searchRadius4NearbyStation2Join, true)
+  local nearbyStationCons = getNearbyStationCons(boardTransf_lua, constants.searchRadius4NearbyStation2Join, true)
   -- logger.print('#nearbyStationCons =', #nearbyStationCons)
   if #nearbyStationCons == 0 then
     guiHelpers.showWarningWindowWithMessage(_('CannotFindStationToJoin'))
@@ -133,7 +126,7 @@ local function tryJoinBoard(boardConstructionId, tentativeStationConId)
     joinBoardBase(boardConstructionId, nearbyStationCons[1].id)
   else
     guiHelpers.showNearbyStationPicker(
-      true, -- passenger or cargo station
+      true, -- pick passenger or cargo stations
       nearbyStationCons,
       tentativeStationConId,
       function(stationConId)
@@ -158,6 +151,7 @@ local function handleEvent(id, name, args)
         if not(config) then return end
 
         local state = stateManager.getState()
+        -- logger.print('state =') logger.debugPrint(state)
         local stationConId = (state.placed_signs and state.placed_signs[args]) and state.placed_signs[args].stationConId or nil
         tryJoinBoard(args, stationConId) -- args here is the construction id
     elseif id == 'constructionBuilder' and name == 'builder.apply' then
@@ -177,7 +171,7 @@ local function handleEvent(id, name, args)
             local state = stateManager.getState()
             if toRemove and toRemove[1] and state.placed_signs[toRemove[1]] then
                 -- logger.print('remove_display_construction for con id =', toRemove[1])
-                sendScriptEvent(constants.eventId, constants.events.remove_display_construction, {boardConstructionId = toRemove[1]}) -- args.result[1] is the construction id
+                sendScriptEvent(constants.eventId, constants.events.remove_display_construction, {boardConstructionId = toRemove[1]})
             end
         end
     elseif id == 'bulldozer' and name == 'builder.apply' then
@@ -188,7 +182,7 @@ local function handleEvent(id, name, args)
           local state = stateManager.getState()
           if toRemove and toRemove[1] and state.placed_signs[toRemove[1]] then
               -- logger.print('remove_display_construction for con id =', toRemove[1])
-              sendScriptEvent(constants.eventId, constants.events.remove_display_construction, {boardConstructionId = toRemove[1]}) -- args.result[1] is the construction id
+              sendScriptEvent(constants.eventId, constants.events.remove_display_construction, {boardConstructionId = toRemove[1]})
           end
       end
     -- else

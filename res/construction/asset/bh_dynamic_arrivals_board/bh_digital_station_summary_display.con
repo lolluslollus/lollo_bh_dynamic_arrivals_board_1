@@ -21,8 +21,8 @@ function data()
 		-- type = "ASSET_TRACK",
 		type = "ASSET_DEFAULT",
 		description = {
-			name = _("Dynamic Arrivals Summary Board"),
-			description = _("A digital display showing approaching trains to all terminals at the nearest station"),
+			name = _("DynamicArrivalsSummaryBoardName"),
+			description = _("DynamicArrivalsSummaryBoardDesc"),
 			icon = "ui/construction/asset/bh_dynamic_arrivals_board/bh_digital_summary_construction@2x.tga"
 		},
 		availability = {},

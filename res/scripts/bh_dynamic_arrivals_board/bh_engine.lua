@@ -9,6 +9,31 @@ local arrayUtils = require('bh_dynamic_arrivals_board.arrayUtils')
 local constants = require('bh_dynamic_arrivals_board.constants')
 local edgeUtils = require('bh_dynamic_arrivals_board.edgeUtils')
 
+local function bulldozeConstruction(conId)
+  if not(edgeUtils.isValidAndExistingId(conId)) then return end
+
+  local proposal = api.type.SimpleProposal.new()
+  -- LOLLO NOTE there are asymmetries how different tables are handled.
+  -- This one requires this system, UG says they will document it or amend it.
+  proposal.constructionsToRemove = { conId }
+  -- proposal.constructionsToRemove[1] = constructionId -- fails to add
+  -- proposal.constructionsToRemove:add(constructionId) -- fails to add
+
+  local context = api.type.Context:new()
+  -- context.checkTerrainAlignment = true -- default is false, true gives smoother Z
+  -- context.cleanupStreetGraph = true -- default is false
+  -- context.gatherBuildings = true  -- default is false
+  -- context.gatherFields = true -- default is true
+  -- context.player = api.engine.util.getPlayer() -- default is -1
+  api.cmd.sendCommand(
+      api.cmd.make.buildProposal(proposal, context, true), -- the 3rd param is "ignore errors"; wrong proposals will be discarded anyway
+      function(result, success)
+          log.print('LOLLO bulldozeConstruction success = ', success)
+          -- logger.print('LOLLO bulldozeConstruction result = ') logger.debugPrint(result)
+      end
+  )
+end
+
 local function getClosestTerminal(transform)
   local position = bhm.transformVec(vec3.new(0, 0, 0), transform)
   local radius = 50
@@ -537,120 +562,131 @@ local function update()
   local oldConstructions = {}
 
   log.timed("sign processing", function()
+    -- sign is no more around: clean the state
+    for signConId, signProps in pairs(state.placed_signs) do
+      if not(edgeUtils.isValidAndExistingId(signConId)) then
+        stateManager.removePlacedSign(signConId)
+      end
+    end
+    -- station is no more around: bulldoze its signs
+    for signConId, signProps in pairs(state.placed_signs) do
+      if not(edgeUtils.isValidAndExistingId(signProps.stationConId)) then
+        stateManager.removePlacedSign(signConId)
+        bulldozeConstruction(signConId)
+      end
+    end
+    -- now the state is clean
     for signConId, signProps in pairs(state.placed_signs) do
       -- log.print('signConId =') log.debugPrint(signConId)
       -- log.print('signProps =') log.debugPrint(signProps)
-      if edgeUtils.isValidAndExistingId(signConId) then -- prevent crash if construction does not exist
-        local signCon = api.engine.getComponent(signConId, api.type.ComponentType.CONSTRUCTION)
-        -- log.print('signCon =') log.debugPrint(signCon)
-        if signCon then
-          local config = construction.getRegisteredConstructions()[signCon.fileName]
-          -- log.print('config =') log.debugPrint(config)
-          if not config then
-            print('bh_dynamic_arrivals_board WARNING: cannot read the constructionconfig, conId =', signConId)
-          end
-
-          if not config then config = {} end
-          if not config.labelParamPrefix then config.labelParamPrefix = "" end
-          local function param(name) return config.labelParamPrefix .. name end
-
-          -- update the linked terminal as it might have been changed by the player in the construction params
-          local terminalOverride = signCon.params[param("terminal_override")] or 0
-
-          if config.singleTerminal then
-            if signProps.stationTerminal and not signProps.stationTerminal.auto and terminalOverride == 0 then
-              -- player may have changed the construction from a specific terminal to auto, so we need to recalculate the closest one
-              signProps.isLinked = false
-            end
-          else
-            if signProps.stationConId then
-              signProps.isLinked = true
-            end
-          end
-
-          local arrivals = {}
-
-          if config.singleTerminal then
-            if not signProps.isLinked then
-              configureSignLink(signCon, signProps, config)
-            end
-
-            if signProps.stationTerminal and terminalOverride > 0 then
-              signProps.stationTerminal.terminal = terminalOverride - 1
-              signProps.stationTerminal.auto = false
-            end
-
-            if signProps.stationTerminal and config.maxArrivals > 0 then
-              local nextArrivals = getNextArrivals(signProps.stationTerminal, config.maxArrivals, time)
-
-              -- if selectedObject == signConId then
-              --   log.object("Time", time)
-              --   log.object("stationTerminal", signProps.stationTerminal)
-              --   log.object("nextArrivals", nextArrivals)
-              -- end
-
-              arrivals = formatArrivals(nextArrivals, time)
-            end
-          else
-            local _setNextArrivals = function()
-              local nextArrivals = {}
-              local stationIds = api.engine.getComponent(signProps.stationConId, api.type.ComponentType.CONSTRUCTION).stations
-              for _, stationId in pairs(stationIds) do
-                arrayUtils.concatValues(
-                  nextArrivals,
-                  getNextArrivals4Station(
-                    stationId,
-                    config.maxArrivals,
-                    time
-                ))
-              end
-
-              log.print('nextArrivals =') log.debugPrint(nextArrivals)
-              arrivals = formatArrivals(nextArrivals, time)
-            end
-
-            _setNextArrivals()
-          end
-
-          local newCon = api.type.SimpleProposal.ConstructionEntity.new()
-
-          local newParams = {}
-          for oldKey, oldVal in pairs(signCon.params) do
-            newParams[oldKey] = oldVal
-          end
-
-          if config.clock then
-            newParams[param("time_string")] = clockString
-            newParams[param("game_time")] = clock_time
-          end
-
-          newParams[param("num_arrivals")] = #arrivals
-
-          for i, a in ipairs(arrivals) do
-            local paramName = ""
-            
-            paramName = paramName .. "arrival_" .. i .. "_"
-            newParams[param(paramName .. "dest")] = a.dest
-            newParams[param(paramName .. "time")] = config.absoluteArrivalTime and a.arrivalTimeString or a.etaMinsString
-            if not config.singleTerminal and a.arrivalTerminal then
-              newParams[param(paramName .. "terminal")] = a.arrivalTerminal + 1
-            end
-          end
-
-          newParams.seed = signCon.params.seed + 1
-
-          newCon.fileName = signCon.fileName
-          newCon.params = newParams
-          newCon.transf = signCon.transf
-          newCon.playerEntity = api.engine.util.getPlayer()
-
-          newConstructions[#newConstructions+1] = newCon
-          oldConstructions[#oldConstructions+1] = signConId
-
-          -- log.print('newCon =') log.debugPrint(newCon)
+      local signCon = api.engine.getComponent(signConId, api.type.ComponentType.CONSTRUCTION)
+      local stationIds = api.engine.getComponent(signProps.stationConId, api.type.ComponentType.CONSTRUCTION).stations
+      -- log.print('signCon =') log.debugPrint(signCon)
+      if signCon then
+        local config = construction.getRegisteredConstructions()[signCon.fileName]
+        -- log.print('config =') log.debugPrint(config)
+        if not config then
+          print('bh_dynamic_arrivals_board WARNING: cannot read the constructionconfig, conId =', signConId)
         end
-      else -- signCon does not exist
-        stateManager.removePlacedSign(signConId) -- it might skip one, never mind: it will come at the next tick
+
+        if not config then config = {} end
+        if not config.labelParamPrefix then config.labelParamPrefix = "" end
+        local function param(name) return config.labelParamPrefix .. name end
+
+        -- update the linked terminal as it might have been changed by the player in the construction params
+        local terminalOverride = signCon.params[param("terminal_override")] or 0
+
+        if config.singleTerminal then
+          if signProps.stationTerminal and not signProps.stationTerminal.auto and terminalOverride == 0 then
+            -- player may have changed the construction from a specific terminal to auto, so we need to recalculate the closest one
+            signProps.isLinked = false
+          end
+        else
+          if signProps.stationConId then
+            signProps.isLinked = true
+          end
+        end
+
+        local arrivals = {}
+
+        if config.singleTerminal then
+          if not signProps.isLinked then
+            configureSignLink(signCon, signProps, config)
+          end
+
+          if signProps.stationTerminal and terminalOverride > 0 then
+            signProps.stationTerminal.terminal = terminalOverride - 1
+            signProps.stationTerminal.auto = false
+          end
+
+          if signProps.stationTerminal and config.maxArrivals > 0 then
+            local nextArrivals = getNextArrivals(signProps.stationTerminal, config.maxArrivals, time)
+
+            -- if selectedObject == signConId then
+            --   log.object("Time", time)
+            --   log.object("stationTerminal", signProps.stationTerminal)
+            --   log.object("nextArrivals", nextArrivals)
+            -- end
+
+            arrivals = formatArrivals(nextArrivals, time)
+          end
+        else
+          local _setNextArrivals = function()
+            local nextArrivals = {}
+
+            for _, stationId in pairs(stationIds) do
+              arrayUtils.concatValues(
+                nextArrivals,
+                getNextArrivals4Station(
+                  stationId,
+                  config.maxArrivals,
+                  time
+              ))
+            end
+
+            log.print('nextArrivals =') log.debugPrint(nextArrivals)
+            arrivals = formatArrivals(nextArrivals, time)
+          end
+
+          _setNextArrivals()
+        end
+
+        local newCon = api.type.SimpleProposal.ConstructionEntity.new()
+
+        local newParams = {}
+        for oldKey, oldVal in pairs(signCon.params) do
+          newParams[oldKey] = oldVal
+        end
+
+        if config.clock then
+          newParams[param("time_string")] = clockString
+          newParams[param("game_time")] = clock_time
+        end
+
+        newParams[param("num_arrivals")] = #arrivals
+
+        for i, a in ipairs(arrivals) do
+          local paramName = ""
+          
+          paramName = paramName .. "arrival_" .. i .. "_"
+          newParams[param(paramName .. "dest")] = a.dest
+          newParams[param(paramName .. "time")] = config.absoluteArrivalTime and a.arrivalTimeString or a.etaMinsString
+          if not config.singleTerminal and a.arrivalTerminal then
+            newParams[param(paramName .. "terminal")] = a.arrivalTerminal + 1
+          end
+        end
+
+        newParams.seed = signCon.params.seed + 1
+
+        newCon.fileName = signCon.fileName
+        newCon.params = newParams
+        newCon.transf = signCon.transf
+        newCon.playerEntity = api.engine.util.getPlayer()
+
+        newConstructions[#newConstructions+1] = newCon
+        oldConstructions[#oldConstructions+1] = signConId
+
+        -- log.print('newCon =') log.debugPrint(newCon)
       end
     end
   end)
@@ -678,24 +714,13 @@ local function handleEvent(src, id, name, args)
   log.print('handleEvent firing, src =', src, ', id =', id, ', name =', name, ', args =') log.debugPrint(args)
 
   if name == constants.events.remove_display_construction then
-    log.print('state before =') log.debugPrint(stateManager.loadState())
+    log.print('state before =') log.debugPrint(stateManager.getState())
     stateManager.removePlacedSign(args.boardConstructionId)
-    -- local state = stateManager.getState()
-    -- state.placed_signs[args] = nil
-    -- log.print("Removed display construction id ") log.debugPrint(args)
-    log.print('state after =') log.debugPrint(stateManager.loadState())
+    log.print('state after =') log.debugPrint(stateManager.getState())
   elseif name == constants.events.join_board_to_station then
-    log.print('state before =') log.debugPrint(stateManager.loadState())
+    log.print('state before =') log.debugPrint(stateManager.getState())
     stateManager.setPlacedSign(args.boardConstructionId, {['stationConId'] = args.stationConId})
-    -- log.print("Added display construction id ") log.debugPrint(args)
-    log.print('state after =') log.debugPrint(stateManager.loadState())
-  -- elseif name == "select_object" then
-  --   -- selectedObject = args
-  --   -- log.message("bh_dynamic_arrivals_board WARNING LEGACY Selected display construction id " .. tostring(args))
-  -- elseif name == "add_display_construction" then
-  --   local state = stateManager.getState()
-  --   state.placed_signs[args] = {}
-  --   -- log.message("bh_dynamic_arrivals_board WARNING LEGACY Added display construction id " .. tostring(args))
+    log.print('state after =') log.debugPrint(stateManager.getState())
   end
 end
 
