@@ -26,7 +26,7 @@ local guiHelpers = {
     end
 }
 
-guiHelpers.showNearbyStationPicker = function(isTheNewObjectCargo, stationCons, joinCallback)
+guiHelpers.showNearbyStationPicker = function(isTheNewObjectCargo, stationCons, tentativeStationConId, joinCallback)
     -- print('showNearbyStationPicker starting')
     local layout = api.gui.layout.BoxLayout.new('VERTICAL')
     local window = api.gui.util.getById(_stationPickerWindowId)
@@ -72,6 +72,9 @@ guiHelpers.showNearbyStationPicker = function(isTheNewObjectCargo, stationCons, 
                     window:setVisible(false, false)
                 end
             )
+            if stationCon.id == tentativeStationConId then
+                joinButton:setEnabled(false)
+            end
 
             components[#components + 1] = {name, cargoIcon, passengerIcon, gotoButton, joinButton}
         end

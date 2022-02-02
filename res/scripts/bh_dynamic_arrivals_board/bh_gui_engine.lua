@@ -110,7 +110,7 @@ local function joinBoardBase(boardConstructionId, stationConId)
   sendScriptEvent(constants.eventId, constants.events.join_board_to_station, eventArgs)
 end
 
-local function tryJoinBoard(boardConstructionId)
+local function tryJoinBoard(boardConstructionId, tentativeStationConId)
   if not(edgeUtils.isValidAndExistingId(boardConstructionId)) then return false end
 
   local con = api.engine.getComponent(boardConstructionId, api.type.ComponentType.CONSTRUCTION)
@@ -135,6 +135,7 @@ local function tryJoinBoard(boardConstructionId)
     guiHelpers.showNearbyStationPicker(
       true, -- passenger or cargo station
       nearbyStationCons,
+      tentativeStationConId,
       function(stationConId)
         joinBoardBase(boardConstructionId, stationConId)
       end
@@ -156,8 +157,9 @@ local function handleEvent(id, name, args)
         -- logger.print('conProps =') logger.debugPrint(config)
         if not(config) then return end
 
-        tryJoinBoard(args) -- args here is the construction id
-        -- sendScriptEvent(id, "select_object", args) -- args here is the construction id
+        local state = stateManager.getState()
+        local stationConId = (state.placed_signs and state.placed_signs[args]) and state.placed_signs[args].stationConId or nil
+        tryJoinBoard(args, stationConId) -- args here is the construction id
     elseif id == 'constructionBuilder' and name == 'builder.apply' then
         -- logger.print('LOLLO caught gui event, id = ', id, ' name = ', name, ' args = ') -- logger.debugPrint(args)
         -- logger.print('construction.getRegisteredConstructions() =') logger.debugPrint(construction.getRegisteredConstructions())
@@ -167,8 +169,7 @@ local function handleEvent(id, name, args)
               local config = construction.getRegisteredConstructions()[toAdd[1].fileName]
               -- logger.print('conProps =') logger.debugPrint(config)
               if config and args.result and args.result[1] then
-                  tryJoinBoard(args.result[1])
-                  -- sendScriptEvent(constants.eventid, "add_display_construction", args.result[1]) -- args.result[1] is the construction id
+                tryJoinBoard(args.result[1])
               end
             end
 
