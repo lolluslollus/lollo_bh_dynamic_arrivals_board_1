@@ -1,7 +1,6 @@
 -- State is pretty much read-only here
 local stateManager = require "bh_dynamic_arrivals_board/bh_state_manager"
 local construction = require "bh_dynamic_arrivals_board/bh_construction_hooks"
--- local _constants = require('bh_dynamic_arrivals_board.constants')
 local arrayUtils = require('bh_dynamic_arrivals_board.arrayUtils')
 local constants = require('bh_dynamic_arrivals_board.constants')
 local edgeUtils = require('bh_dynamic_arrivals_board.edgeUtils')
@@ -99,39 +98,47 @@ local function getNearbyStationCons(transf, searchRadius, isOnlyPassengers)
   return results
 end
 
-local function joinBoard(eventId, eventName, boardConstructionId)
-  if not(edgeUtils.isValidAndExistingId(boardConstructionId)) then return end
+local function sendScriptEvent(id, name, args)
+  api.cmd.sendCommand(api.cmd.make.sendScriptEvent(constants.eventSources.bh_gui_engine, id, name, args))
+end
+
+local function joinBoardBase(boardConstructionId, stationConId)
+  local eventArgs = {
+    boardConstructionId = boardConstructionId,
+    stationConId = stationConId
+  }
+  sendScriptEvent(constants.eventId, constants.events.join_board_to_station, eventArgs)
+end
+
+local function tryJoinBoard(boardConstructionId)
+  if not(edgeUtils.isValidAndExistingId(boardConstructionId)) then return false end
 
   local con = api.engine.getComponent(boardConstructionId, api.type.ComponentType.CONSTRUCTION)
   -- if con ~= nil then logger.print('con.fileName =') logger.debugPrint(con.fileName) end
-  if con == nil or con.transf == nil then return end
+  if con == nil or con.transf == nil then return false end
 
   local boardTransf_c = con.transf
-  if boardTransf_c == nil then return end
+  if boardTransf_c == nil then return false end
 
   local boardTransf_lua = transfUtilsUG.new(boardTransf_c:cols(0), boardTransf_c:cols(1), boardTransf_c:cols(2), boardTransf_c:cols(3))
-  if boardTransf_lua == nil then return end
+  if boardTransf_lua == nil then return false end
 
   -- logger.print('conTransf =') logger.debugPrint(boardTransf_lua)
   local nearbyStationCons = getNearbyStationCons(boardTransf_lua, _constants.searchRadius4NearbyStation2Join, true)
   -- logger.print('#nearbyStationCons =', #nearbyStationCons)
-  if #nearbyStationCons == 0 then return end
-
-  guiHelpers.showNearbyStationPicker(
+  if #nearbyStationCons == 0 then return false
+  elseif #nearbyStationCons == 1 then
+    joinBoardBase(boardConstructionId, nearbyStationCons[1].id)
+  else
+    guiHelpers.showNearbyStationPicker(
       true, -- passenger or cargo station
       nearbyStationCons,
-      eventId,
-      eventName,
-      nil,
-      {
-        boardConstructionId = boardConstructionId
-          -- stationConId will be added by the popup
-      }
-  )
-end
-
-local function sendScriptEvent(id, name, args)
-    api.cmd.sendCommand(api.cmd.make.sendScriptEvent(constants.eventSources.bh_gui_engine, id, name, args))
+      function(stationConId)
+        joinBoardBase(boardConstructionId, stationConId)
+      end
+    )
+  end
+  return true
 end
 
 local function handleEvent(id, name, args)
@@ -145,9 +152,9 @@ local function handleEvent(id, name, args)
 
         local config = construction.getRegisteredConstructions()[con.fileName]
         -- logger.print('conProps =') logger.debugPrint(config)
-        if not(config) or config.singleTerminal then return end
+        if not(config) then return end
 
-        joinBoard(constants.eventId, constants.events.join_board_to_station, args) -- args here is the construction id
+        tryJoinBoard(args) -- args here is the construction id
         -- sendScriptEvent(id, "select_object", args) -- args here is the construction id
     elseif id == 'constructionBuilder' and name == 'builder.apply' then
         -- logger.print('LOLLO caught gui event, id = ', id, ' name = ', name, ' args = ') -- logger.debugPrint(args)
@@ -157,11 +164,9 @@ local function handleEvent(id, name, args)
             if toAdd and toAdd[1] then
               local config = construction.getRegisteredConstructions()[toAdd[1].fileName]
               -- logger.print('conProps =') logger.debugPrint(config)
-              if config and not(config.singleTerminal) then
-                if args.result and args.result[1] then
-                  joinBoard(constants.eventId, constants.events.join_board_to_station, args.result[1])
-                    -- sendScriptEvent(constants.eventid, "add_display_construction", args.result[1]) -- args.result[1] is the construction id
-                end
+              if config and args.result and args.result[1] then
+                  tryJoinBoard(args.result[1])
+                  -- sendScriptEvent(constants.eventid, "add_display_construction", args.result[1]) -- args.result[1] is the construction id
               end
             end
 

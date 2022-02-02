@@ -80,7 +80,7 @@ function data()
       -- specifically to make the game treat this as a construction
 	  -- makes this thing easier to select in game; capacity must be > 0
 	  -- it also makes it bulldozable with the bulldozer, instead of the eraser brush,
-	  -- so we can catch the event, which we otherwise cannot.
+	  -- so we can catch the bulldoze event, which we otherwise cannot.
 	  -- LOLLO TODO see if we can get rid of this bodge
 			result.personCapacity = { type = "RESIDENTIAL", capacity = 1, }
 

@@ -25,7 +25,7 @@ local guiHelpers = {
     end
 }
 
-guiHelpers.showNearbyStationPicker = function(isTheNewObjectCargo, stationCons, eventId, joinEventName, noJoinEventName, eventArgs)
+guiHelpers.showNearbyStationPicker = function(isTheNewObjectCargo, stationCons, joinCallback)
     -- print('showNearbyStationPicker starting')
     local layout = api.gui.layout.BoxLayout.new('VERTICAL')
     local window = api.gui.util.getById(_stationPickerWindowId)
@@ -67,16 +67,7 @@ guiHelpers.showNearbyStationPicker = function(isTheNewObjectCargo, stationCons, 
             local joinButton = api.gui.comp.Button.new(joinButtonLayout, true)
             joinButton:onClick(
                 function()
-                    if not(stringUtils.isNullOrEmptyString(joinEventName)) then
-                        eventArgs.stationConId = stationCon.id
-                        api.cmd.sendCommand(api.cmd.make.sendScriptEvent(
-                            -- string.sub(debug.getinfo(1, 'S').source, 1),
-                            constants.eventSources.bh_gui_engine,
-                            eventId,
-                            joinEventName,
-                            eventArgs
-                        ))
-                    end
+                    if type(joinCallback) == 'function' then joinCallback(stationCon.id) end
                     window:setVisible(false, false)
                 end
             )
@@ -94,75 +85,13 @@ guiHelpers.showNearbyStationPicker = function(isTheNewObjectCargo, stationCons, 
         end
     end
 
-    local function addNoJoinButton()
-        local buttonLayout = api.gui.layout.BoxLayout.new('HORIZONTAL')
-        buttonLayout:addItem(api.gui.comp.ImageView.new('ui/design/components/checkbox_invalid.tga'))
-        buttonLayout:addItem(api.gui.comp.TextView.new(_texts.noJoin))
-        local button = api.gui.comp.Button.new(buttonLayout, true)
-        button:onClick(
-            function()
-                -- print('string.sub(debug.getinfo(1, \'S\').source, 1) =') debugPrint(string.sub(debug.getinfo(1, 'S').source, 1))
-                -- the following dumps
-                -- print('string.sub(debug.getinfo(1, \'S\').source, 2) =') debugPrint(string.sub(debug.getinfo(2, 'S').source, 1))
-                -- print('string.sub(debug.getinfo(1, \'S\').source, 3) =') debugPrint(string.sub(debug.getinfo(3, 'S').source, 1))
-                -- print('string.sub(debug.getinfo(1, \'S\').source, 4) =') debugPrint(string.sub(debug.getinfo(4, 'S').source, 1))
-                if not(stringUtils.isNullOrEmptyString(noJoinEventName)) then
-                    api.cmd.sendCommand(api.cmd.make.sendScriptEvent(
-                        -- string.sub(debug.getinfo(1, 'S').source, 1),
-                        constants.eventSources.bh_gui_engine,
-                        eventId,
-                        noJoinEventName,
-                        eventArgs
-                    ))
-                end
-                window:setVisible(false, false)
-            end
-        )
-        layout:addItem(button)
-    end
-
-    local function addGoBackToWrongObjectButton()
-        if not(edgeUtils.isValidAndExistingId(eventArgs.platformWaypoint1Id)) then return end
-
-        local newObjectPosition = edgeUtils.getObjectPosition(eventArgs.platformWaypoint1Id)
-        if newObjectPosition ~= nil then
-            local buttonLayout = api.gui.layout.BoxLayout.new('HORIZONTAL')
-            buttonLayout:addItem(api.gui.comp.ImageView.new('ui/design/window-content/arrow_style1_left.tga'))
-            buttonLayout:addItem(api.gui.comp.TextView.new(_texts.goBack))
-            local button = api.gui.comp.Button.new(buttonLayout, true)
-            button:onClick(
-                function()
-                    -- UG TODO this dumps, ask UG to fix it
-                    -- api.gui.util.CameraController:setCameraData(
-                    --     api.type.Vec2f.new(wrongObjectPosition[1], wrongObjectPosition[2]),
-                    --     100, 0, 0
-                    -- )
-                    -- x, y, distance, angleInRad, pitchInRad
-                    guiHelpers.moveCamera(newObjectPosition)
-                    -- game.gui.setCamera({wrongObjectPosition[1], wrongObjectPosition[2], 100, 0, 0})
-                end
-            )
-            layout:addItem(button)
-        end
-    end
     addJoinButtons()
-    addNoJoinButton()
-    addGoBackToWrongObjectButton()
 
     -- window:setHighlighted(true)
     local position = api.gui.util.getMouseScreenPos()
     window:setPosition(position.x + _windowXShift, position.y)
     window:onClose(
         function()
-            if not(stringUtils.isNullOrEmptyString(noJoinEventName)) then
-                api.cmd.sendCommand(api.cmd.make.sendScriptEvent(
-                    -- string.sub(debug.getinfo(1, 'S').source, 1),
-                    constants.eventSources.bh_gui_engine,
-                    eventId,
-                    noJoinEventName,
-                    eventArgs
-                ))
-            end
             window:setVisible(false, false)
         end
     )
