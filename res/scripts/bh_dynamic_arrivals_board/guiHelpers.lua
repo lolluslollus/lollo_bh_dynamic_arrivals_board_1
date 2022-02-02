@@ -5,7 +5,6 @@ local stringUtils = require('bh_dynamic_arrivals_board.stringUtils')
 local _stationPickerWindowId = 'bh_arrivals_manager_picker_window'
 local _warningWindowWithGotoId = 'bh_arrivals_manager_warning_window_with_goto'
 local _warningWindowWithStateId = 'bh_arrivals_manager_warning_window_with_state'
-local _waypointDistanceWindowId = 'bh_arrivals_manager_waypoint_distance_window'
 
 local _texts = {
     goBack = _('GoBack'),
@@ -14,14 +13,12 @@ local _texts = {
     noJoin = _('NoJoin'),
     stationPickerWindowTitle = _('StationPickerWindowTitle'),
     warningWindowTitle = _('WarningWindowTitle'),
-    waypointDistanceWindowTitle = _('WaypointDistanceWindowTitle'),
 }
 
 local _windowXShift = -200
 
 local guiHelpers = {
     isShowingWarning = false,
-    isShowingWaypointDistance = false,
     moveCamera = function(position)
         local cameraData = game.gui.getCamera()
         game.gui.setCamera({position[1], position[2], cameraData[3], cameraData[4], cameraData[5]})
@@ -280,32 +277,6 @@ guiHelpers.showWarningWindowWithState = function(text)
     )
 end
 
-guiHelpers.showWaypointDistance = function(text)
-    guiHelpers.isShowingWaypointDistance = true
-
-    local content = api.gui.layout.BoxLayout.new('VERTICAL')
-    local window = api.gui.util.getById(_waypointDistanceWindowId)
-    if window == nil then
-        window = api.gui.comp.Window.new(_texts.waypointDistanceWindowTitle, content)
-        window:setId(_waypointDistanceWindowId)
-    else
-        window:setContent(content)
-        window:setVisible(true, false)
-    end
-
-    content:addItem(api.gui.comp.TextView.new(text))
-
-    local position = api.gui.util.getMouseScreenPos()
-    window:setPosition(position.x + _windowXShift, position.y)
-
-    -- make title bar invisible without that dumb pseudo css
-    window:getLayout():getItem(0):setVisible(false, false)
-
-    window:onClose(
-        guiHelpers.hideWaypointDistance
-    )
-end
-
 guiHelpers.hideAllWarnings = function()
     local window = api.gui.util.getById(_stationPickerWindowId)
     if window ~= nil then
@@ -314,17 +285,6 @@ guiHelpers.hideAllWarnings = function()
     window = api.gui.util.getById(_warningWindowWithGotoId)
     if window ~= nil then
         window:setVisible(false, false)
-    end
-end
-
-guiHelpers.hideWaypointDistance = function()
-    if guiHelpers.isShowingWaypointDistance then -- only for performance
-        guiHelpers.isShowingWaypointDistance = false
-
-        local window = api.gui.util.getById(_waypointDistanceWindowId)
-        if window ~= nil then
-            window:setVisible(false, false)
-        end
     end
 end
 

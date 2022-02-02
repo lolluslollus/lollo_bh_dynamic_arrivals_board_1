@@ -110,13 +110,61 @@ local function calculateLineStopTermini(line)
   end
 
   if legStart == 1 then
+    log.print('ONE')
     -- route is direct (there are no repeated stops on the way back)
     setLegTerminus(legStart, #lineStops - legStart, #lineStops)
     stops[#lineStops] = 1
   else
+    log.print('TWO')
     setLegTerminus(legStart, #lineStops - legStart + 1, 1)
   end
   return stops
+end
+
+local function calculateLineStopTermini4Station(line, stationGroupId, terminalIndexBase0)
+  -- log.print('calculateLineStopTermini4Station starting, line =') log.debugPrint(line)
+  local lineStops = line.stops
+  local legStartIndex = 1
+  for stopIndex, stop in ipairs(lineStops) do
+    if stop.stationGroup == stationGroupId and stop.terminal == terminalIndexBase0 then
+      legStartIndex = stopIndex
+      break
+    end
+  end
+
+  local stationVisits = {}
+  for stopIndex, stop in ipairs(lineStops) do
+    stationVisits[stop.stationGroup] = (stationVisits[stop.stationGroup] or 0) + 1
+  end
+
+  local legEndIndex = 0
+  local i = legStartIndex + 1
+  while i ~= legStartIndex do
+    if i > #lineStops then i = i - #lineStops end
+    if stationVisits[lineStops[i].stationGroup] == 1 then
+      legEndIndex = i
+      break
+    end
+    i = i + 1
+  end
+
+  if legEndIndex == 0 then
+  -- good for circular lines
+    legEndIndex = legStartIndex + math.ceil(#lineStops * 0.5)
+    if legEndIndex > #lineStops then
+      legEndIndex = legEndIndex - #lineStops
+    end
+  end
+
+  -- just in case
+  if legEndIndex == legStartIndex then
+    if legEndIndex < #lineStops then legEndIndex = legEndIndex + 1
+    else legEndIndex = 1
+    end
+  end
+
+  -- log.print('legStartIndex, legEndIndex =', legStartIndex, legEndIndex)
+  return legStartIndex, legEndIndex
 end
 
 local function calculateTimeUntilStop(vehicle, stopIdx, stopsAway, nStops, averageSectionTime, currentTime)
@@ -259,98 +307,135 @@ local function getNextArrivals(stationTerminal, numArrivals, time)
   return ret
 end
 
+local function getAverageSectionTimeToDestinations(vehicles, nStops, fallbackLegDuration)
+  local averages = {}
+
+  for hereIndex = 1, nStops, 1 do
+    local prevIndex = hereIndex - 1
+    if prevIndex < 1 then prevIndex = prevIndex + nStops end
+
+    local average, nVehicles4Average = 0, #vehicles
+    for _, vehicleId in ipairs(vehicles) do
+      local vehicle = api.engine.getComponent(vehicleId, api.type.ComponentType.TRANSPORT_VEHICLE)
+      if vehicle.sectionTimes[prevIndex] == 0 then
+        nVehicles4Average = nVehicles4Average - 1
+      else
+        average = average + vehicle.sectionTimes[prevIndex]
+      end
+    end
+    if nVehicles4Average > 0 then
+      average = average / nVehicles4Average
+    else
+      average = fallbackLegDuration
+    end
+
+    averages[hereIndex] = math.ceil(average * 1000)
+  end
+
+  return averages
+end
+
 local function getNextArrivals4Station(stationId, numArrivals, time)
-  -- TODO some departures are for the station itself, where the sign is placed, if it is the end station.
-  -- TODO We should make a twin construction for departures
-  
+  -- log.print('getNextArrivals4Station starting')
+  -- TODO We should make a twin construction for arrivals, this is for departures
+  -- TODO if a terminal is skipped, for example 3, the display will show 3 instead of 4, 4 instead of 5, and so on
+  -- This may have to do with the way the freestyle station works
+
   -- despite how many we want to return, we actually need to look at every vehicle on every line stopping here before we can sort and trim
   local arrivals = {}
 
   if not stationId then return arrivals end
 
-  local lineStops = api.engine.system.lineSystem.getLineStopsForStation(stationId)
-
-  if lineStops then
-    local uniqueLines = {}
-    for _, line in pairs(lineStops) do
-      uniqueLines[line] = line
-    end
-    
-    for _, line in pairs(uniqueLines) do
-      local lineData = api.engine.getComponent(line, api.type.ComponentType.LINE)
+  local stationGroupId = api.engine.system.stationGroupSystem.getStationGroup(stationId)
+  -- log.print('stationGroupId =', stationGroupId)
+  -- log.print('stationId =', stationId)
+  local stationTerminals = api.engine.getComponent(stationId, api.type.ComponentType.STATION).terminals
+  for terminalId, terminal in pairs(stationTerminals) do
+    -- log.print('terminal.tag =', terminal.tag or 'NIL', ', terminalId =', terminalId or 'NIL')
+    local lineIds = api.engine.system.lineSystem.getLineStopsForTerminal(stationId, terminal.tag)
+    for _, lineId in pairs(lineIds) do
+      -- log.print('lineId =', lineId or 'NIL')
+      local lineData = api.engine.getComponent(lineId, api.type.ComponentType.LINE)
       if lineData then
-        local lineTermini = calculateLineStopTermini(lineData) -- this will eventually be done in a slower engine loop to save performance
-        local terminalStopIndex = {}
-        local nStops = #lineData.stops
-        
-        for stopIdx, stop in ipairs(lineData.stops) do
-          terminalStopIndex[stop.terminal] = stopIdx
-        end
+        local vehicles = api.engine.system.transportVehicleSystem.getLineVehicles(lineId)
+        if #vehicles > 0 then
+          local hereIndex, lineTerminusIndex = calculateLineStopTermini4Station(lineData, stationGroupId, terminal.tag) -- this will eventually be done in a slower engine loop to save performance
+          local nStops = #lineData.stops
+          -- local prevIndex = hereIndex - 1
+          -- if prevIndex < 1 then prevIndex = prevIndex + nStops end
+          -- log.print('hereIndex, prevIndex, nStops, lineTerminusIndex =', hereIndex, prevIndex, nStops, lineTerminusIndex)
+          log.print('hereIndex, nStops, lineTerminusIndex =', hereIndex, nStops, lineTerminusIndex)
 
-        local vehicles = api.engine.system.transportVehicleSystem.getLineVehicles(line)
-        if vehicles then
-          for _, veh in ipairs(vehicles) do
-            local vehicle = api.engine.getComponent(veh, api.type.ComponentType.TRANSPORT_VEHICLE)
-            if vehicle then
-              local lineDuration = 0
-              for _, sectionTime in ipairs(vehicle.sectionTimes) do
-                lineDuration = lineDuration + sectionTime
-                if sectionTime == 0 then
-                  lineDuration = 0
-                  break -- early out if we dont have full line duration data. we need to calculate a different (less accurate) way
-                end
-              end
+          local averageSectionTimeToDestinations = getAverageSectionTimeToDestinations(vehicles, nStops, lineData.waitingTime / nStops)
+          log.print('averageSectionTimeToDestinations =') log.debugPrint(averageSectionTimeToDestinations)
+          -- log.print('#averageSectionTimeToDestinations =', #averageSectionTimeToDestinations or 'NIL') -- ok
+          -- log.print('averageSectionTimeToGetHere (fallback) =', averageSectionTimeToGetHere)
+          -- log.print('lineData.waitingTime / nStops =', lineData.waitingTime / nStops)
+          -- log.print('time =', time)
+          --   -- alternative calculation
+          --   -- vehicle hasn't run a full route yet, so fall back to less accurate (?) method
+          --   -- calculate line duration by multiplying the number of vehicles by the line frequency
+          --   -- Alternatively, I could take lineData.waitingTime and keep it simple.
+          --   local lineEntity = game.interface.getEntity(lineId)
+          --   lineDuration = (1 / lineEntity.frequency) * #vehicles
+          -- log.print('There are', #vehicles, 'vehicles')
 
-              --[[if selectedObject == veh then
-                debugPrint({ terminals = terminalStopIndex, sectionTimes = vehicle.sectionTimes, stopDepartures = vehicle.lineStopDepartures })
-              end]]
+          for _, vehicleId in ipairs(vehicles) do
+            log.print('vehicleId =', vehicleId or 'NIL')
+            local vehicle = api.engine.getComponent(vehicleId, api.type.ComponentType.TRANSPORT_VEHICLE)
+            -- vehicle has:
+            -- stopIndex = 1, -- next stop index, base 0
+            -- lineStopDepartures = { -- last recorded departure times, they can be 0 if not yet recorded
+            --   [1] = 4591600,
+            --   [2] = 4498000,
+            -- },
+            -- lastLineStopDeparture = 0, -- seems inaccurate
+            -- sectionTimes = { -- tale a while to calculate
+            --   [1] = 0, -- time it took to complete a segment, starting from stop 1
+            --   [2] = 86.600006103516, -- time it took to complete a segment, starting from stop 2
+            -- },
+            -- timeUntilLoad = -5.5633368492126, -- seems useless
+            -- timeUntilCloseDoors = -0.19238702952862, -- seems useless
+            -- timeUntilDeparture = -0.026386171579361, -- seems useless
+            -- doorsTime = 4590600000, -- last departure time, seems OK
+            -- and it is quicker than checking the max across lineStopDepartures
+            -- we add 1000 so we match it to the highest lineStopDeparture
 
-              -- local function blah(str, val)
-              --   if selectedObject == veh then
-              --     print(str .. " = " .. val)
-              --   end
-              -- end
+            -- log.print('vehicle.stopIndex =', vehicle.stopIndex or 'NIL')
 
-              if lineDuration == 0 then
-                -- vehicle hasn't run a full route yet, so fall back to less accurate (?) method
-                -- calculate line duration by multiplying the number of vehicles by the line frequency
-                local lineEntity = game.interface.getEntity(line)
-                lineDuration = (1 / lineEntity.frequency) * #vehicles
-              end
+            local stopsAway = (hereIndex - vehicle.stopIndex - 1)
+            if stopsAway < 0 then stopsAway = stopsAway + nStops end
+            -- log.print('stopsAway =', stopsAway or 'NIL')
+            -- log.print('vehicle.doorsTime / 1000 + 1000', vehicle.doorsTime / 1000 + 1000)
 
-              -- and calculate an average section time by dividing by the number of stops
-              local averageSectionTime = lineDuration / nStops
+            local lastDepartureTime = math.max(table.unpack(vehicle.lineStopDepartures))
+            -- useful when starting a new line
+            if lastDepartureTime == 0 then lastDepartureTime = time end
 
-              --log.object("vehicle_" .. veh, vehicle)
-              for terminalIdx, stopIdx in pairs(terminalStopIndex) do
-                local stopsAway = (stopIdx - vehicle.stopIndex - 1) % nStops
+            local remainingTime = 0
+            local destinationIndex = vehicle.stopIndex + 1 -- base 0 to base 1
+            while destinationIndex ~= hereIndex do
+              remainingTime = remainingTime + averageSectionTimeToDestinations[destinationIndex]
+              destinationIndex = destinationIndex + 1
+              if destinationIndex > nStops then destinationIndex = destinationIndex - nStops end
+            end
+            remainingTime = remainingTime + averageSectionTimeToDestinations[hereIndex]
 
-                -- using lineStopDepartures[stopIdx] + lineDuration seems simple but requires at least one full loop and still isn't always correct if there's bunching.
-                -- so instead, using stopsAway, add up the sectionTimes of the stops between there and here, and subtract the diff of now - stopsAway departure time.
-                -- lastLineStopDeparture seems to be inaccurate.
-                --local expectedArrivalTime = vehicle.lineStopDepartures[stopIdx] + math.ceil(lineDuration) * 1000
+            arrivals[#arrivals+1] = {
+              terminalId = terminal.tag,
+              destination = lineData.stops[lineTerminusIndex].stationGroup,
+              arrivalTime = lastDepartureTime + remainingTime,
+              stopsAway = stopsAway
+            }
 
-                local timeUntilArrival = calculateTimeUntilStop(vehicle, stopIdx, stopsAway, nStops, averageSectionTime, time)
-                -- blah("[Stop " .. stopIdx .. "]: timeUntilArrival", timeUntilArrival)
-                local expectedArrivalTime = time + timeUntilArrival
-
-                arrivals[#arrivals+1] = {
-                  terminalId = terminalIdx,
-                  destination = lineData.stops[lineTermini[stopIdx]].stationGroup,
-                  arrivalTime = expectedArrivalTime,
-                  stopsAway = stopsAway
-                }
-
-                if #vehicles == 1 and lineDuration > 0 then
-                  -- if there's only one vehicle, make a second arrival eta + an entire line duration
-                  arrivals[#arrivals+1] = {
-                    terminalId = terminalIdx,
-                    destination = lineData.stops[lineTermini[stopIdx]].stationGroup,
-                    arrivalTime = math.ceil(expectedArrivalTime + lineDuration * 1000),
-                    stopsAway = stopsAway
-                  }
-                end
-              end
+            if #vehicles == 1 and averageSectionTimeToDestinations > 0 then
+              -- if there's only one vehicle, make a second arrival eta + an entire line duration
+              arrivals[#arrivals+1] = {
+                terminalId = terminal.tag,
+                destination = lineData.stops[lineTerminusIndex].stationGroup,
+                arrivalTime = lastDepartureTime + remainingTime + remainingTime,
+                stopsAway = stopsAway
+              }
             end
           end
         end
@@ -358,15 +443,15 @@ local function getNextArrivals4Station(stationId, numArrivals, time)
     end
   end
 
+  -- log.print('arrivals before sorting =') log.debugPrint(arrivals)
   table.sort(arrivals, function(a, b) return a.arrivalTime < b.arrivalTime end)
 
-  local ret = {}
-  
+  local results = {}
   for i = 1, numArrivals do
-    ret[#ret+1] = arrivals[i]
+    results[#results+1] = arrivals[i]
   end
 
-  return ret
+  return results
 end
 
 local function formatClockString(clock_time)
@@ -510,10 +595,16 @@ local function update()
               local nextArrivals = {}
               local stationIds = api.engine.getComponent(signProps.stationConId, api.type.ComponentType.CONSTRUCTION).stations
               for _, stationId in pairs(stationIds) do
-                arrayUtils.concatValues(nextArrivals, getNextArrivals4Station(stationId, config.maxArrivals, time))
+                arrayUtils.concatValues(
+                  nextArrivals,
+                  getNextArrivals4Station(
+                    stationId,
+                    config.maxArrivals,
+                    time
+                ))
               end
 
-              -- log.print('nextArrivals =') log.debugPrint(nextArrivals)
+              log.print('nextArrivals =') log.debugPrint(nextArrivals)
               arrivals = formatArrivals(nextArrivals, time)
             end
 
@@ -586,17 +677,17 @@ local function handleEvent(src, id, name, args)
   log.print('handleEvent firing, src =', src, ', id =', id, ', name =', name, ', args =') log.debugPrint(args)
 
   if name == constants.events.remove_display_construction then
-    -- log.print('state before =') log.debugPrint(stateManager.loadState())
+    log.print('state before =') log.debugPrint(stateManager.loadState())
     stateManager.removePlacedSign(args.boardConstructionId)
     -- local state = stateManager.getState()
     -- state.placed_signs[args] = nil
     -- log.print("Removed display construction id ") log.debugPrint(args)
-    -- log.print('state after =') log.debugPrint(stateManager.loadState())
+    log.print('state after =') log.debugPrint(stateManager.loadState())
   elseif name == constants.events.join_board_to_station then
-    -- log.print('state before =') log.debugPrint(stateManager.loadState())
+    log.print('state before =') log.debugPrint(stateManager.loadState())
     stateManager.setPlacedSign(args.boardConstructionId, {['stationConId'] = args.stationConId})
     -- log.print("Added display construction id ") log.debugPrint(args)
-    -- log.print('state after =') log.debugPrint(stateManager.loadState())
+    log.print('state after =') log.debugPrint(stateManager.loadState())
   -- elseif name == "select_object" then
   --   -- selectedObject = args
   --   -- log.message("bh_dynamic_arrivals_board WARNING LEGACY Selected display construction id " .. tostring(args))
