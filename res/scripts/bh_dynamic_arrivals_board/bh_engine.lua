@@ -326,7 +326,7 @@ local function getAverageSectionTimeToDestinations(vehicles, nStops, fallbackLeg
     if nVehicles4Average > 0 then
       average = average / nVehicles4Average
     else
-      average = fallbackLegDuration
+      average = fallbackLegDuration -- useful when starting a new line
     end
 
     averages[hereIndex] = math.ceil(average * 1000)
@@ -366,18 +366,19 @@ local function getNextArrivals4Station(stationId, numArrivals, time)
           -- log.print('hereIndex, prevIndex, nStops, lineTerminusIndex =', hereIndex, prevIndex, nStops, lineTerminusIndex)
           log.print('hereIndex, nStops, lineTerminusIndex =', hereIndex, nStops, lineTerminusIndex)
 
+          -- Here, I average the times across all the trains on this line.
+          -- If they are wildly different, which is stupid, this could be less accurate;
+          -- otherwise, it will be more accurate.
+
+          -- alternative calculation for line duration, I don't like mixing the old and the new api tho
+          -- vehicle hasn't run a full route yet, so fall back to less accurate (?) method
+          -- calculate line duration by multiplying the number of vehicles by the line frequency
+          --   local lineEntity = game.interface.getEntity(lineId)
+          --   lineDuration = (1 / lineEntity.frequency) * #vehicles
           local averageSectionTimeToDestinations = getAverageSectionTimeToDestinations(vehicles, nStops, lineData.waitingTime / nStops)
           log.print('averageSectionTimeToDestinations =') log.debugPrint(averageSectionTimeToDestinations)
           -- log.print('#averageSectionTimeToDestinations =', #averageSectionTimeToDestinations or 'NIL') -- ok
-          -- log.print('averageSectionTimeToGetHere (fallback) =', averageSectionTimeToGetHere)
-          -- log.print('lineData.waitingTime / nStops =', lineData.waitingTime / nStops)
           -- log.print('time =', time)
-          --   -- alternative calculation
-          --   -- vehicle hasn't run a full route yet, so fall back to less accurate (?) method
-          --   -- calculate line duration by multiplying the number of vehicles by the line frequency
-          --   -- Alternatively, I could take lineData.waitingTime and keep it simple.
-          --   local lineEntity = game.interface.getEntity(lineId)
-          --   lineDuration = (1 / lineEntity.frequency) * #vehicles
           -- log.print('There are', #vehicles, 'vehicles')
 
           for _, vehicleId in ipairs(vehicles) do
@@ -390,7 +391,7 @@ local function getNextArrivals4Station(stationId, numArrivals, time)
             --   [2] = 4498000,
             -- },
             -- lastLineStopDeparture = 0, -- seems inaccurate
-            -- sectionTimes = { -- tale a while to calculate
+            -- sectionTimes = { -- take a while to calculate when starting a new line
             --   [1] = 0, -- time it took to complete a segment, starting from stop 1
             --   [2] = 86.600006103516, -- time it took to complete a segment, starting from stop 2
             -- },
@@ -399,10 +400,9 @@ local function getNextArrivals4Station(stationId, numArrivals, time)
             -- timeUntilDeparture = -0.026386171579361, -- seems useless
             -- doorsTime = 4590600000, -- last departure time, seems OK
             -- and it is quicker than checking the max across lineStopDepartures
-            -- we add 1000 so we match it to the highest lineStopDeparture
+            -- we add 1000 so we match it to the highest lineStopDeparture, but it varies with the cargo => no
 
-            -- log.print('vehicle.stopIndex =', vehicle.stopIndex or 'NIL')
-
+            -- log.print('vehicle.stopIndex =', vehicle.stopIndex)
             local stopsAway = (hereIndex - vehicle.stopIndex - 1)
             if stopsAway < 0 then stopsAway = stopsAway + nStops end
             -- log.print('stopsAway =', stopsAway or 'NIL')
