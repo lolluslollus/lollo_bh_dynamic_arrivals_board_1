@@ -74,8 +74,8 @@ utils.getFormattedArrivals = function(arrivals, time)
     return ret
 end
 
-local function calculateLineStopTermini4Station(line, stationGroupId, terminalIndexBase0)
-    -- log.print('calculateLineStopTermini4Station starting, line =') log.debugPrint(line)
+local function calculateLineStopTermini(line, stationGroupId, terminalIndexBase0)
+    -- log.print('calculateLineStopTermini starting, line =') log.debugPrint(line)
     local lineStops = line.stops
     local legStartIndex = 1
     for stopIndex, stop in ipairs(lineStops) do
@@ -148,8 +148,8 @@ local function getAverageSectionTimeToDestinations(vehicles, nStops, fallbackLeg
     return averages
 end
 
-local function getNextArrivals4Station(stationId, numArrivals, time, onlyTerminalId)
-    -- log.print('getNextArrivals4Station starting')
+local function getNextArrivals(stationId, numArrivals, time, onlyTerminalId)
+    -- log.print('getNextArrivals starting')
     -- TODO We should make a twin construction for arrivals, this is for departures
 
     -- despite how many we want to return, we actually need to look at every vehicle on every line stopping here before we can sort and trim
@@ -171,7 +171,7 @@ local function getNextArrivals4Station(stationId, numArrivals, time, onlyTermina
                 if lineData then
                     local vehicles = api.engine.system.transportVehicleSystem.getLineVehicles(lineId)
                     if #vehicles > 0 then
-                        local hereIndex, lineTerminusIndex = calculateLineStopTermini4Station(lineData, stationGroupId, terminal.tag) -- this will eventually be done in a slower engine loop to save performance
+                        local hereIndex, lineTerminusIndex = calculateLineStopTermini(lineData, stationGroupId, terminal.tag) -- this will eventually be done in a slower engine loop to save performance
                         local nStops = #lineData.stops
                         -- local prevIndex = hereIndex - 1
                         -- if prevIndex < 1 then prevIndex = prevIndex + nStops end
@@ -348,7 +348,7 @@ local function update()
                             for _, stationId in pairs(stationIds) do
                                 arrayUtils.concatValues(
                                     nextArrivals,
-                                    getNextArrivals4Station(
+                                    getNextArrivals(
                                         stationId,
                                         config.maxArrivals,
                                         time,
@@ -365,7 +365,7 @@ local function update()
                         for _, stationId in pairs(stationIds) do
                             arrayUtils.concatValues(
                                 nextArrivals,
-                                getNextArrivals4Station(
+                                getNextArrivals(
                                     stationId,
                                     config.maxArrivals,
                                     time
