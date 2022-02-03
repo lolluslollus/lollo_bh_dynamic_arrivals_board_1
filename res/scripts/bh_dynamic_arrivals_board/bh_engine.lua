@@ -51,7 +51,7 @@ utils.getFormattedArrivals = function(arrivals, time)
     local results = {}
 
     if arrivals then
-        for _, arrival in pairs(arrivals) do
+        for _, arrival in ipairs(arrivals) do
             local entry = { dest = "", etaMinsString = "", arrivalTimeString = "", arrivalTerminal = arrival.terminalId }
             local terminusName = api.engine.getComponent(arrival.destination, api.type.ComponentType.NAME)
             if terminusName then
