@@ -215,15 +215,19 @@ local function getNextArrivals(stationId, numArrivals, time, onlyTerminalId)
                             -- timeUntilDeparture = -0.026386171579361, -- seems useless
                             -- doorsTime = 4590600000, -- last departure time, seems OK
                             -- and it is quicker than checking the max across lineStopDepartures
-                            -- we add 1000 so we match it to the highest lineStopDeparture, but it varies with the cargo => no
+                            -- we add 1000 so we match it to the highest lineStopDeparture, but it varies with some unknown factor.
+                            -- Sometimes, two vehicles A and B on the same line may have A the highest lineStopDeparture and B the highest doorsTime.
 
                             -- log.print('vehicle.stopIndex =', vehicle.stopIndex)
                             local stopsAway = (hereIndex - vehicle.stopIndex - 1)
                             if stopsAway < 0 then stopsAway = stopsAway + nStops end
                             -- log.print('stopsAway =', stopsAway or 'NIL')
-                            -- log.print('vehicle.doorsTime / 1000 + 1000', vehicle.doorsTime / 1000 + 1000)
 
-                            local lastDepartureTime = math.max(table.unpack(vehicle.lineStopDepartures))
+                            -- LOLLO TODO choose one
+                            -- local lastDepartureTime = math.max(table.unpack(vehicle.lineStopDepartures))
+                            local lastDepartureTime = vehicle.doorsTime / 1000 + 1000
+                            -- log.print('lastDepartureTime with unpack and with doorsTime =', lastDepartureTime, lastDepartureTime2)
+
                             -- useful when starting a new line
                             if lastDepartureTime == 0 then lastDepartureTime = time end
 
