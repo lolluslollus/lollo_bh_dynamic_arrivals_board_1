@@ -346,7 +346,7 @@ local function updateWithNoIndexes()
                                     arrayUtils.concatValues(rawArrivals, nextArrivals)
                                 end
                             end
-                            log.print('single terminal nextArrivals =') log.debugPrint(rawArrivals)
+                            -- log.print('single terminal nextArrivals =') log.debugPrint(rawArrivals)
                         else
                             for _, stationId in pairs(stationIds) do
                                 local nextArrivals = getNextArrivals(
@@ -360,7 +360,7 @@ local function updateWithNoIndexes()
                                     arrayUtils.concatValues(rawArrivals, nextArrivals)
                                 end
                             end
-                            log.print('station nextArrivals =') log.debugPrint(rawArrivals)
+                            -- log.print('station nextArrivals =') log.debugPrint(rawArrivals)
                         end
                         formattedArrivals = utils.getFormattedArrivals(rawArrivals or {}, time)
                     end
