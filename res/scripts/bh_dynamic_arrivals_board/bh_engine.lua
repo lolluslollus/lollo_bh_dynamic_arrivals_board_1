@@ -12,7 +12,10 @@ local stationUtils = require('bh_dynamic_arrivals_board.stationUtils')
 local transfUtilsUG = require('transf')
 
 local function bulldozeConstruction(conId)
-    if not(edgeUtils.isValidAndExistingId(conId)) then return end
+    if not(edgeUtils.isValidAndExistingId(conId)) then
+        -- log.print('bulldozeConstruction cannot bulldoze construction with id =', conId or 'NIL', 'because it is not valid or does not exist')
+        return
+    end
 
     local proposal = api.type.SimpleProposal.new()
     -- LOLLO NOTE there are asymmetries how different tables are handled.
@@ -30,8 +33,8 @@ local function bulldozeConstruction(conId)
     api.cmd.sendCommand(
         api.cmd.make.buildProposal(proposal, context, true), -- the 3rd param is "ignore errors"; wrong proposals will be discarded anyway
         function(result, success)
-            log.print('LOLLO bulldozeConstruction success = ', success)
-            -- logger.print('LOLLO bulldozeConstruction result = ') logger.debugPrint(result)
+            log.print('bulldozeConstruction success = ', success)
+            -- logger.print('bulldozeConstruction result = ') logger.debugPrint(result)
         end
     )
 end
