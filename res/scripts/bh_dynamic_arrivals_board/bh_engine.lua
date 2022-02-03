@@ -717,39 +717,40 @@ local function handleEvent(src, id, name, args)
 
     if name == constants.events.remove_display_construction then
         log.print('state before =') log.debugPrint(stateManager.getState())
-        stateManager.removePlacedSign(args.boardConstructionId)
+        stateManager.removePlacedSign(args.signConId)
+        bulldozeConstruction(args.signConId)
         log.print('state after =') log.debugPrint(stateManager.getState())
-    elseif name == constants.events.join_board_to_station then
+    elseif name == constants.events.join_sign_to_station then
         log.print('state before =') log.debugPrint(stateManager.getState())
-        if not(args) or not(edgeUtils.isValidAndExistingId(args.boardConstructionId)) then return end
+        if not(args) or not(edgeUtils.isValidAndExistingId(args.signConId)) then return end
 
-        local boardCon = api.engine.getComponent(args.boardConstructionId, api.type.ComponentType.CONSTRUCTION)
-        if not(boardCon) then return end
+        local signCon = api.engine.getComponent(args.signConId, api.type.ComponentType.CONSTRUCTION)
+        if not(signCon) then return end
 
-        local config = constructionHooks.getRegisteredConstructions()[boardCon.fileName]
+        local config = constructionHooks.getRegisteredConstructions()[signCon.fileName]
         if not(config) then return end
 
         if config.singleTerminal then
             -- local nearestTerminals = stationUtils.getNearestTerminals(
-            --     transfUtilsUG.new(boardCon.transf:cols(0), boardCon.transf:cols(1), boardCon.transf:cols(2), boardCon.transf:cols(3)),
+            --     transfUtilsUG.new(signCon.transf:cols(0), signCon.transf:cols(1), signCon.transf:cols(2), signCon.transf:cols(3)),
             --     args.stationConId,
             --     false -- not only passengers
             -- )
             -- log.print('freshly calculated nearestTerminals =') log.debugPrint(nearestTerminals)
             local nearestTerminal = stationUtils.getNearestTerminal(
-                transfUtilsUG.new(boardCon.transf:cols(0), boardCon.transf:cols(1), boardCon.transf:cols(2), boardCon.transf:cols(3)),
+                transfUtilsUG.new(signCon.transf:cols(0), signCon.transf:cols(1), signCon.transf:cols(2), signCon.transf:cols(3)),
                 args.stationConId
             )
             log.print('freshly calculated nearestTerminal =') log.debugPrint(nearestTerminal)
             stateManager.setPlacedSign(
-                args.boardConstructionId,
+                args.signConId,
                 {
                     stationConId = args.stationConId,
                     nearestTerminal = nearestTerminal,
                 }
             )
         else
-            stateManager.setPlacedSign(args.boardConstructionId, {stationConId = args.stationConId})
+            stateManager.setPlacedSign(args.signConId, {stationConId = args.stationConId})
         end
         log.print('state after =') log.debugPrint(stateManager.getState())
     end

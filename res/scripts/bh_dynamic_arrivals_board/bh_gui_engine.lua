@@ -13,42 +13,42 @@ local function sendScriptEvent(id, name, args)
   api.cmd.sendCommand(api.cmd.make.sendScriptEvent(constants.eventSources.bh_gui_engine, id, name, args))
 end
 
-local function joinBoardBase(boardConstructionId, stationConId)
+local function joinSignBase(signConId, stationConId)
   local eventArgs = {
-    boardConstructionId = boardConstructionId,
+    signConId = signConId,
     stationConId = stationConId
   }
-  sendScriptEvent(constants.eventId, constants.events.join_board_to_station, eventArgs)
+  sendScriptEvent(constants.eventId, constants.events.join_sign_to_station, eventArgs)
 end
 
-local function tryJoinBoard(boardConstructionId, tentativeStationConId)
-  if not(edgeUtils.isValidAndExistingId(boardConstructionId)) then return false end
+local function tryJoinSign(signConId, tentativeStationConId)
+  if not(edgeUtils.isValidAndExistingId(signConId)) then return false end
 
-  local con = api.engine.getComponent(boardConstructionId, api.type.ComponentType.CONSTRUCTION)
+  local con = api.engine.getComponent(signConId, api.type.ComponentType.CONSTRUCTION)
   -- if con ~= nil then logger.print('con.fileName =') logger.debugPrint(con.fileName) end
   if con == nil or con.transf == nil then return false end
 
-  local boardTransf_c = con.transf
-  if boardTransf_c == nil then return false end
+  local signTransf_c = con.transf
+  if signTransf_c == nil then return false end
 
-  local boardTransf_lua = transfUtilsUG.new(boardTransf_c:cols(0), boardTransf_c:cols(1), boardTransf_c:cols(2), boardTransf_c:cols(3))
-  if boardTransf_lua == nil then return false end
+  local signTransf_lua = transfUtilsUG.new(signTransf_c:cols(0), signTransf_c:cols(1), signTransf_c:cols(2), signTransf_c:cols(3))
+  if signTransf_lua == nil then return false end
 
-  -- logger.print('conTransf =') logger.debugPrint(boardTransf_lua)
-  local nearbyStationCons = stationUtils.getNearbyStationCons(boardTransf_lua, constants.searchRadius4NearbyStation2Join, true)
+  -- logger.print('conTransf =') logger.debugPrint(signTransf_lua)
+  local nearbyStationCons = stationUtils.getNearbyStationCons(signTransf_lua, constants.searchRadius4NearbyStation2Join, true)
   -- logger.print('#nearbyStationCons =', #nearbyStationCons)
   if #nearbyStationCons == 0 then
     guiHelpers.showWarningWindowWithMessage(_('CannotFindStationToJoin'))
     return false
   elseif #nearbyStationCons == 1 then
-    joinBoardBase(boardConstructionId, nearbyStationCons[1].id)
+    joinSignBase(signConId, nearbyStationCons[1].id)
   else
     guiHelpers.showNearbyStationPicker(
       true, -- pick passenger or cargo stations
       nearbyStationCons,
       tentativeStationConId,
       function(stationConId)
-        joinBoardBase(boardConstructionId, stationConId)
+        joinSignBase(signConId, stationConId)
       end
     )
   end
@@ -71,7 +71,7 @@ local function handleEvent(id, name, args)
         local state = stateManager.getState()
         -- logger.print('state =') logger.debugPrint(state)
         local stationConId = (state.placed_signs and state.placed_signs[args]) and state.placed_signs[args].stationConId or nil
-        tryJoinBoard(args, stationConId) -- args here is the construction id
+        tryJoinSign(args, stationConId) -- args here is the construction id
     elseif id == 'constructionBuilder' and name == 'builder.apply' then
         -- logger.print('LOLLO caught gui event, id = ', id, ' name = ', name, ' args = ') -- logger.debugPrint(args)
         -- logger.print('construction.getRegisteredConstructions() =') logger.debugPrint(construction.getRegisteredConstructions())
@@ -81,7 +81,7 @@ local function handleEvent(id, name, args)
               local config = constructionHooks.getRegisteredConstructions()[toAdd[1].fileName]
               -- logger.print('conProps =') logger.debugPrint(config)
               if config and args.result and args.result[1] then
-                tryJoinBoard(args.result[1])
+                tryJoinSign(args.result[1])
               end
             end
 
@@ -89,7 +89,7 @@ local function handleEvent(id, name, args)
             local state = stateManager.getState()
             if toRemove and toRemove[1] and state.placed_signs[toRemove[1]] then
                 -- logger.print('remove_display_construction for con id =', toRemove[1])
-                sendScriptEvent(constants.eventId, constants.events.remove_display_construction, {boardConstructionId = toRemove[1]})
+                sendScriptEvent(constants.eventId, constants.events.remove_display_construction, {signConId = toRemove[1]})
             end
         end
     elseif id == 'bulldozer' and name == 'builder.apply' then
@@ -100,7 +100,7 @@ local function handleEvent(id, name, args)
           local state = stateManager.getState()
           if toRemove and toRemove[1] and state.placed_signs[toRemove[1]] then
               -- logger.print('remove_display_construction for con id =', toRemove[1])
-              sendScriptEvent(constants.eventId, constants.events.remove_display_construction, {boardConstructionId = toRemove[1]})
+              sendScriptEvent(constants.eventId, constants.events.remove_display_construction, {signConId = toRemove[1]})
           end
       end
     -- else

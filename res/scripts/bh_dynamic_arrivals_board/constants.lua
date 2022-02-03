@@ -8,7 +8,7 @@ local constants = {
     },
     events = {
         ['hide_warnings'] = 'hide_warnings',
-        ['join_board_to_station'] = 'join_board_to_station',
+        ['join_sign_to_station'] = 'join_sign_to_station',
         ['remove_display_construction'] = 'remove_display_construction',
     }
 }
