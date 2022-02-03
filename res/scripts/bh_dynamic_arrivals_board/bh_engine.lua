@@ -730,17 +730,22 @@ local function handleEvent(src, id, name, args)
         if not(config) then return end
 
         if config.singleTerminal then
-            local nearestTerminals = stationUtils.getNearestTerminals(
+            -- local nearestTerminals = stationUtils.getNearestTerminals(
+            --     transfUtilsUG.new(boardCon.transf:cols(0), boardCon.transf:cols(1), boardCon.transf:cols(2), boardCon.transf:cols(3)),
+            --     args.stationConId,
+            --     false -- not only passengers
+            -- )
+            -- log.print('freshly calculated nearestTerminals =') log.debugPrint(nearestTerminals)
+            local nearestTerminal = stationUtils.getNearestTerminal(
                 transfUtilsUG.new(boardCon.transf:cols(0), boardCon.transf:cols(1), boardCon.transf:cols(2), boardCon.transf:cols(3)),
-                args.stationConId,
-                false -- only passengers?
+                args.stationConId
             )
-            log.print('freshly calculated nearestTerminals =') log.debugPrint(nearestTerminals)
+            log.print('freshly calculated nearestTerminal =') log.debugPrint(nearestTerminal)
             stateManager.setPlacedSign(
                 args.boardConstructionId,
                 {
                     stationConId = args.stationConId,
-                    nearestTerminals = nearestTerminals,
+                    nearestTerminal = nearestTerminal,
                 }
             )
         else

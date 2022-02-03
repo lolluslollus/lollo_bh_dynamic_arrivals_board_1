@@ -52,7 +52,7 @@ local function getNodeIds4Terminal(frozenNodeIds, startNodeId)
         visitedNodeIds_Indexed[nodeId] = true
 
         if adjacentEdgeIds_c == nil then
-            print('Warning: FOUR')
+            logger.print('Warning: FOUR')
             return {}
         else
             local nextNodes = {}
@@ -62,7 +62,7 @@ local function getNodeIds4Terminal(frozenNodeIds, startNodeId)
                     if newNodeIds[i] and not(visitedNodeIds_Indexed[newNodeIds[i]]) and _frozenNodeIds_Indexed[newNodeIds[i]] then nextNodes[#nextNodes+1] = newNodeIds[i] end
                 end
             end
-            print('FIVE')
+            logger.print('FIVE')
             return nextNodes
         end
     end
@@ -223,5 +223,20 @@ local utils = {
         return nearestTerminals
     end,
 }
+
+utils.getNearestTerminal = function(transf, stationConId)
+    local nearestTerminals = utils.getNearestTerminals(transf, stationConId, false)
+    if not(nearestTerminals) then return nil end
+
+    local result = nil
+    for stationId, station in pairs(nearestTerminals) do
+        if not(result) or result.distance > station.distance then
+            result = station
+            result.stationId = stationId
+        end
+    end
+
+    return result
+end
 
 return utils

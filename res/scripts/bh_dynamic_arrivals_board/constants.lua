@@ -1,5 +1,5 @@
 local constants = {
-    refreshCount = 2000,
+    refreshCount = 5000, -- refresh every 5 seconds
     searchRadius4NearbyStation2Join = 50,
 
     eventId = 'bh_arrivals_manager',
