@@ -1,4 +1,23 @@
 function data()
+    -- Hi. This is what we do with the expr and replace if the label is set to custom filter:
+    --[[
+        std::regex_replace(
+            text,
+            std::regex(expr),
+            replace,
+            std::regex_constants::format_sed | std::regex_constants::format_no_copy
+        );
+    ]]
+    -- it is possible that the C++ implementation does not support the full regexp capabilities
+    -- aside from that we do not do anything special with the input strings
+
+    --[[
+        https://www.cplusplus.com/reference/regex/regex_replace/
+        https://pubs.opengroup.org/onlinepubs/9699919799/utilities/sed.html#tag_20_116_13_03
+        https://docs.microsoft.com/en-us/dotnet/api/system.text.regularexpressions.regex.replace?view=net-6.0
+        https://www.cplusplus.com/reference/regex/regex_constants/
+    ]]
+
 	local params_1_1 = {
 		expr = "([a-zA-Z-]*)",
 		replace = '\\0',
