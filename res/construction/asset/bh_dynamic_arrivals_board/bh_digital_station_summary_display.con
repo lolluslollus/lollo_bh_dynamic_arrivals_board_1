@@ -3,89 +3,102 @@ local transf = require "transf"
 local utils = require "bh_dynamic_arrivals_board/bh_utils"
 
 local function configKey(name)
-	return "bh_summary_display_" .. name
+    return "bh_summary_display_" .. name
 end
 
 local function makeParams()
-	local params = {}
+    local params = {}
 
-	utils.makeRotateParams(params, configKey)
-	utils.makeOffsetParams(params, configKey)
+    params[#params+1] = {
+        key = configKey("snapTrackPlatformAlign"),
+        name = _("Snapping Align"),
+        values = { _("Free"), _("Platform") },
+        defaultIndex = 1
+    }
 
-	return params
+    utils.makeRotateParams(params, configKey)
+    utils.makeOffsetParams(params, configKey)
+
+    return params
 end
 
 function data()
-	return {
-		-- type = "ASSET_TRACK",
-		type = "ASSET_DEFAULT",
-		description = {
-			name = _("DynamicArrivalsSummaryBoardName"),
-			description = _("DynamicArrivalsSummaryBoardDesc"),
-			icon = "ui/construction/asset/bh_dynamic_arrivals_board/bh_digital_summary_construction@2x.tga"
-		},
-		availability = {},
-		buildMode = "SINGLE",
-		categories = { "badgerrhax" },
-		order = 13,
-		skipCollision = true,
-		autoRemovable = false,
-		params = makeParams(),
-		updateFn = function(params)
-			-- print('LOLLO params =') debugPrint(params)
-			local result = { }
-			result.models = {}
+    return {
+        -- type = "ASSET_TRACK",
+        type = "ASSET_DEFAULT",
+        description = {
+            name = _("DynamicArrivalsSummaryBoardName"),
+            description = _("DynamicArrivalsSummaryBoardDesc"),
+            icon = "ui/construction/asset/bh_dynamic_arrivals_board/bh_digital_summary_construction@2x.tga"
+        },
+        availability = {},
+        buildMode = "SINGLE",
+        categories = { "badgerrhax" },
+        order = 13,
+        skipCollision = true,
+        autoRemovable = false,
+        params = makeParams(),
+        updateFn = function(params)
+            -- print('LOLLO params =') debugPrint(params)
+            local result = { }
+            result.models = {}
 
-			local rotate = utils.readRotateParams(params, configKey)
-			rotate.x = rotate.x + math.pi / 2
+            local align = params[configKey("snapTrackPlatformAlign")] or 1
 
-			local offset = utils.readOffsetParams(params, configKey)
-			offset.y = offset.y - 4.95
-			offset.z = offset.z + 0.54
+            local rotate = utils.readRotateParams(params, configKey)
+            if align ~= 0 then
+                rotate.x = rotate.x + math.pi / 2
+            end
 
-			-- local model = "bh_dynamic_arrivals_board/bh_dynamic_tall_board.mdl"
-			-- local model = "bh_dynamic_arrivals_board/bh_dynamic_tall_board_name.mdl"
-			result.models[#result.models + 1] = {
-				id = "bh_dynamic_arrivals_board/bh_dynamic_tall_wide_board_name.mdl",
-				transf = constructionutil.rotateTransf(params, transf.rotZYXTransl(rotate, offset))
-			}
+            local offset = utils.readOffsetParams(params, configKey)
+            if align ~= 0 then
+                offset.y = offset.y - 4.95
+                offset.z = offset.z + 0.54
+            end
+
+            -- local model = "bh_dynamic_arrivals_board/bh_dynamic_tall_board.mdl"
+            -- local model = "bh_dynamic_arrivals_board/bh_dynamic_tall_board_name.mdl"
+            result.models[#result.models + 1] = {
+                id = "bh_dynamic_arrivals_board/bh_dynamic_tall_wide_board_name.mdl",
+                transf = constructionutil.rotateTransf(params, transf.rotZYXTransl(rotate, offset))
+            }
 
 --[[ 			local labelValues = {}
-			for i = 1, 29 do
-				labelValues[i] = ""
-			end
+            for i = 1, 29 do
+                labelValues[i] = ""
+            end
 
-			labelValues[1] = "Destination"
-			labelValues[2] = "Plat"
-			labelValues[3] = "Time"
-			labelValues[28] = params[configKey("time_string")]
+            labelValues[1] = "Destination"
+            labelValues[2] = "Plat"
+            labelValues[3] = "Time"
+            labelValues[28] = params[configKey("time_string")]
 
-			local numArrivals = params[configKey("num_arrivals")] or 0
-			if numArrivals > 0 then
-				for i = 1, numArrivals do
-					local labelIndexStart = 3 * i + 1
-					labelValues[labelIndexStart] = params[configKey("arrival_" .. i .. "_dest")]
-					labelValues[labelIndexStart+1] = tostring(params[configKey("arrival_" .. i .. "_terminal")])
-					labelValues[labelIndexStart+2] = params[configKey("arrival_" .. i .. "_time")]
-				end
-			end
+            local numArrivals = params[configKey("num_arrivals")] or 0
+            if numArrivals > 0 then
+                for i = 1, numArrivals do
+                    local labelIndexStart = 3 * i + 1
+                    labelValues[labelIndexStart] = params[configKey("arrival_" .. i .. "_dest")]
+                    labelValues[labelIndexStart+1] = tostring(params[configKey("arrival_" .. i .. "_terminal")])
+                    labelValues[labelIndexStart+2] = params[configKey("arrival_" .. i .. "_time")]
+                end
+            end
 
-			result.labelText = {
-				[#result.models-1] = labelValues
-			} ]]
+            result.labelText = {
+                [#result.models-1] = labelValues
+            } ]]
 
-			result.terrainAlignmentLists = { { type = "EQUAL", faces = {} }}
-			result.groundFaces = {}
+            result.terrainAlignmentLists = { { type = "EQUAL", faces = {} }}
+            result.groundFaces = {}
 
-      -- specifically to make the game treat this as a construction
-	  -- makes this thing easier to select in game; capacity must be > 0
-	  -- it also makes it bulldozable with the bulldozer, instead of the eraser brush,
-	  -- so we can catch the bulldoze event, which we otherwise cannot.
-	  -- LOLLO TODO see if we can get rid of this bodge
-			result.personCapacity = { type = "RESIDENTIAL", capacity = 1, }
+    -- specifically to make the game treat this as a construction
+    -- makes this thing easier to select in game; capacity must be > 0
+    -- it also makes it bulldozable with the bulldozer, instead of the eraser brush,
+    -- so we can catch the bulldoze event, which we otherwise cannot.
+    -- LOLLO TODO see if we can get rid of this bodge
+            result.personCapacity = { type = "RESIDENTIAL", capacity = 1, }
 
-			-- print('LOLLO result =') debugPrint(result)
-			return result
-		end
-	}
+            -- print('LOLLO result =') debugPrint(result)
+            return result
+        end
+    }
 end

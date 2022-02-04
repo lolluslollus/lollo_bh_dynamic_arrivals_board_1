@@ -6,89 +6,101 @@ local styles = { "digital_display_name", "digital_display_nopole_name", "digital
 
 -- I use a utility function to join the param label registered with the engine, with the individual param names
 local function configKey(name)
-	return "bh_digital_display_" .. name
+    return "bh_digital_display_" .. name
 end
 
 local function mdl(style)
-	return "bh_dynamic_arrivals_board/bh_manchester_metrolink_" .. style .. ".mdl"
+    return "bh_dynamic_arrivals_board/bh_manchester_metrolink_" .. style .. ".mdl"
 end
 
 local function makeParams()
-	local params = {}
+    local params = {}
 
-	params[#params+1] = {
-		key = configKey("style"),
-		name = _("Style"),
-		uiType = "ICON_BUTTON",
-		values = utils.parameterIcons(styles)
-	}
+    params[#params+1] = {
+        key = configKey("style"),
+        name = _("Style"),
+        uiType = "ICON_BUTTON",
+        values = utils.parameterIcons(styles)
+    }
 
-	-- since the terminal placement logic is not perfect, provide a param to override the terminal this sign is linked to
-	utils.makeTerminalOverrideParam(params, configKey)
-	utils.makeRotateParams(params, configKey)
-	utils.makeOffsetParams(params, configKey)
+    params[#params+1] = {
+        key = configKey("snapTrackPlatformAlign"),
+        name = _("Snapping Align"),
+        values = { _("Free"), _("Platform") },
+        defaultIndex = 1
+    }
 
-	return params
+    -- since the terminal placement logic is not perfect, provide a param to override the terminal this sign is linked to
+    utils.makeTerminalOverrideParam(params, configKey)
+    utils.makeRotateParams(params, configKey)
+    utils.makeOffsetParams(params, configKey)
+
+    return params
 end
 
 function data()
+    return {
+        type = "ASSET_TRACK",
+        description = {
+            name = _("DynamicArrivalsSingleTerminalName"),
+            description = _("DynamicArrivalsSingleTerminalDesc"),
+            icon = "ui/construction/asset/bh_dynamic_arrivals_board/bh_digital_display_construction@2x.tga"
+        },
+        availability = {},
+        buildMode = "SINGLE",
+        categories = { "badgerrhax" },
+        order = 13,
+        skipCollision = true,
+        autoRemovable = false,
+        params = makeParams(),
+        updateFn = function(params)
+            local result = { }
+            result.models = {}
 
-	return { 
-		type = "ASSET_TRACK",
-		description = {
-			name = _("DynamicArrivalsSingleTerminalName"),
-			description = _("DynamicArrivalsSingleTerminalDesc"),
-			icon = "ui/construction/asset/bh_dynamic_arrivals_board/bh_digital_display_construction@2x.tga"
-		},
-		availability = {},
-		buildMode = "SINGLE",
-		categories = { "badgerrhax" },
-		order = 13,
-		skipCollision = true,
-		autoRemovable = false,
-		params = makeParams(),
-		updateFn = function(params)
-			local result = { }
-			result.models = {}
+            local align = params[configKey("snapTrackPlatformAlign")] or 1
 
-			local rotate = utils.readRotateParams(params, configKey)
-			rotate.x = rotate.x + math.pi / 2
+            local rotate = utils.readRotateParams(params, configKey)
+            if align ~= 0 then
+                rotate.x = rotate.x + math.pi / 2
+            end
 
-			local offset = utils.readOffsetParams(params, configKey)
-			offset.y = offset.y - 4.95
-			offset.z = offset.z + 0.54
+            local offset = utils.readOffsetParams(params, configKey)
+            if align ~= 0 then
+                offset.y = offset.y - 4.95
+                offset.z = offset.z + 0.54
+            end
 
-			local style = styles[params[configKey("style")]+1]
-			result.models[#result.models + 1] = {
-				id = mdl(style),
-				-- id = 'bh_manchester_metrolink_digital_display_name.mdl',
-				transf = constructionutil.rotateTransf(params, transf.rotZYXTransl(rotate, offset))
-			}
+            local style = styles[params[configKey("style")]+1]
+            result.models[#result.models + 1] = {
+                id = mdl(style),
+                -- id = 'bh_manchester_metrolink_digital_display_name.mdl',
+                transf = constructionutil.rotateTransf(params, transf.rotZYXTransl(rotate, offset))
+            }
 
-			-- local labelValues = {
-			-- 	params[configKey("arrival_1_dest")], -- these are some of the params provided by the arrivals engine when updating this construction
-			-- 	params[configKey("arrival_2_dest")],
-			-- 	params[configKey("time_string")],
-			-- 	params[configKey("arrival_1_time")],
-			-- 	params[configKey("arrival_2_time")],
-			-- }
+            -- local labelValues = {
+            -- 	params[configKey("arrival_1_dest")], -- these are some of the params provided by the arrivals engine when updating this construction
+            -- 	params[configKey("arrival_2_dest")],
+            -- 	params[configKey("time_string")],
+            -- 	params[configKey("arrival_1_time")],
+            -- 	params[configKey("arrival_2_time")],
+            -- }
 
-			-- result.labelText = {
-			-- 	[#result.models-1] = utils.joinTables(labelValues, labelValues) -- our sign is 2-sided with same values on both
-			-- }
+            -- result.labelText = {
+            -- 	[#result.models-1] = utils.joinTables(labelValues, labelValues) -- our sign is 2-sided with same values on both
+            -- }
 
-			result.terrainAlignmentLists = { { type = "EQUAL", faces = {} }}
-			result.groundFaces = {}
+            result.terrainAlignmentLists = { { type = "EQUAL", faces = {} }}
+            result.groundFaces = {}
 
-		-- specifically to make the game treat this as a construction
-		-- makes this thing easier to select in game; capacity must be > 0
-		-- it also makes it bulldozable with the bulldozer, instead of the eraser brush,
-		-- so we can catch the bulldoze event, which we otherwise cannot.
-		-- LOLLO TODO see if we can get rid of this bodge
-			result.personCapacity = { type = "RESIDENTIAL", capacity = 1, }
+        -- specifically to make the game treat this as a construction
+        -- makes this thing easier to select in game; capacity must be > 0
+        -- it also makes it bulldozable with the bulldozer, instead of the eraser brush,
+        -- so we can catch the bulldoze event, which we otherwise cannot.
+        -- LOLLO TODO see if we can get rid of this bodge
+            result.personCapacity = { type = "RESIDENTIAL", capacity = 1, }
 
-			return result
-		end
-	}
+            return result
+        end
+    }
 
 end
