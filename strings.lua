@@ -1,6 +1,8 @@
 function data()
 	return {
 		en = {
+            ["Destination"] = "Destination",
+            ["Due"] = "Due",
             ["DynamicArrivalsSingleTerminalName"] = "Dynamic Arrivals Single Terminal",
             ["DynamicArrivalsSingleTerminalDesc"] = "A digital display showing the next two approaching trains to a single terminal. It will be bulldozed when the station is bulldozed and you unpause the game.",
             ["DynamicArrivalsSummaryBoardName"] = "Dynamic Arrivals Summary Board",
@@ -9,8 +11,11 @@ function data()
             ["GoBack"] = "Go back",
             ["GoThere"] = "Go there",
             ["Join"] = "Join",
+            ["MinutesShort"] = "min",
             ["NoJoin"] = "Do not join",
+            ["Platform"] = "Plat",
             ["StationPickerWindowTitle"] = "Pick a station to join",
+            ["Time"] = "Time",
             ["WarningWindowTitle"] = "Warning",
         },
     }

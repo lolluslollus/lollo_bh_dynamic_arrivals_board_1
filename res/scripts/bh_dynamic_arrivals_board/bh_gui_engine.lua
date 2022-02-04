@@ -5,7 +5,7 @@ local constants = require('bh_dynamic_arrivals_board.constants')
 local edgeUtils = require('bh_dynamic_arrivals_board.edgeUtils')
 local guiHelpers = require('bh_dynamic_arrivals_board.guiHelpers')
 local logger = require('bh_dynamic_arrivals_board.bh_log')
-local stationUtils = require('bh_dynamic_arrivals_board.stationUtils')
+local stationHelpers = require('bh_dynamic_arrivals_board.stationHelpers')
 local transfUtilsUG = require('transf')
 
 
@@ -35,14 +35,14 @@ local function tryJoinSign(signConId, tentativeStationConId)
     if signTransf_lua == nil then return false end
 
     -- logger.print('conTransf =') logger.debugPrint(signTransf_lua)
-    local nearbyStationCons = stationUtils.getNearbyStationCons(signTransf_lua, constants.searchRadius4NearbyStation2Join, true)
+    local nearbyStationCons = stationHelpers.getNearbyStationCons(signTransf_lua, constants.searchRadius4NearbyStation2Join, true)
     -- logger.print('#nearbyStationCons =', #nearbyStationCons)
     if #nearbyStationCons == 0 then
         guiHelpers.showWarningWindowWithMessage(_('CannotFindStationToJoin'))
         return false
     elseif #nearbyStationCons == 1 then
         joinSignBase(signConId, nearbyStationCons[1].id)
-    else
+    else -- LOLLO TODO in future, make the popup never show once a sign has been assigned
         guiHelpers.showNearbyStationPicker(
             true, -- pick passenger or cargo stations
             nearbyStationCons,

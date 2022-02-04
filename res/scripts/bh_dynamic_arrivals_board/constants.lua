@@ -7,9 +7,13 @@ local constants = {
         ['bh_gui_engine'] = 'bh_gui_engine.lua',
     },
     events = {
-        ['hide_warnings'] = 'hide_warnings',
-        ['join_sign_to_station'] = 'join_sign_to_station',
-        ['remove_display_construction'] = 'remove_display_construction',
+        hide_warnings = 'hide_warnings',
+        join_sign_to_station = 'join_sign_to_station',
+        remove_display_construction = 'remove_display_construction',
+    },
+
+    nameTags = {
+        clock = 'clock',
     }
 }
 

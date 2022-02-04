@@ -1,4 +1,6 @@
 function data()
+	local constants = require('bh_dynamic_arrivals_board.constants')
+	-- LOLLO NOTE from UG on regex
     -- Hi. This is what we do with the expr and replace if the label is set to custom filter:
     --[[
         std::regex_replace(
@@ -19,7 +21,7 @@ function data()
     ]]
 
 	-- stick this in the model editor under "options - config - name"
-	local _testText = "@_1_@Destination@_2_@Track@_3_@Time@_4_@Brignole@_5_@2@_6_@1:50@_7_@Porta Nuova@_8_@21@_9_@22:50@_10_@Sestri Levante@_11_@12@_12_@21:50@_13_@Milano Centrale@_14_@24@_15_@23:59@"
+	local _testText = "@_1_@Destination@_2_@Plat@_3_@Time@_4_@Brignole@_5_@2@_6_@1:50@_7_@Porta Nuova@_8_@21@_9_@22:50@_10_@Sestri Levante@_11_@12@_12_@21:50@_13_@Milano Centrale@_14_@24@_15_@23:59@_clock_@01:12:20@"
 
 	local function params(counter)
 		return {
@@ -165,7 +167,7 @@ return {
 					verticalAlignment = "CENTER",
 				},
 				{
-					alignment = "RIGHT",
+					alignment = "CENTER",
 					alpha = 1,
 					alphaMode = "CUTOUT",
 					childId = "",
@@ -213,7 +215,7 @@ return {
 					verticalAlignment = "CENTER",
 				},
 				{
-					alignment = "RIGHT",
+					alignment = "CENTER",
 					alpha = 1,
 					alphaMode = "CUTOUT",
 					childId = "",
@@ -261,7 +263,7 @@ return {
 					verticalAlignment = "CENTER",
 				},
 				{
-					alignment = "RIGHT",
+					alignment = "CENTER",
 					alpha = 1,
 					alphaMode = "CUTOUT",
 					childId = "",
@@ -309,7 +311,7 @@ return {
 					verticalAlignment = "CENTER",
 				},
 				{
-					alignment = "RIGHT",
+					alignment = "CENTER",
 					alpha = 1,
 					alphaMode = "CUTOUT",
 					childId = "",
@@ -357,7 +359,7 @@ return {
 					verticalAlignment = "CENTER",
 				},
 				{
-					alignment = "RIGHT",
+					alignment = "CENTER",
 					alpha = 1,
 					alphaMode = "CUTOUT",
 					childId = "",
@@ -405,7 +407,7 @@ return {
 					verticalAlignment = "CENTER",
 				},
 				{
-					alignment = "RIGHT",
+					alignment = "CENTER",
 					alpha = 1,
 					alphaMode = "CUTOUT",
 					childId = "",
@@ -453,7 +455,7 @@ return {
 					verticalAlignment = "CENTER",
 				},
 				{
-					alignment = "RIGHT",
+					alignment = "CENTER",
 					alpha = 1,
 					alphaMode = "CUTOUT",
 					childId = "",
@@ -501,7 +503,7 @@ return {
 					verticalAlignment = "CENTER",
 				},
 				{
-					alignment = "RIGHT",
+					alignment = "CENTER",
 					alpha = 1,
 					alphaMode = "CUTOUT",
 					childId = "",
@@ -541,7 +543,7 @@ return {
 					filter = "CUSTOM",
 					fitting = "CUT",
 					nLines = 1,
-					params = params(28),
+					params = params(constants.nameTags.clock),
 					renderMode = "EMISSIVE",
 					size = { 1.02, 0.15, },
 					transf = { 1, 0, -0, 0, 0, 0, 1, 0, 0, -1, 0, 0, -0.5, -0.07, 3.2, 1, },

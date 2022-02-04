@@ -16,8 +16,7 @@ local function makeParams()
 end
 
 function data()
-
-	return { 
+	return {
 		-- type = "ASSET_TRACK",
 		type = "ASSET_DEFAULT",
 		description = {
@@ -32,7 +31,6 @@ function data()
 		skipCollision = true,
 		autoRemovable = false,
 		params = makeParams(),
-		
 		updateFn = function(params)
 			-- print('LOLLO params =') debugPrint(params)
 			local result = { }
@@ -45,12 +43,14 @@ function data()
 			offset.y = offset.y - 4.95
 			offset.z = offset.z + 0.54
 
-      local model = "bh_dynamic_arrivals_board/bh_dynamic_tall_board.mdl"
-      result.models[#result.models + 1] = {
-        id = model, transf = constructionutil.rotateTransf(params, transf.rotZYXTransl(rotate, offset))
-      }
+			-- local model = "bh_dynamic_arrivals_board/bh_dynamic_tall_board.mdl"
+			-- local model = "bh_dynamic_arrivals_board/bh_dynamic_tall_board_name.mdl"
+			result.models[#result.models + 1] = {
+				id = "bh_dynamic_arrivals_board/bh_dynamic_tall_board_name.mdl",
+				transf = constructionutil.rotateTransf(params, transf.rotZYXTransl(rotate, offset))
+			}
 
-			local labelValues = {}
+--[[ 			local labelValues = {}
 			for i = 1, 29 do
 				labelValues[i] = ""
 			end
@@ -72,7 +72,7 @@ function data()
 
 			result.labelText = {
 				[#result.models-1] = labelValues
-			}
+			} ]]
 
 			result.terrainAlignmentLists = { { type = "EQUAL", faces = {} }}
 			result.groundFaces = {}
@@ -88,5 +88,4 @@ function data()
 			return result
 		end
 	}
-
 end

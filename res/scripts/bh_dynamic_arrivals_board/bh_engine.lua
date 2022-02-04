@@ -8,8 +8,16 @@ local log = require "bh_dynamic_arrivals_board/bh_log"
 local arrayUtils = require('bh_dynamic_arrivals_board.arrayUtils')
 local constants = require('bh_dynamic_arrivals_board.constants')
 local edgeUtils = require('bh_dynamic_arrivals_board.edgeUtils')
-local stationUtils = require('bh_dynamic_arrivals_board.stationUtils')
+local stationHelpers = require('bh_dynamic_arrivals_board.stationHelpers')
 local transfUtilsUG = require('transf')
+
+local _texts = {
+    destination = _('Destination'),
+    due = _('Due'),
+    minutesShort = _('MinutesShort'),
+    platform = _('Platform'),
+    time = _('Time'),
+}
 
 local utils = {
     bulldozeConstruction = function(conId)
@@ -52,17 +60,25 @@ utils.getFormattedArrivals = function(arrivals, time)
 
     if arrivals then
         for _, arrival in ipairs(arrivals) do
-            local entry = { dest = "", etaMinsString = "", arrivalTimeString = "", arrivalTerminal = arrival.terminalId }
+            local entry = { dest = "", etaMinsString = "", arrivalTimeString = "", arrivalTerminal = (arrival.terminalId or 0) + 1 }
             local terminusName = api.engine.getComponent(arrival.destination, api.type.ComponentType.NAME)
-            if terminusName then
+            if terminusName and terminusName.name then
                 entry.dest = terminusName.name
+                -- LOLLO NOTE sanitize away the characters that we use in the regex in the model
+                entry.dest:gsub('_', ' ')
+                entry.dest:gsub('@', ' ')
             end
 
             entry.arrivalTimeString = utils.formatClockStringHHMM(arrival.arrivalTime / 1000)
-            local expectedSecondsFromNow = math.ceil((arrival.arrivalTime - time) / 1000)
-            local expectedMins = math.ceil(expectedSecondsFromNow / 60)
+            -- local expectedSecondsFromNow = math.ceil((arrival.arrivalTime - time) / 1000)
+            -- local expectedMins = math.ceil(expectedSecondsFromNow / 60)
+            -- local expectedMins = math.floor(expectedSecondsFromNow / 60)
+            -- local expectedMins = math.ceil((arrival.arrivalTime - time) / 60000)
+            local expectedMins = math.floor((arrival.arrivalTime - time) / 60000)
             if expectedMins > 0 then
-                entry.etaMinsString = expectedMins .. "min"
+                entry.etaMinsString = expectedMins .. _texts.minutesShort
+            else
+                entry.etaMinsString = _texts.due
             end
 
             results[#results+1] = entry
@@ -74,6 +90,44 @@ utils.getFormattedArrivals = function(arrivals, time)
 
     -- log.print('getFormattedArrivals about to return results =') log.debugPrint(results)
     return results
+end
+
+local function getNewSignConName(formattedArrivals, config, clockString)
+    if config.singleTerminal then
+        local result = ''
+        local i = 1
+        for _, arrival in ipairs(formattedArrivals) do
+            result = result .. '@_' .. i .. '_@' .. arrival.dest
+            i = i + 1
+            result = result .. '@_' .. i .. '_@' .. (config.absoluteArrivalTime and arrival.arrivalTimeString or arrival.etaMinsString)
+            i = i + 1
+        end
+        if config.clock and clockString then -- it might also be clock_time, check it
+            result = result .. '@_' .. constants.nameTags.clock .. '_@' .. clockString
+        end
+
+        result = result .. '@'
+
+        return result
+    else
+        local result = '@_1_@' .. _texts.destination .. '@_2_@' .. _texts.platform .. '@_3_@' .. _texts.time
+        local i = 4
+        for _, arrival in ipairs(formattedArrivals) do
+            result = result .. '@_' .. i .. '_@' .. arrival.dest
+            i = i + 1
+            result = result .. '@_' .. i .. '_@' .. arrival.arrivalTerminal
+            i = i + 1
+            result = result .. '@_' .. i .. '_@' .. arrival.arrivalTimeString
+            i = i + 1
+        end
+        if config.clock and clockString then -- it might also be clock_time, check it
+            result = result .. '@_' .. constants.nameTags.clock .. '_@' .. clockString
+        end
+
+        result = result .. '@'
+
+        return result
+    end
 end
 
 local function calculateLineStopTermini(line, stationGroupId, terminalIndexBase0)
@@ -365,39 +419,43 @@ local function updateWithNoIndexes()
                         formattedArrivals = utils.getFormattedArrivals(rawArrivals or {}, time)
                     end
 
-                    -- rebuild the sign construction
-                    local newCon = api.type.SimpleProposal.ConstructionEntity.new()
+                    -- rename the construction
+                    local newName = getNewSignConName(formattedArrivals, config, clockString)
+                    api.cmd.sendCommand(api.cmd.make.setName(signConId, newName))
 
-                    local newParams = {}
-                    for oldKey, oldVal in pairs(signCon.params) do
-                        newParams[oldKey] = oldVal
-                    end
+                    -- -- rebuild the sign construction
+                    -- local newCon = api.type.SimpleProposal.ConstructionEntity.new()
 
-                    if config.clock then
-                        newParams[param("time_string")] = clockString
-                        newParams[param("game_time")] = clock_time
-                    end
+                    -- local newParams = {}
+                    -- for oldKey, oldVal in pairs(signCon.params) do
+                    --     newParams[oldKey] = oldVal
+                    -- end
 
-                    newParams[param("num_arrivals")] = #formattedArrivals
+                    -- if config.clock then
+                    --     newParams[param("time_string")] = clockString
+                    --     newParams[param("game_time")] = clock_time
+                    -- end
 
-                    for i, a in ipairs(formattedArrivals) do
-                        local paramName = "arrival_" .. i .. "_"
-                        newParams[param(paramName .. "dest")] = a.dest
-                        newParams[param(paramName .. "time")] = config.absoluteArrivalTime and a.arrivalTimeString or a.etaMinsString
-                        if not config.singleTerminal and a.arrivalTerminal then
-                            newParams[param(paramName .. "terminal")] = a.arrivalTerminal + 1
-                        end
-                    end
+                    -- newParams[param("num_arrivals")] = #formattedArrivals
 
-                    newParams.seed = signCon.params.seed + 1
+                    -- for i, a in ipairs(formattedArrivals) do
+                    --     local paramName = "arrival_" .. i .. "_"
+                    --     newParams[param(paramName .. "dest")] = a.dest
+                    --     newParams[param(paramName .. "time")] = config.absoluteArrivalTime and a.arrivalTimeString or a.etaMinsString
+                    --     if not config.singleTerminal and a.arrivalTerminal then
+                    --         newParams[param(paramName .. "terminal")] = a.arrivalTerminal
+                    --     end
+                    -- end
 
-                    newCon.fileName = signCon.fileName
-                    newCon.params = newParams
-                    newCon.transf = signCon.transf
-                    newCon.playerEntity = api.engine.util.getPlayer()
+                    -- newParams.seed = signCon.params.seed + 1
 
-                    newConstructions[#newConstructions+1] = newCon
-                    oldConstructions[#oldConstructions+1] = signConId
+                    -- newCon.fileName = signCon.fileName
+                    -- newCon.params = newParams
+                    -- newCon.transf = signCon.transf
+                    -- newCon.playerEntity = api.engine.util.getPlayer()
+
+                    -- newConstructions[#newConstructions+1] = newCon
+                    -- oldConstructions[#oldConstructions+1] = signConId
 
                     -- log.print('newCon =') log.debugPrint(newCon)
                 else
@@ -408,18 +466,18 @@ local function updateWithNoIndexes()
         end
     end)
 
-    if #newConstructions > 0 then
-            local proposal = api.type.SimpleProposal.new()
-            for i = 1, #newConstructions do
-            proposal.constructionsToAdd[i] = newConstructions[i]
-            end
-            proposal.constructionsToRemove = oldConstructions
+    -- if #newConstructions > 0 then
+    --         local proposal = api.type.SimpleProposal.new()
+    --         for i = 1, #newConstructions do
+    --         proposal.constructionsToAdd[i] = newConstructions[i]
+    --         end
+    --         proposal.constructionsToRemove = oldConstructions
 
-            log.timed("buildProposal command", function()
-            -- changing params on a construction doesn't seem to change the entity id which indicates it doesn't completely "replace" it but i don't know how expensive this command actually is...
-            api.cmd.sendCommand(api.cmd.make.buildProposal(proposal, api.type.Context:new(), true))
-            end)
-    end
+    --         log.timed("buildProposal command", function()
+    --         -- changing params on a construction doesn't seem to change the entity id which indicates it doesn't completely "replace" it but i don't know how expensive this command actually is...
+    --         api.cmd.sendCommand(api.cmd.make.buildProposal(proposal, api.type.Context:new(), true))
+    --         end)
+    -- end
 
     local executionTime = math.ceil((os.clock() - startTick) * 1000)
     print("Full update took " .. executionTime .. "ms")
@@ -598,7 +656,7 @@ local function updateWithIndexes()
                         newParams[param(paramName .. "dest")] = a.dest
                         newParams[param(paramName .. "time")] = config.absoluteArrivalTime and a.arrivalTimeString or a.etaMinsString
                         if not config.singleTerminal and a.arrivalTerminal then
-                            newParams[param(paramName .. "terminal")] = a.arrivalTerminal + 1
+                            newParams[param(paramName .. "terminal")] = a.arrivalTerminal
                         end
                     end
 
@@ -665,13 +723,13 @@ local function handleEvent(src, id, name, args)
         if not(config) then return end
 
         if config.singleTerminal then
-            -- local nearestTerminals = stationUtils.getNearestTerminals(
+            -- local nearestTerminals = stationHelpers.getNearestTerminals(
             --     transfUtilsUG.new(signCon.transf:cols(0), signCon.transf:cols(1), signCon.transf:cols(2), signCon.transf:cols(3)),
             --     args.stationConId,
             --     false -- not only passengers
             -- )
             -- log.print('freshly calculated nearestTerminals =') log.debugPrint(nearestTerminals)
-            local nearestTerminal = stationUtils.getNearestTerminal(
+            local nearestTerminal = stationHelpers.getNearestTerminal(
                 transfUtilsUG.new(signCon.transf:cols(0), signCon.transf:cols(1), signCon.transf:cols(2), signCon.transf:cols(3)),
                 args.stationConId
             )
