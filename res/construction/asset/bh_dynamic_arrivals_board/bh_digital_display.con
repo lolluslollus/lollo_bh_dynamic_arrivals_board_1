@@ -73,8 +73,14 @@ function data()
             local style = styles[params[configKey("style")]+1]
             result.models[#result.models + 1] = {
                 id = mdl(style),
-                -- id = 'bh_manchester_metrolink_digital_display_name.mdl',
                 transf = constructionutil.rotateTransf(params, transf.rotZYXTransl(rotate, offset))
+            }
+-- LOLLO TODO use this to ensure the 0, 0, 0 is where it should be,
+-- ie about the bottom of the pole.
+-- A funny offset could damage the terminal locator.
+            result.models[#result.models+1] = {
+                id = 'bh_dynamic_arrivals_board/icon/red.mdl',
+                transf = {1, 0, 0, 0,  0, 1, 0, 0,  0, 0, 1, 0,  0, 0, 0, 1}
             }
 
             -- local labelValues = {
