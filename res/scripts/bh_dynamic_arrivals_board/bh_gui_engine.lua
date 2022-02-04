@@ -42,7 +42,7 @@ local function tryJoinSign(signConId, tentativeStationConId)
         return false
     elseif #nearbyStationCons == 1 then
         joinSignBase(signConId, nearbyStationCons[1].id)
-    else -- LOLLO TODO in future, make the popup never show once a sign has been assigned
+    else
         guiHelpers.showNearbyStationPicker(
             true, -- pick passenger or cargo stations
             nearbyStationCons,
@@ -71,6 +71,8 @@ local function handleEvent(id, name, args)
         local state = stateManager.getState()
         -- logger.print('state =') logger.debugPrint(state)
         local stationConId = (state.placed_signs and state.placed_signs[args]) and state.placed_signs[args].stationConId or nil
+        if stationConId then return end
+
         tryJoinSign(args, stationConId) -- args here is the construction id
     elseif id == 'constructionBuilder' and name == 'builder.apply' then
         -- logger.print('LOLLO caught gui event, id = ', id, ' name = ', name, ' args = ') -- logger.debugPrint(args)
@@ -98,15 +100,10 @@ local function handleEvent(id, name, args)
         -- This is inevitable;
         -- still, if the user is quick enough and the updatte frequency is low enough,
         -- there will be a chance to bulldoze.
-        -- LOLLO TODO try renaming the constructions instead of rebuilding them at every tick,
-        -- and store all display information in their name. There is a cmd for renaming.
-        -- It may be quicker, and it will be bulldozable. I checked it: construction can take very long names.
+        -- LOLLO renaming the constructions instead of rebuilding them at every tick
+        -- may be quicker, and it is easy to bulldoze. I checked it: construction can take very long names.
         -- I tried 20480 characters or more, that will do.
         -- The only drawback is, when hovering they show a long tooltip - with one row only, luckily.
-        -- myCmd = api.cmd.make.setName(23175, name)
-        -- api.cmd.sendCommand(myCmd)
-        -- api.engine.getComponent(conId, api.type.ComponentType.NAME).name:len()
-        -- also name labels in the models work, we just need to go crazy with fucking regex
         -- logger.print('LOLLO caught gui event, id = ', id, ' name = ', name, ' args = ') -- logger.debugPrint(args)
         -- logger.print('construction.getRegisteredConstructions() =') logger.debugPrint(construction.getRegisteredConstructions())
         if args and args.proposal and args.proposal.toRemove and args.proposal.toRemove[1] then

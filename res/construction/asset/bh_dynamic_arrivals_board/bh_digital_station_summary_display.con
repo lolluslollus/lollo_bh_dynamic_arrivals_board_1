@@ -46,7 +46,7 @@ function data()
 			-- local model = "bh_dynamic_arrivals_board/bh_dynamic_tall_board.mdl"
 			-- local model = "bh_dynamic_arrivals_board/bh_dynamic_tall_board_name.mdl"
 			result.models[#result.models + 1] = {
-				id = "bh_dynamic_arrivals_board/bh_dynamic_tall_board_name.mdl",
+				id = "bh_dynamic_arrivals_board/bh_dynamic_tall_wide_board_name.mdl",
 				transf = constructionutil.rotateTransf(params, transf.rotZYXTransl(rotate, offset))
 			}
 
