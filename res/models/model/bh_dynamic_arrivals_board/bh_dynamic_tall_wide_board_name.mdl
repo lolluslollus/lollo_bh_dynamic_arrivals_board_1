@@ -10,6 +10,7 @@ function data()
             std::regex_constants::format_sed | std::regex_constants::format_no_copy
         );
     ]]
+    -- with the 4th parameter "flags", we set the format to the "Sed" format
     -- it is possible that the C++ implementation does not support the full regexp capabilities
     -- aside from that we do not do anything special with the input strings
 
