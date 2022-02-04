@@ -350,8 +350,8 @@ local function updateWithNoIndexes()
     local startTick = os.clock()
     local clockString = utils.formatClockString(clock_time)
 
-    local newConstructions = {}
-    local oldConstructions = {}
+    -- local newConstructions = {}
+    -- local oldConstructions = {}
 
     log.timed("sign processing", function()
         -- sign is no more around: clean the state
@@ -505,8 +505,8 @@ local function updateWithIndexes()
     local startTick = os.clock()
     local clockString = utils.formatClockString(clock_time)
 
-    local newConstructions = {}
-    local oldConstructions = {}
+    -- local newConstructions = {}
+    -- local oldConstructions = {}
 
     log.timed("sign processing", function()
         -- sign is no more around: clean the state
@@ -636,41 +636,45 @@ local function updateWithIndexes()
                     end
                     if formattedArrivals == nil then formattedArrivals = {} end
 
-                    -- rebuild the sign construction
-                    local newCon = api.type.SimpleProposal.ConstructionEntity.new()
+                    -- rename the construction
+                    local newName = getNewSignConName(formattedArrivals, config, clockString)
+                    api.cmd.sendCommand(api.cmd.make.setName(signConId, newName))
 
-                    local newParams = {}
-                    for oldKey, oldVal in pairs(signCon.params) do
-                        newParams[oldKey] = oldVal
-                    end
+                    -- -- rebuild the sign construction
+                    -- local newCon = api.type.SimpleProposal.ConstructionEntity.new()
 
-                    if config.clock then
-                        newParams[param("time_string")] = clockString
-                        newParams[param("game_time")] = clock_time
-                    end
+                    -- local newParams = {}
+                    -- for oldKey, oldVal in pairs(signCon.params) do
+                    --     newParams[oldKey] = oldVal
+                    -- end
 
-                    newParams[param("num_arrivals")] = #formattedArrivals
+                    -- if config.clock then
+                    --     newParams[param("time_string")] = clockString
+                    --     newParams[param("game_time")] = clock_time
+                    -- end
 
-                    for i, a in ipairs(formattedArrivals) do
-                        local paramName = "arrival_" .. i .. "_"
-                        newParams[param(paramName .. "dest")] = a.dest
-                        newParams[param(paramName .. "time")] = config.absoluteArrivalTime and a.arrivalTimeString or a.etaMinsString
-                        if not config.singleTerminal and a.arrivalTerminal then
-                            newParams[param(paramName .. "terminal")] = a.arrivalTerminal
-                        end
-                    end
+                    -- newParams[param("num_arrivals")] = #formattedArrivals
 
-                    newParams.seed = signCon.params.seed + 1
+                    -- for i, a in ipairs(formattedArrivals) do
+                    --     local paramName = "arrival_" .. i .. "_"
+                    --     newParams[param(paramName .. "dest")] = a.dest
+                    --     newParams[param(paramName .. "time")] = config.absoluteArrivalTime and a.arrivalTimeString or a.etaMinsString
+                    --     if not config.singleTerminal and a.arrivalTerminal then
+                    --         newParams[param(paramName .. "terminal")] = a.arrivalTerminal
+                    --     end
+                    -- end
 
-                    newCon.fileName = signCon.fileName
-                    newCon.params = newParams
-                    newCon.transf = signCon.transf
-                    newCon.playerEntity = api.engine.util.getPlayer()
+                    -- newParams.seed = signCon.params.seed + 1
 
-                    newConstructions[#newConstructions+1] = newCon
-                    oldConstructions[#oldConstructions+1] = signConId
+                    -- newCon.fileName = signCon.fileName
+                    -- newCon.params = newParams
+                    -- newCon.transf = signCon.transf
+                    -- newCon.playerEntity = api.engine.util.getPlayer()
 
-                    -- log.print('newCon =') log.debugPrint(newCon)
+                    -- newConstructions[#newConstructions+1] = newCon
+                    -- oldConstructions[#oldConstructions+1] = signConId
+
+                    -- -- log.print('newCon =') log.debugPrint(newCon)
                 else
                     log.print('bh_dynamic_arrivals_board WARNING: single terminal without nearest terminal; signProps =')
                     log.debugPrint(signProps)
@@ -679,18 +683,18 @@ local function updateWithIndexes()
         end
     end)
 
-    if #newConstructions > 0 then
-        local proposal = api.type.SimpleProposal.new()
-        for i = 1, #newConstructions do
-        proposal.constructionsToAdd[i] = newConstructions[i]
-        end
-        proposal.constructionsToRemove = oldConstructions
+    -- if #newConstructions > 0 then
+    --     local proposal = api.type.SimpleProposal.new()
+    --     for i = 1, #newConstructions do
+    --     proposal.constructionsToAdd[i] = newConstructions[i]
+    --     end
+    --     proposal.constructionsToRemove = oldConstructions
 
-        log.timed("buildProposal command", function()
-            -- changing params on a construction doesn't seem to change the entity id which indicates it doesn't completely "replace" it but i don't know how expensive this command actually is...
-            api.cmd.sendCommand(api.cmd.make.buildProposal(proposal, api.type.Context:new(), true))
-        end)
-    end
+    --     log.timed("buildProposal command", function()
+    --         -- changing params on a construction doesn't seem to change the entity id which indicates it doesn't completely "replace" it but i don't know how expensive this command actually is...
+    --         api.cmd.sendCommand(api.cmd.make.buildProposal(proposal, api.type.Context:new(), true))
+    --     end)
+    -- end
 
     local executionTime = math.ceil((os.clock() - startTick) * 1000)
     print("Full update took " .. executionTime .. "ms")
