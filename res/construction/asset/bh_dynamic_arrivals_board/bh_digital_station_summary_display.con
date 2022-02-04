@@ -3,6 +3,7 @@ local transf = require "transf"
 local utils = require "bh_dynamic_arrivals_board/bh_utils"
 
 local styles = { "tall_board_name", "tall_wide_board_name" }
+-- LOLLO TODO make icons, the current ones are copied from the others and show the wrong style
 
 local function configKey(name)
     return "bh_summary_display_" .. name
