@@ -2,12 +2,25 @@ local constructionutil = require "constructionutil"
 local transf = require "transf"
 local utils = require "bh_dynamic_arrivals_board/bh_utils"
 
+local styles = { "tall_board_name", "tall_wide_board_name" }
+
 local function configKey(name)
     return "bh_summary_display_" .. name
 end
 
+local function mdl(style)
+    return "bh_dynamic_" .. style .. ".mdl"
+end
+
 local function makeParams()
     local params = {}
+
+    params[#params+1] = {
+        key = configKey("style"),
+        name = _("Style"),
+        uiType = "ICON_BUTTON",
+        values = utils.parameterIcons(styles)
+    }
 
     params[#params+1] = {
         key = configKey("snapTrackPlatformAlign"),
@@ -58,8 +71,10 @@ function data()
 
             -- local model = "bh_dynamic_arrivals_board/bh_dynamic_tall_board.mdl"
             -- local model = "bh_dynamic_arrivals_board/bh_dynamic_tall_board_name.mdl"
+            local style = styles[params[configKey("style")]+1]
             result.models[#result.models + 1] = {
-                id = "bh_dynamic_arrivals_board/bh_dynamic_tall_wide_board_name.mdl",
+                id = mdl(style),
+                -- id = "bh_dynamic_arrivals_board/bh_dynamic_tall_wide_board_name.mdl",
                 transf = constructionutil.rotateTransf(params, transf.rotZYXTransl(rotate, offset))
             }
 
