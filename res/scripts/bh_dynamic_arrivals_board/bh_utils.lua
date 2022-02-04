@@ -223,8 +223,8 @@ local function joinTables(t, t2)
 end
 
 return {
-  makeOffsetParams = makeOffsetParams,
-  readOffsetParams = readOffsetParams,
+    makeOffsetParams = makeOffsetParams,
+    readOffsetParams = readOffsetParams,
 	makeScaleParams = makeScaleParams,
 	readScaleParams = readScaleParams,
 	makeRotateParams = makeRotateParams,

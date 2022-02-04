@@ -335,7 +335,7 @@ local function updateWithNoIndexes()
     local time = api.engine.getComponent(api.engine.util.getWorld(), api.type.ComponentType.GAME_TIME).gameTime
     if not(time) then log.message("cannot get time!") return end
 
-    if math.fmod(time, constants.refreshCount) ~= 0 then --[[ log.print('skipping') ]] return end
+    if math.fmod(time, constants.refreshPeriod) ~= 0 then --[[ log.print('skipping') ]] return end
     -- log.print('doing it')
 
     local speed = api.engine.getComponent(api.engine.util.getWorld(), api.type.ComponentType.GAME_SPEED).speedup
@@ -490,7 +490,7 @@ local function updateWithIndexes()
     local time = api.engine.getComponent(api.engine.util.getWorld(), api.type.ComponentType.GAME_TIME).gameTime
     if not(time) then log.message("cannot get time!") return end
 
-    if math.fmod(time, constants.refreshCount) ~= 0 then --[[ log.print('skipping') ]] return end
+    if math.fmod(time, constants.refreshPeriod) ~= 0 then --[[ log.print('skipping') ]] return end
     -- log.print('doing it')
 
     local speed = api.engine.getComponent(api.engine.util.getWorld(), api.type.ComponentType.GAME_SPEED).speedup
