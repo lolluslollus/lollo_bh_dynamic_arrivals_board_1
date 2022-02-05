@@ -383,7 +383,7 @@ local function updateWithNoIndexes()
                     if config.maxArrivals > 0 then -- config.maxArrivals is tied to the construction type, like our tables: we can leave it
                         local rawArrivals = nil
                         local cargoOverride = signCon.params[param("cargo_override")] or 0
-                        if cargoOverride == 0 then cargoOverride = (signProps.nearestTerminal.cargo and 2 or 1) end
+                        if cargoOverride == 0 then cargoOverride = ((signProps.nearestTerminal and signProps.nearestTerminal.cargo) and 2 or 1) end
                         if config.singleTerminal then
                             -- update the linked terminal coz the player might have changed it in the construction params
                             local terminalIdOverride = signCon.params[param("terminal_override")] or 0
@@ -557,7 +557,7 @@ local function updateWithIndexes()
                     local function param(name) return config.labelParamPrefix .. name end
                     if config.maxArrivals > 0 then -- config.maxArrivals is tied to the construction type, like our tables: we can leave it
                         local cargoOverride = signCon.params[param("cargo_override")] or 0
-                        if cargoOverride == 0 then cargoOverride = (signProps.nearestTerminal.cargo and 2 or 1) end
+                        if cargoOverride == 0 then cargoOverride = ((signProps.nearestTerminal and signProps.nearestTerminal.cargo) and 2 or 1) end
                         if config.singleTerminal then
                             -- update the linked terminal coz the player might have changed it in the construction params
                             local terminalIdOverride = signCon.params[param("terminal_override")] or 0
@@ -747,28 +747,26 @@ local function handleEvent(src, id, name, args)
         local config = constructionHooks.getRegisteredConstructions()[signCon.fileName]
         if not(config) then return end
 
-        if config.singleTerminal then
-            -- local nearestTerminals = stationHelpers.getNearestTerminals(
-            --     transfUtilsUG.new(signCon.transf:cols(0), signCon.transf:cols(1), signCon.transf:cols(2), signCon.transf:cols(3)),
-            --     args.stationConId,
-            --     false -- not only passengers
-            -- )
-            -- log.print('freshly calculated nearestTerminals =') log.debugPrint(nearestTerminals)
-            local nearestTerminal = stationHelpers.getNearestTerminal(
-                transfUtilsUG.new(signCon.transf:cols(0), signCon.transf:cols(1), signCon.transf:cols(2), signCon.transf:cols(3)),
-                args.stationConId
-            )
-            log.print('freshly calculated nearestTerminal =') log.debugPrint(nearestTerminal)
-            stateManager.setPlacedSign(
-                args.signConId,
-                {
-                    stationConId = args.stationConId,
-                    nearestTerminal = nearestTerminal,
-                }
-            )
-        else
-            stateManager.setPlacedSign(args.signConId, {stationConId = args.stationConId})
-        end
+        -- we need this for the station panel too,
+        -- to find out if it is closer to the cargo or the passenger station
+        -- local nearestTerminals = stationHelpers.getNearestTerminals(
+        --     transfUtilsUG.new(signCon.transf:cols(0), signCon.transf:cols(1), signCon.transf:cols(2), signCon.transf:cols(3)),
+        --     args.stationConId,
+        --     false -- not only passengers
+        -- )
+        -- log.print('freshly calculated nearestTerminals =') log.debugPrint(nearestTerminals)
+        local nearestTerminal = stationHelpers.getNearestTerminal(
+            transfUtilsUG.new(signCon.transf:cols(0), signCon.transf:cols(1), signCon.transf:cols(2), signCon.transf:cols(3)),
+            args.stationConId
+        )
+        log.print('freshly calculated nearestTerminal =') log.debugPrint(nearestTerminal)
+        stateManager.setPlacedSign(
+            args.signConId,
+            {
+                stationConId = args.stationConId,
+                nearestTerminal = nearestTerminal,
+            }
+        )
         log.print('state after =') log.debugPrint(stateManager.getState())
     end
 end
