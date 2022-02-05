@@ -79,6 +79,13 @@ function data()
                 -- id = "bh_dynamic_arrivals_board/bh_dynamic_tall_wide_board_name.mdl",
                 transf = constructionutil.rotateTransf(params, transf.rotZYXTransl(rotate, offset))
             }
+            -- LOLLO TODO use this to ensure the 0, 0, 0 is where it should be,
+            -- ie about the bottom of the pole.
+            -- A funny offset could damage the terminal locator.
+            result.models[#result.models+1] = {
+                id = 'bh_dynamic_arrivals_board/icon/red.mdl',
+                transf = {1, 0, 0, 0,  0, 1, 0, 0,  0, 0, 1, 0,  0, 0, 0, 1}
+            }
 
 --[[ 			local labelValues = {}
             for i = 1, 29 do
