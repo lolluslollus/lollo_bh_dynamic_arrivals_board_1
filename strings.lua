@@ -17,6 +17,7 @@ function data()
             ["NoJoin"] = "Do not join",
             ["Passengers"] = "Passengers",
             ["Platform"] = "Plat",
+            ["SorryNoService"] = "Sorry No Service",
             ["StationPickerWindowTitle"] = "Pick a station to join",
             ["StationSection"] = "Station Section",
             ["Time"] = "Time",

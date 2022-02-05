@@ -69,20 +69,14 @@ function data()
                 -- This is good for the terminal detection.
                 -- offset.y = offset.y - 4.95
                 offset.y = offset.y - 3.7 -- a bit less so it looks good on thin platforms
-                offset.z = offset.z + 0.54
+                -- offset.z = offset.z + 0.54
+                offset.z = offset.z + 0.3 -- a bit less so it fits freestyle stations
             end
 
             local style = styles[params[configKey("style")]+1]
             result.models[#result.models + 1] = {
                 id = mdl(style),
                 transf = constructionutil.rotateTransf(params, transf.rotZYXTransl(rotate, offset))
-            }
--- LOLLO TODO use this to ensure the 0, 0, 0 is where it should be,
--- ie about the bottom of the pole.
--- A funny offset could damage the terminal locator.
-            result.models[#result.models+1] = {
-                id = 'bh_dynamic_arrivals_board/icon/red.mdl',
-                transf = {1, 0, 0, 0,  0, 1, 0, 0,  0, 0, 1, 0,  0, 0, 0, 1}
             }
 
             -- local labelValues = {
