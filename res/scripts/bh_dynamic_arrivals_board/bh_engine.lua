@@ -53,6 +53,16 @@ local utils = {
     formatClockStringHHMM = function(clock_time)
         return string.format("%02d:%02d", (clock_time / 60 / 60) % 24, (clock_time / 60) % 60)
     end,
+    getCargoOverride = function(config, signCon, signProps, getParam)
+        local result = signCon.params[getParam("cargo_override")] or 0
+        if result == 0 then result = ((signProps.nearestTerminal and signProps.nearestTerminal.cargo) and 2 or 1) end
+        return result
+    end,
+    getTerminalOverride = function(config, signCon, signProps, getParam)
+        local result = signCon.params[getParam("terminal_override")] or 0
+        if result == 0 then result = (signProps.nearestTerminal and signProps.nearestTerminal.terminalId or 0) or 0 end
+        return result
+    end,
 }
 utils.getFormattedArrivals = function(arrivals, time)
     -- log.print('getFormattedArrivals starting, arrivals =') log.debugPrint(arrivals)
@@ -376,110 +386,102 @@ local function updateWithNoIndexes()
             -- log.print('signCon =') log.debugPrint(signCon)
             if signCon then
                 local config = constructionHooks.getRegisteredConstructionOrDefault(signCon.fileName)
-                -- nearestTerminal is required for singleTerminal signs, otherwise I default to passengers
-                if not(config.singleTerminal) or (signProps.nearestTerminal and signProps.nearestTerminal.terminalId) then
-                    local function param(name) return config.labelParamPrefix .. name end
+                local function param(name) return config.labelParamPrefix .. name end
 
-                    local formattedArrivals = {}
-                    if config.maxArrivals > 0 then -- config.maxArrivals is tied to the construction type, like our tables: we can leave it
-                        local rawArrivals = nil
-                        local cargoOverride = signCon.params[param("cargo_override")] or 0
-                        if cargoOverride == 0 then cargoOverride = ((signProps.nearestTerminal and signProps.nearestTerminal.cargo) and 2 or 1) end
-                        if config.singleTerminal then
-                            -- update the linked terminal coz the player might have changed it in the construction params
-                            local terminalIdOverride = signCon.params[param("terminal_override")] or 0
-                            if terminalIdOverride == 0 then terminalIdOverride = signProps.nearestTerminal.terminalId end
-                            for _, stationId in pairs(stationIds) do
-                                local station = api.engine.getComponent(stationId, api.type.ComponentType.STATION)
-                                -- if (cargoOverride == 1) == (station.cargo) -- more elegant but less safe
-                                if (cargoOverride == 1 and not(station.cargo))
-                                or (cargoOverride == 2 and station.cargo)
-                                then
-                                    local nextArrivals = getNextArrivals(
-                                        stationId,
-                                        station,
-                                        config.maxArrivals,
-                                        time,
-                                        terminalIdOverride
-                                    )
-                                    if rawArrivals == nil then
-                                        rawArrivals = nextArrivals
-                                    else
-                                        print('bh_dynamic_arrivals_board WARNING this should never happen ONE')
-                                        arrayUtils.concatValues(rawArrivals, nextArrivals)
-                                    end
+                local formattedArrivals = {}
+                if config.maxArrivals > 0 then -- config.maxArrivals is tied to the construction type, like our tables: we can leave it
+                    local rawArrivals = nil
+                    local cargoOverride = utils.getCargoOverride(config, signCon, signProps, param)
+                    if config.singleTerminal then
+                        -- update the linked terminal coz the player might have changed it in the construction params
+                        local terminalIdOverride = utils.getTerminalOverride(config, signCon, signProps, param)
+                        for _, stationId in pairs(stationIds) do
+                            local station = api.engine.getComponent(stationId, api.type.ComponentType.STATION)
+                            -- if (cargoOverride == 1) == (station.cargo) -- more elegant but less safe
+                            if (cargoOverride == 1 and not(station.cargo))
+                            or (cargoOverride == 2 and station.cargo)
+                            then
+                                local nextArrivals = getNextArrivals(
+                                    stationId,
+                                    station,
+                                    config.maxArrivals,
+                                    time,
+                                    terminalIdOverride
+                                )
+                                if rawArrivals == nil then
+                                    rawArrivals = nextArrivals
+                                else
+                                    print('bh_dynamic_arrivals_board WARNING this should never happen ONE')
+                                    arrayUtils.concatValues(rawArrivals, nextArrivals)
                                 end
                             end
-                            -- log.print('single terminal nextArrivals =') log.debugPrint(rawArrivals)
-                        else
-                            for _, stationId in pairs(stationIds) do
-                                local station = api.engine.getComponent(stationId, api.type.ComponentType.STATION)
-                                -- if (cargoOverride == 1) == (station.cargo) -- more elegant but less safe
-                                if (cargoOverride == 1 and not(station.cargo))
-                                or (cargoOverride == 2 and station.cargo)
-                                then
-                                    local nextArrivals = getNextArrivals(
-                                        stationId,
-                                        station,
-                                        config.maxArrivals,
-                                        time
-                                    )
-                                    if rawArrivals == nil then
-                                        rawArrivals = nextArrivals
-                                    else
-                                        print('bh_dynamic_arrivals_board WARNING this should never happen TWO')
-                                        arrayUtils.concatValues(rawArrivals, nextArrivals)
-                                    end
-                                end
-                            end
-                            -- log.print('station nextArrivals =') log.debugPrint(rawArrivals)
                         end
-                        formattedArrivals = utils.getFormattedArrivals(rawArrivals or {}, time)
+                        -- log.print('single terminal nextArrivals =') log.debugPrint(rawArrivals)
+                    else
+                        for _, stationId in pairs(stationIds) do
+                            local station = api.engine.getComponent(stationId, api.type.ComponentType.STATION)
+                            -- if (cargoOverride == 1) == (station.cargo) -- more elegant but less safe
+                            if (cargoOverride == 1 and not(station.cargo))
+                            or (cargoOverride == 2 and station.cargo)
+                            then
+                                local nextArrivals = getNextArrivals(
+                                    stationId,
+                                    station,
+                                    config.maxArrivals,
+                                    time
+                                )
+                                if rawArrivals == nil then
+                                    rawArrivals = nextArrivals
+                                else
+                                    print('bh_dynamic_arrivals_board WARNING this should never happen TWO')
+                                    arrayUtils.concatValues(rawArrivals, nextArrivals)
+                                end
+                            end
+                        end
+                        -- log.print('station nextArrivals =') log.debugPrint(rawArrivals)
                     end
-
-                    -- rename the construction
-                    local newName = getNewSignConName(formattedArrivals, config, clockString)
-                    api.cmd.sendCommand(api.cmd.make.setName(signConId, newName))
-
-                    -- -- rebuild the sign construction
-                    -- local newCon = api.type.SimpleProposal.ConstructionEntity.new()
-
-                    -- local newParams = {}
-                    -- for oldKey, oldVal in pairs(signCon.params) do
-                    --     newParams[oldKey] = oldVal
-                    -- end
-
-                    -- if config.clock then
-                    --     newParams[param("time_string")] = clockString
-                    --     newParams[param("game_time")] = clock_time
-                    -- end
-
-                    -- newParams[param("num_arrivals")] = #formattedArrivals
-
-                    -- for i, a in ipairs(formattedArrivals) do
-                    --     local paramName = "arrival_" .. i .. "_"
-                    --     newParams[param(paramName .. "dest")] = a.dest
-                    --     newParams[param(paramName .. "time")] = config.absoluteArrivalTime and a.arrivalTimeString or a.etaMinsString
-                    --     if not config.singleTerminal and a.arrivalTerminal then
-                    --         newParams[param(paramName .. "terminal")] = a.arrivalTerminal
-                    --     end
-                    -- end
-
-                    -- newParams.seed = signCon.params.seed + 1
-
-                    -- newCon.fileName = signCon.fileName
-                    -- newCon.params = newParams
-                    -- newCon.transf = signCon.transf
-                    -- newCon.playerEntity = api.engine.util.getPlayer()
-
-                    -- newConstructions[#newConstructions+1] = newCon
-                    -- oldConstructions[#oldConstructions+1] = signConId
-
-                    -- log.print('newCon =') log.debugPrint(newCon)
-                else
-                    log.print('bh_dynamic_arrivals_board WARNING: single terminal without nearest terminal; signProps =')
-                    log.debugPrint(signProps)
+                    formattedArrivals = utils.getFormattedArrivals(rawArrivals or {}, time)
                 end
+
+                -- rename the construction
+                local newName = getNewSignConName(formattedArrivals, config, clockString)
+                api.cmd.sendCommand(api.cmd.make.setName(signConId, newName))
+
+                -- -- rebuild the sign construction
+                -- local newCon = api.type.SimpleProposal.ConstructionEntity.new()
+
+                -- local newParams = {}
+                -- for oldKey, oldVal in pairs(signCon.params) do
+                --     newParams[oldKey] = oldVal
+                -- end
+
+                -- if config.clock then
+                --     newParams[param("time_string")] = clockString
+                --     newParams[param("game_time")] = clock_time
+                -- end
+
+                -- newParams[param("num_arrivals")] = #formattedArrivals
+
+                -- for i, a in ipairs(formattedArrivals) do
+                --     local paramName = "arrival_" .. i .. "_"
+                --     newParams[param(paramName .. "dest")] = a.dest
+                --     newParams[param(paramName .. "time")] = config.absoluteArrivalTime and a.arrivalTimeString or a.etaMinsString
+                --     if not config.singleTerminal and a.arrivalTerminal then
+                --         newParams[param(paramName .. "terminal")] = a.arrivalTerminal
+                --     end
+                -- end
+
+                -- newParams.seed = signCon.params.seed + 1
+
+                -- newCon.fileName = signCon.fileName
+                -- newCon.params = newParams
+                -- newCon.transf = signCon.transf
+                -- newCon.playerEntity = api.engine.util.getPlayer()
+
+                -- newConstructions[#newConstructions+1] = newCon
+                -- oldConstructions[#oldConstructions+1] = signConId
+
+                -- log.print('newCon =') log.debugPrint(newCon)
             end
         end
     end)
@@ -554,56 +556,48 @@ local function updateWithIndexes()
             -- log.print('signCon =') log.debugPrint(signCon)
             if signCon then
                 local config = constructionHooks.getRegisteredConstructionOrDefault(signCon.fileName)
-                -- nearestTerminal is required for singleTerminal signs, otherwise I default to passengers
-                if not(config.singleTerminal) or (signProps.nearestTerminal and signProps.nearestTerminal.terminalId) then
-                    local function param(name) return config.labelParamPrefix .. name end
-                    if config.maxArrivals > 0 then -- config.maxArrivals is tied to the construction type, like our tables: we can leave it
-                        local cargoOverride = signCon.params[param("cargo_override")] or 0
-                        if cargoOverride == 0 then cargoOverride = ((signProps.nearestTerminal and signProps.nearestTerminal.cargo) and 2 or 1) end
-                        if config.singleTerminal then
-                            -- update the linked terminal coz the player might have changed it in the construction params
-                            local terminalIdOverride = signCon.params[param("terminal_override")] or 0
-                            if terminalIdOverride == 0 then terminalIdOverride = signProps.nearestTerminal.terminalId end
-                            for _, stationId in pairs(stationIds) do
+                local function param(name) return config.labelParamPrefix .. name end
+                if config.maxArrivals > 0 then -- config.maxArrivals is tied to the construction type, like our tables: we can leave it
+                    local cargoOverride = utils.getCargoOverride(config, signCon, signProps, param)
+                    if config.singleTerminal then
+                        -- update the linked terminal coz the player might have changed it in the construction params
+                        local terminalIdOverride = utils.getCargoOverride(config, signCon, signProps, param)
+                        for _, stationId in pairs(stationIds) do
+                            local station = api.engine.getComponent(stationId, api.type.ComponentType.STATION)
+                            -- if (cargoOverride == 1) == (station.cargo) -- more elegant but less safe
+                            if (cargoOverride == 1 and not(station.cargo))
+                            or (cargoOverride == 2 and station.cargo)
+                            then
+                                if arrivalsByStationAndTerminal[stationId] == nil or arrivalsByStationAndTerminal[stationId][terminalIdOverride] == nil then
+                                    if arrivalsByStationAndTerminal[stationId] == nil then arrivalsByStationAndTerminal[stationId] = {} end
+                                    arrivalsByStationAndTerminal[stationId][terminalIdOverride] = getNextArrivals(
+                                        stationId,
+                                        station,
+                                        config.maxArrivals,
+                                        time,
+                                        terminalIdOverride
+                                    )
+                                end
+                            end
+                        end
+                    else
+                        for _, stationId in pairs(stationIds) do
+                            if arrivalsByStation[stationId] == nil then
                                 local station = api.engine.getComponent(stationId, api.type.ComponentType.STATION)
                                 -- if (cargoOverride == 1) == (station.cargo) -- more elegant but less safe
                                 if (cargoOverride == 1 and not(station.cargo))
                                 or (cargoOverride == 2 and station.cargo)
                                 then
-                                    if arrivalsByStationAndTerminal[stationId] == nil or arrivalsByStationAndTerminal[stationId][terminalIdOverride] == nil then
-                                        if arrivalsByStationAndTerminal[stationId] == nil then arrivalsByStationAndTerminal[stationId] = {} end
-                                        arrivalsByStationAndTerminal[stationId][terminalIdOverride] = getNextArrivals(
-                                            stationId,
-                                            station,
-                                            config.maxArrivals,
-                                            time,
-                                            terminalIdOverride
-                                        )
-                                    end
-                                end
-                            end
-                        else
-                            for _, stationId in pairs(stationIds) do
-                                if arrivalsByStation[stationId] == nil then
-                                    local station = api.engine.getComponent(stationId, api.type.ComponentType.STATION)
-                                    -- if (cargoOverride == 1) == (station.cargo) -- more elegant but less safe
-                                    if (cargoOverride == 1 and not(station.cargo))
-                                    or (cargoOverride == 2 and station.cargo)
-                                    then
-                                        arrivalsByStation[stationId] = getNextArrivals(
-                                            stationId,
-                                            api.engine.getComponent(stationId, api.type.ComponentType.STATION),
-                                            config.maxArrivals,
-                                            time
-                                        )
-                                    end
+                                    arrivalsByStation[stationId] = getNextArrivals(
+                                        stationId,
+                                        api.engine.getComponent(stationId, api.type.ComponentType.STATION),
+                                        config.maxArrivals,
+                                        time
+                                    )
                                 end
                             end
                         end
                     end
-                else
-                    log.print('bh_dynamic_arrivals_board WARNING: single terminal without nearest terminal; signProps =')
-                    log.debugPrint(signProps)
                 end
             end
         end
@@ -631,80 +625,72 @@ local function updateWithIndexes()
             if signCon then
                 local config = constructionHooks.getRegisteredConstructionOrDefault(signCon.fileName)
                 -- log.print('config =') log.debugPrint(config)
-                -- nearestTerminal is required for singleTerminal signs, otherwise I default to passengers
-                if not(config.singleTerminal) or (signProps.nearestTerminal and signProps.nearestTerminal.terminalId) then
-                    local function param(name) return config.labelParamPrefix .. name end
-
-                    local formattedArrivals = nil
-                    if config.maxArrivals > 0 then -- config.maxArrivals is tied to the construction type, like our tables: we can leave it
-                        if config.singleTerminal then
-                            -- update the linked terminal coz the player might have changed it in the construction params
-                            local terminalIdOverride = signCon.params[param("terminal_override")] or 0
-                            if terminalIdOverride == 0 then terminalIdOverride = signProps.nearestTerminal.terminalId end
-                            for _, stationId in pairs(stationIds) do
-                                if formattedArrivals == nil then
-                                    formattedArrivals = arrivalsByStationAndTerminal[stationId][terminalIdOverride]
-                                else
-                                    print('bh_dynamic_arrivals_board WARNING this should never happen THREE')
-                                    arrayUtils.concatValues(formattedArrivals, arrivalsByStationAndTerminal[stationId][terminalIdOverride])
-                                end
+                local function param(name) return config.labelParamPrefix .. name end
+                local formattedArrivals = nil
+                if config.maxArrivals > 0 then -- config.maxArrivals is tied to the construction type, like our tables: we can leave it
+                    if config.singleTerminal then
+                        -- update the linked terminal coz the player might have changed it in the construction params
+                        local terminalIdOverride = utils.getCargoOverride(config, signCon, signProps, param)
+                        for _, stationId in pairs(stationIds) do
+                            if formattedArrivals == nil then
+                                formattedArrivals = arrivalsByStationAndTerminal[stationId][terminalIdOverride]
+                            else
+                                print('bh_dynamic_arrivals_board WARNING this should never happen THREE')
+                                arrayUtils.concatValues(formattedArrivals, arrivalsByStationAndTerminal[stationId][terminalIdOverride])
                             end
-                        else
-                            for _, stationId in pairs(stationIds) do
-                                if formattedArrivals == nil then
-                                    formattedArrivals = arrivalsByStation[stationId]
-                                else
-                                    print('bh_dynamic_arrivals_board WARNING this should never happen FOUR')
-                                    arrayUtils.concatValues(formattedArrivals, arrivalsByStation[stationId])
-                                end
+                        end
+                    else
+                        for _, stationId in pairs(stationIds) do
+                            if formattedArrivals == nil then
+                                formattedArrivals = arrivalsByStation[stationId]
+                            else
+                                print('bh_dynamic_arrivals_board WARNING this should never happen FOUR')
+                                arrayUtils.concatValues(formattedArrivals, arrivalsByStation[stationId])
                             end
                         end
                     end
-                    if formattedArrivals == nil then formattedArrivals = {} end
-
-                    -- rename the construction
-                    local newName = getNewSignConName(formattedArrivals, config, clockString)
-                    api.cmd.sendCommand(api.cmd.make.setName(signConId, newName))
-
-                    -- -- rebuild the sign construction
-                    -- local newCon = api.type.SimpleProposal.ConstructionEntity.new()
-
-                    -- local newParams = {}
-                    -- for oldKey, oldVal in pairs(signCon.params) do
-                    --     newParams[oldKey] = oldVal
-                    -- end
-
-                    -- if config.clock then
-                    --     newParams[param("time_string")] = clockString
-                    --     newParams[param("game_time")] = clock_time
-                    -- end
-
-                    -- newParams[param("num_arrivals")] = #formattedArrivals
-
-                    -- for i, a in ipairs(formattedArrivals) do
-                    --     local paramName = "arrival_" .. i .. "_"
-                    --     newParams[param(paramName .. "dest")] = a.dest
-                    --     newParams[param(paramName .. "time")] = config.absoluteArrivalTime and a.arrivalTimeString or a.etaMinsString
-                    --     if not config.singleTerminal and a.arrivalTerminal then
-                    --         newParams[param(paramName .. "terminal")] = a.arrivalTerminal
-                    --     end
-                    -- end
-
-                    -- newParams.seed = signCon.params.seed + 1
-
-                    -- newCon.fileName = signCon.fileName
-                    -- newCon.params = newParams
-                    -- newCon.transf = signCon.transf
-                    -- newCon.playerEntity = api.engine.util.getPlayer()
-
-                    -- newConstructions[#newConstructions+1] = newCon
-                    -- oldConstructions[#oldConstructions+1] = signConId
-
-                    -- -- log.print('newCon =') log.debugPrint(newCon)
-                else
-                    log.print('bh_dynamic_arrivals_board WARNING: single terminal without nearest terminal; signProps =')
-                    log.debugPrint(signProps)
                 end
+                if formattedArrivals == nil then formattedArrivals = {} end
+
+                -- rename the construction
+                local newName = getNewSignConName(formattedArrivals, config, clockString)
+                api.cmd.sendCommand(api.cmd.make.setName(signConId, newName))
+
+                -- -- rebuild the sign construction
+                -- local newCon = api.type.SimpleProposal.ConstructionEntity.new()
+
+                -- local newParams = {}
+                -- for oldKey, oldVal in pairs(signCon.params) do
+                --     newParams[oldKey] = oldVal
+                -- end
+
+                -- if config.clock then
+                --     newParams[param("time_string")] = clockString
+                --     newParams[param("game_time")] = clock_time
+                -- end
+
+                -- newParams[param("num_arrivals")] = #formattedArrivals
+
+                -- for i, a in ipairs(formattedArrivals) do
+                --     local paramName = "arrival_" .. i .. "_"
+                --     newParams[param(paramName .. "dest")] = a.dest
+                --     newParams[param(paramName .. "time")] = config.absoluteArrivalTime and a.arrivalTimeString or a.etaMinsString
+                --     if not config.singleTerminal and a.arrivalTerminal then
+                --         newParams[param(paramName .. "terminal")] = a.arrivalTerminal
+                --     end
+                -- end
+
+                -- newParams.seed = signCon.params.seed + 1
+
+                -- newCon.fileName = signCon.fileName
+                -- newCon.params = newParams
+                -- newCon.transf = signCon.transf
+                -- newCon.playerEntity = api.engine.util.getPlayer()
+
+                -- newConstructions[#newConstructions+1] = newCon
+                -- oldConstructions[#oldConstructions+1] = signConId
+
+                -- -- log.print('newCon =') log.debugPrint(newCon)
             end
         end
     end)

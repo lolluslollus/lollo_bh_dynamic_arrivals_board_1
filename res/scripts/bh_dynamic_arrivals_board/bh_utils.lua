@@ -234,6 +234,7 @@ local function joinTables(t, t2)
 end
 
 return {
+	makeCargoOverrideParam = makeCargoOverrideParam,
     makeOffsetParams = makeOffsetParams,
     readOffsetParams = readOffsetParams,
 	makeScaleParams = makeScaleParams,

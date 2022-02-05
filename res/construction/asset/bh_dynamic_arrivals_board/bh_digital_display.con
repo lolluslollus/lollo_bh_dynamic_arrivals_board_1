@@ -65,7 +65,10 @@ function data()
 
             local offset = utils.readOffsetParams(params, configKey)
             if align ~= 0 then
-                offset.y = offset.y - 4.95
+                -- offset.y == 0 is the middle of the track, since this is a track asset.
+                -- This is good for the terminal detection.
+                -- offset.y = offset.y - 4.95
+                offset.y = offset.y - 3.7 -- a bit less so it looks good on thin platforms
                 offset.z = offset.z + 0.54
             end
 

@@ -171,7 +171,6 @@ local utils = {
         -- a terminal is not a point but a collection of edges, and edges have nodes.
         -- I need to iterate across those collections of edges and find the one collection (ie the terminal)
         -- that contains the edge closest to pos.
-        -- LOLLO TODO implement this
         -- construction.frozenNodes[] and construction.frozenEdges[] only contain tracks;
         -- there is no telling to which terminal they belong
         -- station.terminals[].personNodes and station.terminals[].personEdges do not have a position
@@ -180,7 +179,6 @@ local utils = {
         -- As soon as one node is not frozen, return
         -- Repeat to the right.
         -- This way, I can tell which vehicle nodes belong to which terminal
-
 
         local stationCon = api.engine.getComponent(stationConId, api.type.ComponentType.CONSTRUCTION)
         if not(stationCon) or not(stationCon.stations) then return nil end

@@ -1,4 +1,4 @@
-local _mdlHelpers = require('bh_dynamic_arrivals_board.mdlHelpers')
+local _mdlHelpers = require('bh_dynamic_arrivals_board.modelHelper')
 
 function data()
     return {
