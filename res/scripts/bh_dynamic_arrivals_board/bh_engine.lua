@@ -318,8 +318,11 @@ local function getAverageSectionTimeToDestinations(vehicles, nStops, fallbackLeg
     return averages
 end
 
+local averageTimeToNextDepartAtDestinations = {}
 local function getAverageTimeToNextDepartAtDestinations(vehicles, nStops, fallbackLegDuration, lineId)
-    -- LOLLO TODO buffer this
+    -- buffer
+    if averageTimeToNextDepartAtDestinations[lineId] then return averageTimeToNextDepartAtDestinations[lineId] end
+
     local averages = {}
 
     for stopIndex = 1, nStops, 1 do
@@ -359,6 +362,7 @@ local function getAverageTimeToNextDepartAtDestinations(vehicles, nStops, fallba
         averages[stopIndex] = math.ceil(average)
     end
 
+    averageTimeToNextDepartAtDestinations[lineId] = averages
     return averages
 end
 
