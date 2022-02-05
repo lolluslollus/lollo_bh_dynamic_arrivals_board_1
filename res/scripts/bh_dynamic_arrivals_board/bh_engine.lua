@@ -376,6 +376,7 @@ local function updateWithNoIndexes()
             -- log.print('signCon =') log.debugPrint(signCon)
             if signCon then
                 local config = constructionHooks.getRegisteredConstructionOrDefault(signCon.fileName)
+                -- nearestTerminal is required for singleTerminal signs, otherwise I default to passengers
                 if not(config.singleTerminal) or (signProps.nearestTerminal and signProps.nearestTerminal.terminalId) then
                     local function param(name) return config.labelParamPrefix .. name end
 
@@ -404,7 +405,7 @@ local function updateWithNoIndexes()
                                     if rawArrivals == nil then
                                         rawArrivals = nextArrivals
                                     else
-                                        print('bh_dynamic_arrivals_board WARNING this should never happen')
+                                        print('bh_dynamic_arrivals_board WARNING this should never happen ONE')
                                         arrayUtils.concatValues(rawArrivals, nextArrivals)
                                     end
                                 end
@@ -426,7 +427,7 @@ local function updateWithNoIndexes()
                                     if rawArrivals == nil then
                                         rawArrivals = nextArrivals
                                     else
-                                        print('bh_dynamic_arrivals_board WARNING this should never happen')
+                                        print('bh_dynamic_arrivals_board WARNING this should never happen TWO')
                                         arrayUtils.concatValues(rawArrivals, nextArrivals)
                                     end
                                 end
@@ -553,6 +554,7 @@ local function updateWithIndexes()
             -- log.print('signCon =') log.debugPrint(signCon)
             if signCon then
                 local config = constructionHooks.getRegisteredConstructionOrDefault(signCon.fileName)
+                -- nearestTerminal is required for singleTerminal signs, otherwise I default to passengers
                 if not(config.singleTerminal) or (signProps.nearestTerminal and signProps.nearestTerminal.terminalId) then
                     local function param(name) return config.labelParamPrefix .. name end
                     if config.maxArrivals > 0 then -- config.maxArrivals is tied to the construction type, like our tables: we can leave it
@@ -629,6 +631,7 @@ local function updateWithIndexes()
             if signCon then
                 local config = constructionHooks.getRegisteredConstructionOrDefault(signCon.fileName)
                 -- log.print('config =') log.debugPrint(config)
+                -- nearestTerminal is required for singleTerminal signs, otherwise I default to passengers
                 if not(config.singleTerminal) or (signProps.nearestTerminal and signProps.nearestTerminal.terminalId) then
                     local function param(name) return config.labelParamPrefix .. name end
 
@@ -642,6 +645,7 @@ local function updateWithIndexes()
                                 if formattedArrivals == nil then
                                     formattedArrivals = arrivalsByStationAndTerminal[stationId][terminalIdOverride]
                                 else
+                                    print('bh_dynamic_arrivals_board WARNING this should never happen THREE')
                                     arrayUtils.concatValues(formattedArrivals, arrivalsByStationAndTerminal[stationId][terminalIdOverride])
                                 end
                             end
@@ -650,6 +654,7 @@ local function updateWithIndexes()
                                 if formattedArrivals == nil then
                                     formattedArrivals = arrivalsByStation[stationId]
                                 else
+                                    print('bh_dynamic_arrivals_board WARNING this should never happen FOUR')
                                     arrayUtils.concatValues(formattedArrivals, arrivalsByStation[stationId])
                                 end
                             end
