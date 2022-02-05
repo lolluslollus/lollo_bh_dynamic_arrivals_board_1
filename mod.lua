@@ -87,9 +87,12 @@ display construction and it will manage its display updates when placed in game.
 				 -- send the current game time (in seconds) in a parameter "game_time" and formatted as HH:MM:SS in "time_string"
 				clock = true,
 
+				isArrivals = false,
+				-- show origins if true, destinations if false
+
 				 -- max number of construction params that will be populated with arrival data. there may be less. "num_arrivals" param contains count if you want it.
 				 -- if 0 there will be no arrival data provided at all (this thing becomes only a clock, basically)
-				maxArrivals = 2,
+				maxEntries = 2,
 
 				-- false = time from now until arrival, true = world time of arrival
 				absoluteArrivalTime = false,
@@ -98,13 +101,23 @@ display construction and it will manage its display updates when placed in game.
 				labelParamPrefix = "bh_digital_display_"
 			})
 
-			construction.registerConstruction("asset/bh_dynamic_arrivals_board/bh_digital_station_summary_display.con", {
-			 singleTerminal = false,
-			 clock = true,
-			 maxArrivals = 8,
-			 absoluteArrivalTime = true,
-			 labelParamPrefix = "bh_summary_display_"
-		 })
+			construction.registerConstruction("asset/bh_dynamic_arrivals_board/bh_digital_station_departures_display.con", {
+				singleTerminal = false,
+				clock = true,
+				isArrivals = false,
+				maxEntries = 8,
+				absoluteArrivalTime = true,
+				labelParamPrefix = "bh_departures_display_"
+			})
+
+			construction.registerConstruction("asset/bh_dynamic_arrivals_board/bh_digital_station_arrivals_display.con", {
+				singleTerminal = false,
+				clock = true,
+				isArrivals = true,
+				maxEntries = 8,
+				absoluteArrivalTime = true,
+				labelParamPrefix = "bh_arrivals_display_"
+			})
 		end,
  }
 end

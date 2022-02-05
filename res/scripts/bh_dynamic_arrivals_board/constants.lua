@@ -2,6 +2,8 @@ local constants = {
     refreshPeriod = 5000, -- refresh every 5 seconds
     searchRadius4NearbyStation2Join = 50,
 
+    guesstimatedStationWaitingTimeMsec = 30000,
+
     eventId = 'bh_arrivals_manager',
     eventSources = {
         ['bh_gui_engine'] = 'bh_gui_engine.lua',
