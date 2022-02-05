@@ -1,6 +1,8 @@
 function data()
 	return {
 		en = {
+            ["Auto"] = "Auto",
+            ["Cargo"] = "Cargo",
             ["Destination"] = "Destination",
             ["Due"] = "Due",
             ["DynamicArrivalsSingleTerminalName"] = "Dynamic Arrivals Single Terminal",
@@ -13,8 +15,10 @@ function data()
             ["Join"] = "Join",
             ["MinutesShort"] = "min",
             ["NoJoin"] = "Do not join",
+            ["Passengers"] = "Passengers",
             ["Platform"] = "Plat",
             ["StationPickerWindowTitle"] = "Pick a station to join",
+            ["StationSection"] = "Station Section",
             ["Time"] = "Time",
             ["WarningWindowTitle"] = "Warning",
         },

@@ -204,19 +204,19 @@ local function getAverageSectionTimeToDestinations(vehicles, nStops, fallbackLeg
     return averages
 end
 
-local function getNextArrivals(stationId, numArrivals, time, onlyTerminalId)
+local function getNextArrivals(stationId, station, numArrivals, time, onlyTerminalId)
     -- log.print('getNextArrivals starting')
     -- TODO We should make a twin construction for arrivals, this is for departures
 
     -- despite how many we want to return, we actually need to look at every vehicle on every line stopping here before we can sort and trim
     local arrivals = {}
 
-    if not stationId then return arrivals end
+    if not station then return arrivals end
 
     local stationGroupId = api.engine.system.stationGroupSystem.getStationGroup(stationId)
     -- log.print('stationGroupId =', stationGroupId)
     -- log.print('stationId =', stationId)
-    local stationTerminals = api.engine.getComponent(stationId, api.type.ComponentType.STATION).terminals
+    local stationTerminals = station.terminals
     for terminalId, terminal in pairs(stationTerminals) do
         if not(onlyTerminalId) or terminalId == onlyTerminalId then
             -- log.print('terminal.tag =', terminal.tag or 'NIL', ', terminalId =', terminalId or 'NIL')
@@ -382,36 +382,53 @@ local function updateWithNoIndexes()
                     local formattedArrivals = {}
                     if config.maxArrivals > 0 then -- config.maxArrivals is tied to the construction type, like our tables: we can leave it
                         local rawArrivals = nil
+                        local cargoOverride = signCon.params[param("cargo_override")] or 0
+                        if cargoOverride == 0 then cargoOverride = (signProps.nearestTerminal.cargo and 2 or 1) end
                         if config.singleTerminal then
                             -- update the linked terminal coz the player might have changed it in the construction params
                             local terminalIdOverride = signCon.params[param("terminal_override")] or 0
                             if terminalIdOverride == 0 then terminalIdOverride = signProps.nearestTerminal.terminalId end
-
                             for _, stationId in pairs(stationIds) do
-                                local nextArrivals = getNextArrivals(
-                                    stationId,
-                                    config.maxArrivals,
-                                    time,
-                                    terminalIdOverride
-                                )
-                                if rawArrivals == nil then
-                                    rawArrivals = nextArrivals
-                                else
-                                    arrayUtils.concatValues(rawArrivals, nextArrivals)
+                                local station = api.engine.getComponent(stationId, api.type.ComponentType.STATION)
+                                -- if (cargoOverride == 1) == (station.cargo) -- more elegant but less safe
+                                if (cargoOverride == 1 and not(station.cargo))
+                                or (cargoOverride == 2 and station.cargo)
+                                then
+                                    local nextArrivals = getNextArrivals(
+                                        stationId,
+                                        station,
+                                        config.maxArrivals,
+                                        time,
+                                        terminalIdOverride
+                                    )
+                                    if rawArrivals == nil then
+                                        rawArrivals = nextArrivals
+                                    else
+                                        print('bh_dynamic_arrivals_board WARNING this should never happen')
+                                        arrayUtils.concatValues(rawArrivals, nextArrivals)
+                                    end
                                 end
                             end
                             -- log.print('single terminal nextArrivals =') log.debugPrint(rawArrivals)
                         else
                             for _, stationId in pairs(stationIds) do
-                                local nextArrivals = getNextArrivals(
-                                    stationId,
-                                    config.maxArrivals,
-                                    time
-                                )
-                                if rawArrivals == nil then
-                                    rawArrivals = nextArrivals
-                                else
-                                    arrayUtils.concatValues(rawArrivals, nextArrivals)
+                                local station = api.engine.getComponent(stationId, api.type.ComponentType.STATION)
+                                -- if (cargoOverride == 1) == (station.cargo) -- more elegant but less safe
+                                if (cargoOverride == 1 and not(station.cargo))
+                                or (cargoOverride == 2 and station.cargo)
+                                then
+                                    local nextArrivals = getNextArrivals(
+                                        stationId,
+                                        station,
+                                        config.maxArrivals,
+                                        time
+                                    )
+                                    if rawArrivals == nil then
+                                        rawArrivals = nextArrivals
+                                    else
+                                        print('bh_dynamic_arrivals_board WARNING this should never happen')
+                                        arrayUtils.concatValues(rawArrivals, nextArrivals)
+                                    end
                                 end
                             end
                             -- log.print('station nextArrivals =') log.debugPrint(rawArrivals)
@@ -539,40 +556,44 @@ local function updateWithIndexes()
                 if not(config.singleTerminal) or (signProps.nearestTerminal and signProps.nearestTerminal.terminalId) then
                     local function param(name) return config.labelParamPrefix .. name end
                     if config.maxArrivals > 0 then -- config.maxArrivals is tied to the construction type, like our tables: we can leave it
+                        local cargoOverride = signCon.params[param("cargo_override")] or 0
+                        if cargoOverride == 0 then cargoOverride = (signProps.nearestTerminal.cargo and 2 or 1) end
                         if config.singleTerminal then
                             -- update the linked terminal coz the player might have changed it in the construction params
                             local terminalIdOverride = signCon.params[param("terminal_override")] or 0
                             if terminalIdOverride == 0 then terminalIdOverride = signProps.nearestTerminal.terminalId end
-
                             for _, stationId in pairs(stationIds) do
-                                if arrivalsByStationAndTerminal[stationId] == nil or arrivalsByStationAndTerminal[stationId][terminalIdOverride] == nil then
-                                    local nextarrivals = getNextArrivals(
-                                        stationId,
-                                        config.maxArrivals,
-                                        time,
-                                        terminalIdOverride
-                                    )
-                                    if arrivalsByStationAndTerminal[stationId] == nil then arrivalsByStationAndTerminal[stationId] = {} end
-                                    if arrivalsByStationAndTerminal[stationId][terminalIdOverride] == nil then
-                                        arrivalsByStationAndTerminal[stationId][terminalIdOverride] = nextarrivals
-                                    else
-                                        arrayUtils.concatValues(arrivalsByStationAndTerminal[stationId][terminalIdOverride], nextarrivals)
+                                local station = api.engine.getComponent(stationId, api.type.ComponentType.STATION)
+                                -- if (cargoOverride == 1) == (station.cargo) -- more elegant but less safe
+                                if (cargoOverride == 1 and not(station.cargo))
+                                or (cargoOverride == 2 and station.cargo)
+                                then
+                                    if arrivalsByStationAndTerminal[stationId] == nil or arrivalsByStationAndTerminal[stationId][terminalIdOverride] == nil then
+                                        if arrivalsByStationAndTerminal[stationId] == nil then arrivalsByStationAndTerminal[stationId] = {} end
+                                        arrivalsByStationAndTerminal[stationId][terminalIdOverride] = getNextArrivals(
+                                            stationId,
+                                            station,
+                                            config.maxArrivals,
+                                            time,
+                                            terminalIdOverride
+                                        )
                                     end
                                 end
                             end
                         else
                             for _, stationId in pairs(stationIds) do
                                 if arrivalsByStation[stationId] == nil then
-                                    local nextarrivals = getNextArrivals(
-                                        stationId,
-                                        config.maxArrivals,
-                                        time
-                                    )
-                                    if arrivalsByStation[stationId] == nil then
-                                        arrivalsByStation[stationId] = nextarrivals
-                                        -- print('LOLLO KAKAKAKA')
-                                    else
-                                        arrayUtils.concatValues(arrivalsByStation[stationId], nextarrivals)
+                                    local station = api.engine.getComponent(stationId, api.type.ComponentType.STATION)
+                                    -- if (cargoOverride == 1) == (station.cargo) -- more elegant but less safe
+                                    if (cargoOverride == 1 and not(station.cargo))
+                                    or (cargoOverride == 2 and station.cargo)
+                                    then
+                                        arrivalsByStation[stationId] = getNextArrivals(
+                                            stationId,
+                                            api.engine.getComponent(stationId, api.type.ComponentType.STATION),
+                                            config.maxArrivals,
+                                            time
+                                        )
                                     end
                                 end
                             end

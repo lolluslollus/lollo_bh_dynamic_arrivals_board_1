@@ -193,11 +193,22 @@ local function makeTerminalOverrideParam(params, configKeyFunc)
 		end
 	end
 
-	params[#params+1] = {
+    params[#params+1] = {
 		key = configKeyFunc("terminal_override"),
 		name = _("Terminal"),
 		values = terminals,
 		uiType = "COMBOBOX"
+	}
+
+	return params
+end
+
+local function makeCargoOverrideParam(params, configKeyFunc)
+    params[#params+1] = {
+		key = configKeyFunc("cargo_override"),
+		name = _("StationSection"),
+		values = {_('Auto'), _('Passengers'), _('Cargo')},
+		uiType = "BUTTON"
 	}
 
 	return params

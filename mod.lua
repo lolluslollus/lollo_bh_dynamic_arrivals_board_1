@@ -80,6 +80,8 @@ display construction and it will manage its display updates when placed in game.
 				 -- when true, receives info about arrivals as parameters named "arrival_<index>_dest" and "arrival_<index>_time"
 				 -- when false, attaches to the nearest station and receives data for ALL terminals in the station. there will be an additional parameter "arrival_<index>_terminal" containing the terminal id.
 				 -- it is up to you to decide how your construction will handle a variable number of terminals in terms of model instances and positioning.
+                 -- there is a similar parameter "cargo_override", useful to choose between the passenger or the cargo station of a station group.
+                 -- station groups and station constructions are 1 to 1.
 				singleTerminal = true,
 
 				 -- send the current game time (in seconds) in a parameter "game_time" and formatted as HH:MM:SS in "time_string"

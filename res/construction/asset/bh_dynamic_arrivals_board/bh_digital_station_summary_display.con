@@ -30,6 +30,7 @@ local function makeParams()
         defaultIndex = 1
     }
 
+    utils.makeCargoOverrideParam(params, configKey)
     utils.makeRotateParams(params, configKey)
     utils.makeOffsetParams(params, configKey)
 
