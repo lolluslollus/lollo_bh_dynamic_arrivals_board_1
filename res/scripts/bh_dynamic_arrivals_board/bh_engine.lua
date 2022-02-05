@@ -318,10 +318,15 @@ local function getAverageSectionTimeToDestinations(vehicles, nStops, fallbackLeg
     return averages
 end
 
-local averageTimeToNextDepartAtDestinations = {}
-local function getAverageTimeToNextDepartAtDestinations(vehicles, nStops, fallbackLegDuration, lineId)
+local function getAverageTimeToNextDepartAtDestinations(vehicles, nStops, lineId, lineWaitingTime, buffer)
     -- buffer
-    if averageTimeToNextDepartAtDestinations[lineId] then return averageTimeToNextDepartAtDestinations[lineId] end
+    if buffer[lineId] then log.print('using ATT buffer for lineID =', lineId) return buffer[lineId] end
+    log.print('NOT using ATT buffer for lineID =', lineId)
+
+    local lineEntity = game.interface.getEntity(lineId)
+    local fallbackLegDuration = lineEntity.frequency > 0 and (1 / lineEntity.frequency) --[[ * #vehicles ]] or lineWaitingTime
+    -- local fallbackLegDuration2 = lineData.waitingTime -- not reliable, it is always 180
+    log.print('fallbackLegDuration =', fallbackLegDuration)
 
     local averages = {}
 
@@ -362,11 +367,11 @@ local function getAverageTimeToNextDepartAtDestinations(vehicles, nStops, fallba
         averages[stopIndex] = math.ceil(average)
     end
 
-    averageTimeToNextDepartAtDestinations[lineId] = averages
+    buffer[lineId] = averages
     return averages
 end
 
-local function getNextPredictions(stationId, station, nEntries, time, onlyTerminalId)
+local function getNextPredictions(stationId, station, nEntries, time, onlyTerminalId, predictionsBufferHelpers, averageTimeToNextDepartAtDestinationsBuffer)
     -- log.print('getNextPredictions starting')
     local predictions = {}
 
@@ -375,6 +380,14 @@ local function getNextPredictions(stationId, station, nEntries, time, onlyTermin
     local stationGroupId = api.engine.system.stationGroupSystem.getStationGroup(stationId)
     local stationIndexInStationGroupBase0 = utils.getStationIndexInStationGroupBase0(stationId, stationGroupId)
     if not(stationIndexInStationGroupBase0) then return predictions end
+
+    local predictionsBuffer = predictionsBufferHelpers.getIt(stationId, onlyTerminalId)
+    if predictionsBuffer then
+        log.print('time = ', time, 'using buffer for stationId =', stationId, 'and onlyTerminalId =', onlyTerminalId or 'NIL')
+        return predictionsBuffer
+    else
+        log.print('time = ', time, 'NOT using buffer for stationId =', stationId, 'and onlyTerminalId =', onlyTerminalId or 'NIL')
+    end
 
     -- log.print('stationGroupId =', stationGroupId)
     -- log.print('stationId =', stationId)
@@ -390,27 +403,14 @@ local function getNextPredictions(stationId, station, nEntries, time, onlyTermin
                     if #vehicles > 0 then
                         local hereIndex, startIndex, endIndex = getHereStartEndIndexes(line, stationGroupId, stationIndexInStationGroupBase0, terminal.tag) -- LOLLO TODO tag or id - 1?
                         local nStops = #line.stops
-                        -- local prevIndex = hereIndex - 1
-                        -- if prevIndex < 1 then prevIndex = prevIndex + nStops end
                         log.print('hereIndex, startIndex, endIndex, nStops =', hereIndex, startIndex, endIndex, nStops)
-
                         -- Here, I average the times across all the trains on this line.
                         -- If the trains are wildly different, which is stupid, this could be less accurate;
                         -- otherwise, it will be pretty accurate.
-
-                        -- alternative calculation for line duration, I don't like mixing the old and the new api tho
-                        -- vehicle hasn't run a full route yet, so fall back to less accurate (?) method
-                        -- calculate line duration by multiplying the number of vehicles by the line frequency
-                        local lineEntity = game.interface.getEntity(lineId)
-                        local fallbackLineDuration = lineEntity.frequency > 0 and (1 / lineEntity.frequency) --[[ * #vehicles ]] or line.waitingTime
-                        -- local fallbackLineDuration2 = lineData.waitingTime -- not reliable, it is always 180
-                        log.print('fallbackLineDuration =', fallbackLineDuration)
-                        -- log.print('fallbackLineDuration2 =', fallbackLineDuration2)
                         -- local averageTimeToDestinations = getAverageSectionTimeToDestinations(vehicles, nStops, fallbackLineDuration, lineId)
-                        local averageTimeToDestinations = getAverageTimeToNextDepartAtDestinations(vehicles, nStops, fallbackLineDuration, lineId)
+                        local averageTimeToDestinations = getAverageTimeToNextDepartAtDestinations(vehicles, nStops, lineId, line.waitingTime, averageTimeToNextDepartAtDestinationsBuffer)
                         log.print('averageTimeToDestinations =') log.debugPrint(averageTimeToDestinations)
                         -- log.print('#averageTimeToDestinations =', #averageTimeToDestinations or 'NIL') -- ok
-                        -- log.print('time =', time)
                         -- log.print('There are', #vehicles, 'vehicles')
 
                         for _, vehicleId in ipairs(vehicles) do
@@ -535,6 +535,7 @@ local function getNextPredictions(stationId, station, nEntries, time, onlyTermin
         results[#results+1] = predictions[i]
     end
 
+    predictionsBufferHelpers.setIt(stationId, onlyTerminalId, results)
     return results
 end
 
@@ -560,6 +561,44 @@ local function updateWithNoIndexes()
 
     -- local newConstructions = {}
     -- local oldConstructions = {}
+
+    local averageTimeToNextDepartAtDestinationsBuffer = {}
+    local predictionsBuffer = {
+        byStation = {},
+        byStationTerminal = {}
+    }
+    local predictionsBufferHelpers = {
+        -- isThere = function(stationId, onlyTerminalId)
+        --     if onlyTerminalId then
+        --         if predictionsBuffer.byStationTerminal[stationId] and predictionsBuffer.byStationTerminal[stationId][onlyTerminalId] then
+        --             return true
+        --         end
+        --     else
+        --         if predictionsBuffer.byStation[stationId] then
+        --             return true
+        --         end
+        --     end
+        --     return false
+        -- end,
+        getIt = function(stationId, onlyTerminalId)
+            if onlyTerminalId then
+                if predictionsBuffer.byStationTerminal[stationId] then
+                    return predictionsBuffer.byStationTerminal[stationId][onlyTerminalId]
+                end
+            else
+                return predictionsBuffer.byStation[stationId]
+            end
+            return nil
+        end,
+        setIt = function(stationId, onlyTerminalId, data)
+            if onlyTerminalId then
+                if not(predictionsBuffer.byStationTerminal[stationId]) then predictionsBuffer.byStationTerminal[stationId] = {} end
+                predictionsBuffer.byStationTerminal[stationId][onlyTerminalId] = data
+            else
+                predictionsBuffer.byStation[stationId] = data
+            end
+        end,
+    }
 
     log.timed("sign processing", function()
         -- sign is no more around: clean the state
@@ -599,7 +638,9 @@ local function updateWithNoIndexes()
                                 station,
                                 config.maxEntries,
                                 time,
-                                terminalId -- nil if config.singleTerminal == falsy
+                                terminalId, -- nil if config.singleTerminal == falsy
+                                predictionsBufferHelpers,
+                                averageTimeToNextDepartAtDestinationsBuffer
                             )
                             if rawPredictions == nil then
                                 rawPredictions = nextPredictions
