@@ -144,14 +144,15 @@ utils.getFormattedPredictions = function(predictions, time)
     return results
 end
 
-local function getNewSignConName(formattedPredictions, config, clockString)
+utils.getNewSignConName = function(formattedPredictions, config, clockString)
     local result = ''
     if config.singleTerminal then
         local i = 1
         for _, prediction in ipairs(formattedPredictions) do
             result = result .. '@_' .. i .. '_@' .. prediction.destinationString
             i = i + 1
-            result = result .. '@_' .. i .. '_@' .. (config.absoluteArrivalTime and prediction.arrivalTimeString or prediction.etaMinutesString)
+            result = result .. '@_' .. i .. '_@' .. (config.absoluteArrivalTime and prediction.departureTimeString or prediction.etaMinutesString)
+            -- result = result .. '@_' .. i .. '_@' .. (config.absoluteArrivalTime and prediction.arrivalTimeString or prediction.etaMinutesString)
             i = i + 1
         end
         if config.clock and clockString then -- it might also be clock_time, check it
@@ -278,52 +279,18 @@ local function getWaitingTimeMsec(line, stopIndex)
     -- end
 end
 
-local function getAverageSectionTimeToDestinations(vehicles, nStops, fallbackLegDuration, lineId)
-    local averages = {}
-
-    for index = 1, nStops, 1 do
-        local prevIndex = index - 1
-        if prevIndex < 1 then prevIndex = prevIndex + nStops end
-
-        local average, nVehicles4Average = 0, #vehicles
-        for _, vehicleId in pairs(vehicles) do
-            local sectionTimes = api.engine.getComponent(vehicleId, api.type.ComponentType.TRANSPORT_VEHICLE).sectionTimes
-            if sectionTimes[prevIndex] == 0 then
-                nVehicles4Average = nVehicles4Average - 1
-            else
-                -- if vehicleId == '198731' then -- one fliegender purupu
-                -- if lineId == '86608' then -- fliegender purupu
-                --     print('vehicle.sectionTimes[prevIndex] =', sectionTimes[prevIndex])
-                -- end
-                average = average + sectionTimes[prevIndex]
-            end
-        end
-        -- with every vehicle, there will always be an index like this:
-        -- stopIndex = 2,
-        -- lineStopDepartures = {
-        -- [2] = 19904000,
-        -- [3] = 19068800,
-        -- sectionTimes = {
-        -- [2] = 0,
-        -- so I will always fall back at least once, if I have one vehicle only
-        if nVehicles4Average > 0 then
-            average = average / nVehicles4Average
-        else
-            average = fallbackLegDuration -- useful when starting a new line
-        end
-
-        averages[index] = math.ceil(average * 1000)
-    end
-
-    return averages
-end
-
 local function getAverageTimeToLeaveDestinationFromPrevious(vehicles, nStops, lineId, lineWaitingTime, buffer)
     -- buffer
     if buffer[lineId] then log.print('using ATT buffer for lineID =', lineId) return buffer[lineId] end
     log.print('NOT using ATT buffer for lineID =', lineId)
 
-    if nStops < 1 then return {} end
+    if nStops < 1 or #vehicles < 1 then return {} end
+
+    -- vehicle states:
+    -- api.type.enum.TransportVehicleState.AT_TERMINAL -- 2
+    -- api.type.enum.TransportVehicleState.EN_ROUTE -- 1
+    -- api.type.enum.TransportVehicleState.GOING_TO_DEPOT -- 3
+    -- api.type.enum.TransportVehicleState.IN_DEPOT -- 0
 
     -- the new API hasn't got this yet, only a dumb fixed waitingTime == 180 seconds
     local lineEntity = game.interface.getEntity(lineId)
@@ -331,9 +298,12 @@ local function getAverageTimeToLeaveDestinationFromPrevious(vehicles, nStops, li
         -- log.print('lineWaitingTime =', lineWaitingTime)
     local fallbackLegDuration = (
         (lineEntity.frequency > 0) -- this is a proper frequency and not a period
-            and (1 / lineEntity.frequency * #vehicles) -- the same vehicle calls every this seconds
+            and (#vehicles / lineEntity.frequency) -- the same vehicle calls at any station every this seconds
             or lineWaitingTime -- should never happen
         ) / nStops * 1000
+    -- log.print('1 / lineEntity.frequency =', 1 / lineEntity.frequency)
+    -- log.print('#vehicles =', #vehicles)
+    -- log.print('nStops =', nStops)
     log.print('fallbackLegDuration =', fallbackLegDuration)
 
     local averages = {}
@@ -342,13 +312,16 @@ local function getAverageTimeToLeaveDestinationFromPrevious(vehicles, nStops, li
         local prevIndex = index - 1
         if prevIndex < 1 then prevIndex = prevIndex + nStops end
 
-        local average, nVehicles4Average = 0, #vehicles
+        local averageLSD, nVehicles4AverageLSD, averageST, nVehicles4AverageST = 0, #vehicles, 0, #vehicles
         for _, vehicleId in pairs(vehicles) do
-            local lineStopDepartures = api.engine.getComponent(vehicleId, api.type.ComponentType.TRANSPORT_VEHICLE).lineStopDepartures
+            local vehicle = api.engine.getComponent(vehicleId, api.type.ComponentType.TRANSPORT_VEHICLE)
+            local lineStopDepartures = vehicle.lineStopDepartures
             if lineStopDepartures[index] == 0
             or lineStopDepartures[prevIndex] == 0
-            or lineStopDepartures[index] <= lineStopDepartures[prevIndex] then
-                nVehicles4Average = nVehicles4Average - 1
+            or lineStopDepartures[index] <= lineStopDepartures[prevIndex]
+            or (vehicle.state ~= api.type.enum.TransportVehicleState.AT_TERMINAL and vehicle.state ~= api.type.enum.TransportVehicleState.EN_ROUTE)
+            then
+                nVehicles4AverageLSD = nVehicles4AverageLSD - 1
             else
                 -- if vehicleId == '198731' then -- one fliegender purupu
                 -- if lineId ~= 86608 then -- fliegender purupu
@@ -358,7 +331,19 @@ local function getAverageTimeToLeaveDestinationFromPrevious(vehicles, nStops, li
                 -- LOLLO TODO to respond better to sudden changes,
                 -- you cound use a weighted average
                 -- with more weight for the latest data
-                average = average + lineStopDepartures[index] - lineStopDepartures[prevIndex]
+                averageLSD = averageLSD + lineStopDepartures[index] - lineStopDepartures[prevIndex]
+            end
+            local sectionTimes = vehicle.sectionTimes
+            if sectionTimes[prevIndex] == 0
+            or (vehicle.state ~= api.type.enum.TransportVehicleState.AT_TERMINAL and vehicle.state ~= api.type.enum.TransportVehicleState.EN_ROUTE)
+            then
+                nVehicles4AverageST = nVehicles4AverageST - 1
+            else
+                -- if vehicleId == '198731' then -- one fliegender purupu
+                -- if lineId == '86608' then -- fliegender purupu
+                --     print('vehicle.sectionTimes[prevIndex] =', sectionTimes[prevIndex])
+                -- end
+                averageST = averageST + sectionTimes[prevIndex] * 1000
             end
         end
         -- with every vehicle, there will always be an index like this:
@@ -369,19 +354,51 @@ local function getAverageTimeToLeaveDestinationFromPrevious(vehicles, nStops, li
         -- sectionTimes = {
         -- [2] = 0,
         -- so I will always fall back at least once, if I have one vehicle only
-        if nVehicles4Average > 0 then
-            average = average / nVehicles4Average
+        if nVehicles4AverageLSD > 0 then
+            averageLSD = averageLSD / nVehicles4AverageLSD
         else
-            average = fallbackLegDuration -- useful when starting a new line
+            averageLSD = fallbackLegDuration -- useful when starting a new line
+        end
+        if nVehicles4AverageST > 0 then
+            averageST = averageST / nVehicles4AverageST
+        else
+            averageST = fallbackLegDuration -- useful when starting a new line
         end
 
-        averages[index] = math.ceil(average)
+        averages[index] = {lsd = math.ceil(averageLSD), st = math.ceil(averageST)}
     end
 
     buffer[lineId] = averages
     return averages
 end
 
+local function getLastDepartureTime(vehicle, time)
+    -- LOLLO TODO choose one varying the waiting times at stations
+    -- this is a little slower; it is 0 when a new train leaves the depot
+    local result = math.max(table.unpack(vehicle.lineStopDepartures))
+    log.print('lastDepartureTime with unpack =', result)
+
+    -- useful when starting a new line or a new train
+    if result == 0 then
+        result = time
+        log.print('lastDepartureTime == 0, a train has just left the depot')
+    end
+
+--[[     -- this is 0 when a new train leaves the depot
+    -- doorsTime == -1 when a vehicle has just left the depot
+
+    local result2 = math.ceil(vehicle.doorsTime / 1000)
+    log.print('lastDepartureTime with doorsTime =', result2)
+
+    -- useful when starting a new line or a new train
+    if result2 == 0 then
+        result2 = time
+        log.print('bh_dynamic_arrivals_board WARNING: lastDepartureTime == 0')
+        result2 = result2 + 1000
+    end ]]
+
+    return result
+end
 local function getNextPredictions(stationId, station, nEntries, time, onlyTerminalId, predictionsBufferHelpers, averageTimeToLeaveDestinationsFromPreviousBuffer)
     -- log.print('getNextPredictions starting')
     local predictions = {}
@@ -418,7 +435,6 @@ local function getNextPredictions(stationId, station, nEntries, time, onlyTermin
                         -- Here, I average the times across all the trains on this line.
                         -- If the trains are wildly different, which is stupid, this could be less accurate;
                         -- otherwise, it will be pretty accurate.
-                        -- local averageTimeToReachDestinationFromPrevious = getAverageSectionTimeToDestinations(vehicles, nStops, fallbackLineDuration, lineId)
                         local averageTimeToLeaveDestinationFromPrevious = getAverageTimeToLeaveDestinationFromPrevious(vehicles, nStops, lineId, line.waitingTime, averageTimeToLeaveDestinationsFromPreviousBuffer)
                         log.print('averageTimeToLeaveDestinationFromPrevious =') log.debugPrint(averageTimeToLeaveDestinationFromPrevious)
                         -- log.print('#averageTimeToLeaveDestinationFromPrevious =', #averageTimeToLeaveDestinationFromPrevious or 'NIL') -- ok
@@ -427,82 +443,79 @@ local function getNextPredictions(stationId, station, nEntries, time, onlyTermin
                         for _, vehicleId in ipairs(vehicles) do
                             log.print('vehicleId =', vehicleId or 'NIL')
                             local vehicle = api.engine.getComponent(vehicleId, api.type.ComponentType.TRANSPORT_VEHICLE)
-                            -- vehicle has:
-                            -- stopIndex = 1, -- last stop index or next stop index in base 0
-                            -- lineStopDepartures = { -- last recorded departure times, they can be 0 if not yet recorded
-                            --   [1] = 4591600,
-                            --   [2] = 4498000,
-                            -- },
-                            -- lastLineStopDeparture = 0, -- seems inaccurate
-                            -- sectionTimes = { -- take a while to calculate when starting a new line
-                            --   [1] = 0, -- time it took to complete a segment, starting from stop 1
-                            --   [2] = 86.600006103516, -- time it took to complete a segment, starting from stop 2
-                            -- },
-                            -- timeUntilLoad = -5.5633368492126, -- seems useless
-                            -- timeUntilCloseDoors = -0.19238702952862, -- seems useless
-                            -- timeUntilDeparture = -0.026386171579361, -- seems useless
-                            -- doorsTime = 4590600000, -- last departure time, seems OK
-                            -- and it is quicker than checking the max across lineStopDepartures
-                            -- we add 1000 so we match it to the highest lineStopDeparture, but it varies with some unknown factor.
-                            -- Sometimes, two vehicles A and B on the same line may have A the highest lineStopDeparture and B the highest doorsTime.
+                            --[[
+                                vehicle has:
+                                stopIndex = 1, -- last stop index or next stop index in base 0
+                                lineStopDepartures = { -- last recorded departure times, they can be 0 if not yet recorded
+                                [1] = 4591600,
+                                [2] = 4498000,
+                                },
+                                lastLineStopDeparture = 0, -- seems inaccurate
+                                sectionTimes = { -- take a while to calculate when starting a new line
+                                [1] = 0, -- time it took to complete a segment, starting from stop 1
+                                [2] = 86.600006103516, -- time it took to complete a segment, starting from stop 2
+                                },
+                                timeUntilLoad = -5.5633368492126, -- seems useless
+                                timeUntilCloseDoors = -0.19238702952862, -- seems useless
+                                timeUntilDeparture = -0.026386171579361, -- seems useless
+                                doorsTime = 4590600000, -- last departure time, seems OK
+                                and it is quicker than checking the max across lineStopDepartures
+                                we add 1000 so we match it to the highest lineStopDeparture, but it varies with some unknown factor.
+                                Sometimes, two vehicles A and B on the same line may have A the highest lineStopDeparture and B the highest doorsTime.
 
-                            -- Here is another example with two vehicles on the same line:
-                            -- line = 86608,
-                            -- stopIndex = 5,
-                            -- lineStopDepartures = {
-                            --   [1] = 19082400,
-                            --   [2] = 19228400,
-                            --   [3] = 19590000,
-                            --   [4] = 19710800,
-                            --   [5] = 19844000,
-                            --   [6] = 18969400,
-                            -- },
-                            -- lastLineStopDeparture = 0,
-                            -- sectionTimes = {
-                            --   [1] = 127.00000762939, -- 146 counting the time spent standing
-                            --   [2] = 354.00003051758, -- 362 counting the time spent standing
-                            --   [3] = 111.00000762939, -- 120 counting the time spent standing
-                            --   [4] = 123.40000915527, -- 133 counting the time spent standing
-                            --   [5] = 0,
-                            --   [6] = 93.200004577637,
-                            -- },
-                            -- line = 86608,
-                            -- stopIndex = 2,
-                            -- lineStopDepartures = {
-                            --     [1] = 19769400,
-                            --     [2] = 19904000,
-                            --     [3] = 19068800,
-                            --     [4] = 19199800,
-                            --     [5] = 19330400,
-                            --     [6] = 19669800,
-                            -- },
-                            -- lastLineStopDeparture = 0,
-                            -- sectionTimes = {
-                            --     [1] = 126.60000610352, -- 135 counting the time spent standing
-                            --     [2] = 0,
-                            --     [3] = 111.00000762939,
-                            --     [4] = 123.40000915527,
-                            --     [5] = 332.20001220703,
-                            --     [6] = 93.200004577637,
-                            -- },
-                            -- sectionTimes tend to be similar but they don't account for the time spent standing
+                                Here is another example with two vehicles on the same line:
+                                line = 86608,
+                                stopIndex = 5,
+                                lineStopDepartures = {
+                                [1] = 19082400,
+                                [2] = 19228400,
+                                [3] = 19590000,
+                                [4] = 19710800,
+                                [5] = 19844000,
+                                [6] = 18969400,
+                                },
+                                lastLineStopDeparture = 0,
+                                sectionTimes = {
+                                [1] = 127.00000762939, -- 146 counting the time spent standing
+                                [2] = 354.00003051758, -- 362 counting the time spent standing
+                                [3] = 111.00000762939, -- 120 counting the time spent standing
+                                [4] = 123.40000915527, -- 133 counting the time spent standing
+                                [5] = 0,
+                                [6] = 93.200004577637,
+                                },
+                                line = 86608,
+                                stopIndex = 2,
+                                lineStopDepartures = {
+                                    [1] = 19769400,
+                                    [2] = 19904000,
+                                    [3] = 19068800,
+                                    [4] = 19199800,
+                                    [5] = 19330400,
+                                    [6] = 19669800,
+                                },
+                                lastLineStopDeparture = 0,
+                                sectionTimes = {
+                                    [1] = 126.60000610352, -- 135 counting the time spent standing
+                                    [2] = 0,
+                                    [3] = 111.00000762939,
+                                    [4] = 123.40000915527,
+                                    [5] = 332.20001220703,
+                                    [6] = 93.200004577637,
+                                },
+                                sectionTimes tend to be similar but they don't account for the time spent standing
+                            ]]
                             -- log.print('vehicle.stopIndex =', vehicle.stopIndex)
                             local nextStopIndex = vehicle.stopIndex + 1
-                            local nStopsAway = hereIndex - nextStopIndex
-                            if nStopsAway < 0 then nStopsAway = nStopsAway + nStops end
+                            -- local nStopsAway = hereIndex - nextStopIndex
+                            -- if nStopsAway < 0 then nStopsAway = nStopsAway + nStops end
                             -- log.print('nStopsAway =', nStopsAway or 'NIL')
 
-                            -- LOLLO TODO choose one varying the waiting times at stations
-                            -- local lastDepartureTime = math.max(table.unpack(vehicle.lineStopDepartures))
-                            local lastDepartureTime = math.ceil(vehicle.doorsTime / 1000 + 1000)
-                            -- log.print('lastDepartureTime with unpack and with doorsTime =', lastDepartureTime, lastDepartureTime2)
-
-                            -- useful when starting a new line
-                            if lastDepartureTime == 0 then lastDepartureTime = time print('bh_dynamic_arrivals_board WARNING: lastDepartureTime == 0') end
-
-                            local remainingTime = averageTimeToLeaveDestinationFromPrevious[hereIndex]
+                            local lastDepartureTime = getLastDepartureTime(vehicle, time)
+                            log.print('lastDepartureTime =', lastDepartureTime)
+                            -- local remainingTime = averageTimeToLeaveDestinationFromPrevious[hereIndex].lsd
+                            local remainingTime = 0
                             while nextStopIndex ~= hereIndex do
-                                remainingTime = remainingTime + averageTimeToLeaveDestinationFromPrevious[nextStopIndex]
+                                remainingTime = remainingTime + averageTimeToLeaveDestinationFromPrevious[nextStopIndex].lsd
                                     -- + getWaitingTimeMsec(line, nextStopIndex) -- not needed since I check the departures
                                 nextStopIndex = nextStopIndex + 1
                                 if nextStopIndex > nStops then nextStopIndex = nextStopIndex - nStops end
@@ -513,9 +526,10 @@ local function getNextPredictions(stationId, station, nEntries, time, onlyTermin
                                 terminalTag = terminal.tag,
                                 originStationGroupId = line.stops[startIndex].stationGroup,
                                 destinationStationGroupId = line.stops[endIndex].stationGroup,
-                                arrivalTime = lastDepartureTime + remainingTime - getWaitingTimeMsec(line, hereIndex),
-                                departureTime = lastDepartureTime + remainingTime,
-                                nStopsAway = nStopsAway
+                                -- arrivalTime = lastDepartureTime + remainingTime - getWaitingTimeMsec(line, hereIndex),
+                                arrivalTime = lastDepartureTime + remainingTime + averageTimeToLeaveDestinationFromPrevious[hereIndex].st,
+                                departureTime = lastDepartureTime + remainingTime + averageTimeToLeaveDestinationFromPrevious[hereIndex].lsd,
+                                -- nStopsAway = nStopsAway
                             }
 
                             -- not a good calculation. You should, instead,
@@ -541,7 +555,7 @@ local function getNextPredictions(stationId, station, nEntries, time, onlyTermin
         end
     end
 
-    -- log.print('predictions before sorting =') log.debugPrint(predictions)
+    log.print('predictions before sorting =') log.debugPrint(predictions)
     table.sort(predictions, function(a, b) return a.arrivalTime < b.arrivalTime end)
 
     local results = {}
@@ -669,7 +683,7 @@ local function updateWithNoIndexes()
                 end
 
                 -- rename the construction
-                local newName = getNewSignConName(formattedPredictions, config, clockString)
+                local newName = utils.getNewSignConName(formattedPredictions, config, clockString)
                 api.cmd.sendCommand(api.cmd.make.setName(signConId, newName))
 
                 -- -- rebuild the sign construction
@@ -728,213 +742,7 @@ local function updateWithNoIndexes()
     print("Full update took " .. executionTime .. "ms")
 end
 
----@diagnostic disable-next-line: unused-function
-local function updateWithIndexes()
-    -- LOLLO TODO this takes twice as long as the non-indexed version, even with 6 boards in one station.
-    -- The non-indexed one seems not to suffer from adding boards instead.
-    local time = api.engine.getComponent(api.engine.util.getWorld(), api.type.ComponentType.GAME_TIME).gameTime
-    if not(time) then log.message("cannot get time!") return end
-
-    if math.fmod(time, constants.refreshPeriod) ~= 0 then --[[ log.print('skipping') ]] return end
-    -- log.print('doing it')
-
-    local state = stateManager.loadState()
-    local clock_time = math.floor(time / 1000)
-    if clock_time == state.world_time then return end
-
-    state.world_time = clock_time
-
-    local speed = (api.engine.getComponent(api.engine.util.getWorld(), api.type.ComponentType.GAME_SPEED).speedup) or 1
-
-    -- performance profiling
-    local startTick = os.clock()
-    local clockString = utils.formatClockString(clock_time)
-
-    -- local newConstructions = {}
-    -- local oldConstructions = {}
-
-    log.timed("sign processing", function()
-        -- sign is no more around: clean the state
-        for signConId, signState in pairs(state.placed_signs) do
-            if not(edgeUtils.isValidAndExistingId(signConId)) then
-                stateManager.removePlacedSign(signConId)
-            end
-        end
-        -- station is no more around: bulldoze its signs
-        for signConId, signState in pairs(state.placed_signs) do
-            if not(edgeUtils.isValidAndExistingId(signState.stationConId)) then
-                stateManager.removePlacedSign(signConId)
-                utils.bulldozeConstruction(signConId)
-            end
-        end
-        -- now the state is clean
-        -- We index all the data so we don't repeat the calculations for every sign at the same station or terminal
-        -- We need them separated coz we may have a terminal sign on a terminal with a very rare line
-        local predictionsByStation = {}
-        local predictionsByStationAndTerminal = {}
-        -- populate prediction tables
-        for signConId, signState in pairs(state.placed_signs) do
-            -- log.print('signConId =') log.debugPrint(signConId)
-            -- log.print('signState =') log.debugPrint(signState)
-            local signCon = api.engine.getComponent(signConId, api.type.ComponentType.CONSTRUCTION)
-            local stationIds = api.engine.getComponent(signState.stationConId, api.type.ComponentType.CONSTRUCTION).stations
-            -- log.print('signCon =') log.debugPrint(signCon)
-            if signCon then
-                local config = constructionHooks.getRegisteredConstructionOrDefault(signCon.fileName)
-                if (config.maxEntries or 0) > 0 then -- config.maxEntries is tied to the construction type, like our tables
-                    local function param(name) return config.labelParamPrefix .. name end
-                    local isCargo = utils.getIsCargo(config, signCon, signState, param)
-                    if config.singleTerminal then
-                        -- update the linked terminal coz the player might have changed it in the construction params
-                        local terminalId = utils.getTerminalId(config, signCon, signState, param)
-                        for _, stationId in pairs(stationIds) do
-                            local station = api.engine.getComponent(stationId, api.type.ComponentType.STATION)
-                            if isCargo == not(not(station.cargo)) then
-                                if predictionsByStationAndTerminal[stationId] == nil or predictionsByStationAndTerminal[stationId][terminalId] == nil then
-                                    if predictionsByStationAndTerminal[stationId] == nil then predictionsByStationAndTerminal[stationId] = {} end
-                                    predictionsByStationAndTerminal[stationId][terminalId] = getNextPredictions(
-                                        stationId,
-                                        station,
-                                        config.maxEntries,
-                                        time,
-                                        terminalId
-                                    )
-                                end
-                            end
-                        end
-                    else
-                        for _, stationId in pairs(stationIds) do
-                            if predictionsByStation[stationId] == nil then
-                                local station = api.engine.getComponent(stationId, api.type.ComponentType.STATION)
-                                if isCargo == not(not(station.cargo)) then
-                                    predictionsByStation[stationId] = getNextPredictions(
-                                        stationId,
-                                        api.engine.getComponent(stationId, api.type.ComponentType.STATION),
-                                        config.maxEntries,
-                                        time
-                                    )
-                                end
-                            end
-                        end
-                    end
-                end
-            end
-        end
-
-        -- log.print('predictionsByStation before formatting =') log.debugPrint(predictionsByStation)
-        -- format the indexed table
-        for stationId, rawPredictions in pairs(predictionsByStation) do
-            predictionsByStation[stationId] = utils.getFormattedPredictions(rawPredictions, time)
-        end
-        for stationId, terminals in pairs(predictionsByStationAndTerminal) do
-            for terminalId, rawPredictions in pairs(terminals) do
-                predictionsByStationAndTerminal[stationId][terminalId] = utils.getFormattedPredictions(rawPredictions, time)
-            end
-        end
-        -- log.print('predictionsByStation after formatting =') log.debugPrint(predictionsByStation)
-
-        -- rebuild the sign constructions
-        -- I'd rather duplicate the code for the moment, it's clearer
-        for signConId, signState in pairs(state.placed_signs) do
-            -- log.print('signConId =') log.debugPrint(signConId)
-            -- log.print('signState =') log.debugPrint(signState)
-            local signCon = api.engine.getComponent(signConId, api.type.ComponentType.CONSTRUCTION)
-            local stationIds = api.engine.getComponent(signState.stationConId, api.type.ComponentType.CONSTRUCTION).stations
-            -- log.print('signCon =') log.debugPrint(signCon)
-            if signCon then
-                local config = constructionHooks.getRegisteredConstructionOrDefault(signCon.fileName)
-                -- log.print('config =') log.debugPrint(config)
-                local formattedPredictions = nil
-                if (config.maxEntries or 0) > 0 then -- config.maxEntries is tied to the construction type, like our tables
-                    local function param(name) return config.labelParamPrefix .. name end
-                    if config.singleTerminal then
-                        local terminalId = utils.getTerminalId(config, signCon, signState, param)
-                        for _, stationId in pairs(stationIds) do
-                            if predictionsByStationAndTerminal[stationId] and predictionsByStationAndTerminal[stationId][terminalId] then
-                                if formattedPredictions == nil then
-                                    formattedPredictions = predictionsByStationAndTerminal[stationId][terminalId]
-                                else
-                                    print('bh_dynamic_arrivals_board WARNING this should never happen THREE')
-                                    arrayUtils.concatValues(formattedPredictions, predictionsByStationAndTerminal[stationId][terminalId])
-                                end
-                            end
-                        end
-                    else
-                        for _, stationId in pairs(stationIds) do
-                            if predictionsByStationAndTerminal[stationId] then
-                                if formattedPredictions == nil then
-                                    formattedPredictions = predictionsByStation[stationId]
-                                else
-                                    print('bh_dynamic_arrivals_board WARNING this should never happen FOUR')
-                                    arrayUtils.concatValues(formattedPredictions, predictionsByStation[stationId])
-                                end
-                            end
-                        end
-                    end
-                end
-
-                -- rename the construction
-                local newName = getNewSignConName(formattedPredictions or {}, config, clockString)
-                api.cmd.sendCommand(api.cmd.make.setName(signConId, newName))
-
-                -- -- rebuild the sign construction
-                -- local newCon = api.type.SimpleProposal.ConstructionEntity.new()
-
-                -- local newParams = {}
-                -- for oldKey, oldVal in pairs(signCon.params) do
-                --     newParams[oldKey] = oldVal
-                -- end
-
-                -- if config.clock then
-                --     newParams[param("time_string")] = clockString
-                --     newParams[param("game_time")] = clock_time
-                -- end
-
-                -- newParams[param("num_arrivals")] = #formattedArrivals
-
-                -- for i, a in ipairs(formattedArrivals) do
-                --     local paramName = "arrival_" .. i .. "_"
-                --     newParams[param(paramName .. "dest")] = a.destinationString
-                --     newParams[param(paramName .. "time")] = config.absoluteArrivalTime and a.arrivalTimeString or a.etaMinutesString
-                --     if not config.singleTerminal and a.arrivalTerminal then
-                --         newParams[param(paramName .. "terminal")] = a.arrivalTerminal
-                --     end
-                -- end
-
-                -- newParams.seed = signCon.params.seed + 1
-
-                -- newCon.fileName = signCon.fileName
-                -- newCon.params = newParams
-                -- newCon.transf = signCon.transf
-                -- newCon.playerEntity = api.engine.util.getPlayer()
-
-                -- newConstructions[#newConstructions+1] = newCon
-                -- oldConstructions[#oldConstructions+1] = signConId
-
-                -- -- log.print('newCon =') log.debugPrint(newCon)
-            end
-        end
-    end)
-
-    -- if #newConstructions > 0 then
-    --     local proposal = api.type.SimpleProposal.new()
-    --     for i = 1, #newConstructions do
-    --     proposal.constructionsToAdd[i] = newConstructions[i]
-    --     end
-    --     proposal.constructionsToRemove = oldConstructions
-
-    --     log.timed("buildProposal command", function()
-    --         -- changing params on a construction doesn't seem to change the entity id which indicates it doesn't completely "replace" it but i don't know how expensive this command actually is...
-    --         api.cmd.sendCommand(api.cmd.make.buildProposal(proposal, api.type.Context:new(), true))
-    --     end)
-    -- end
-
-    local executionTime = math.ceil((os.clock() - startTick) * 1000)
-    print("Full update took " .. executionTime .. "ms")
-end
-
 local function update()
-    -- updateWithIndexes()
     -- updateWithNoIndexes()
     updateWithNoIndexes()
 end

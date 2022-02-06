@@ -7,7 +7,7 @@ end
 local function getRegisteredConstructionOrDefault(index)
     local config = targetConstructions[index]
     if not config then
-        print('bh_dynamic_arrivals_board WARNING: cannot read the constructionconfig, fileName =', index or 'NIL')
+        print('bh_dynamic_arrivals_board WARNING: cannot read the construction config, fileName =', index or 'NIL')
         config = {}
     end
 
