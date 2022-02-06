@@ -59,6 +59,8 @@ return {
 				children = {
 					{
 						materials = {
+							"railroad/power_pole_us.mtl",
+							"railroad/power_pole_us_alpha.mtl",
 							"lolloArrivalsDeparturesPredictor/rough_alu.mtl",
 							"lolloArrivalsDeparturesPredictor/glass_dark.mtl",
 						},

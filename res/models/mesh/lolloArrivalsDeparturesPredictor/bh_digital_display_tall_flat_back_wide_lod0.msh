@@ -1,48 +1,97 @@
 function data()
 return {
 	matConfigs = {
-		{ 0, 0, }, 
+		{
+			0, 0, 0, 0, 
+		}, 
 	},
 	subMeshes = {
 		{
 			indices = {
 				normal = {
-					count = 600,
-					offset = 1416,
+					count = 432,
+					offset = 3524,
 				},
 				position = {
-					count = 600,
-					offset = 3216,
+					count = 432,
+					offset = 3092,
 				},
 				tangent = {
-					count = 600,
-					offset = 2616,
+					count = 432,
+					offset = 2660,
 				},
 				uv0 = {
-					count = 600,
-					offset = 2016,
+					count = 432,
+					offset = 2228,
+				},
+			},
+			materials = {
+				"railroad/power_pole_us.mtl", 
+			},
+		},
+		{
+			indices = {
+				normal = {
+					count = 192,
+					offset = 4532,
+				},
+				position = {
+					count = 192,
+					offset = 4340,
+				},
+				tangent = {
+					count = 192,
+					offset = 4148,
+				},
+				uv0 = {
+					count = 192,
+					offset = 3956,
+				},
+			},
+			materials = {
+				"railroad/power_pole_us_alpha.mtl", 
+			},
+		},
+		{
+			indices = {
+				normal = {
+					count = 360,
+					offset = 5804,
+				},
+				position = {
+					count = 360,
+					offset = 5444,
+				},
+				tangent = {
+					count = 360,
+					offset = 5084,
+				},
+				uv0 = {
+					count = 360,
+					offset = 4724,
 				},
 			},
 			materials = {
 				"station/train/passenger/alu.mtl", 
 			},
-		}, {
+		},
+		{
 			indices = {
 				normal = {
 					count = 24,
-					offset = 3816,
+					offset = 6236,
 				},
 				position = {
 					count = 24,
-					offset = 3888,
+					offset = 6212,
 				},
 				tangent = {
 					count = 24,
-					offset = 3864,
+					offset = 6188,
 				},
 				uv0 = {
 					count = 24,
-					offset = 3840,
+					offset = 6164,
 				},
 			},
 			materials = {
@@ -52,24 +101,24 @@ return {
 	},
 	vertexAttr = {
 		normal = {
-			count = 192,
+			count = 204,
 			numComp = 3,
-			offset = 0,
+			offset = 2024,
 		},
 		position = {
-			count = 384,
+			count = 960,
 			numComp = 3,
-			offset = 1032,
+			offset = 1064,
 		},
 		tangent = {
-			count = 128,
+			count = 192,
 			numComp = 4,
-			offset = 904,
+			offset = 872,
 		},
 		uv0 = {
-			count = 712,
+			count = 872,
 			numComp = 2,
-			offset = 192,
+			offset = 0,
 		},
 	},
 }
