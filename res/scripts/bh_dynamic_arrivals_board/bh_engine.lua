@@ -281,8 +281,8 @@ end
 local function getAverageSectionTimeToDestinations(vehicles, nStops, fallbackLegDuration, lineId)
     local averages = {}
 
-    for stopIndex = 1, nStops, 1 do
-        local prevIndex = stopIndex - 1
+    for index = 1, nStops, 1 do
+        local prevIndex = index - 1
         if prevIndex < 1 then prevIndex = prevIndex + nStops end
 
         local average, nVehicles4Average = 0, #vehicles
@@ -312,7 +312,7 @@ local function getAverageSectionTimeToDestinations(vehicles, nStops, fallbackLeg
             average = fallbackLegDuration -- useful when starting a new line
         end
 
-        averages[stopIndex] = math.ceil(average * 1000)
+        averages[index] = math.ceil(average * 1000)
     end
 
     return averages
@@ -330,16 +330,16 @@ local function getAverageTimeToNextDepartAtDestinations(vehicles, nStops, lineId
 
     local averages = {}
 
-    for stopIndex = 1, nStops, 1 do
-        local prevIndex = stopIndex - 1
+    for index = 1, nStops, 1 do
+        local prevIndex = index - 1
         if prevIndex < 1 then prevIndex = prevIndex + nStops end
 
         local average, nVehicles4Average = 0, #vehicles
         for _, vehicleId in pairs(vehicles) do
             local lineStopDepartures = api.engine.getComponent(vehicleId, api.type.ComponentType.TRANSPORT_VEHICLE).lineStopDepartures
-            if lineStopDepartures[stopIndex] == 0
+            if lineStopDepartures[index] == 0
             or lineStopDepartures[prevIndex] == 0
-            or lineStopDepartures[stopIndex] <= lineStopDepartures[prevIndex] then
+            or lineStopDepartures[index] <= lineStopDepartures[prevIndex] then
                 nVehicles4Average = nVehicles4Average - 1
             else
                 -- if vehicleId == '198731' then -- one fliegender purupu
@@ -347,7 +347,7 @@ local function getAverageTimeToNextDepartAtDestinations(vehicles, nStops, lineId
                 --     print('lineStopDepartures[prevIndex] =', lineStopDepartures[prevIndex])
                 --     print('lineStopDepartures[stopIndex] =', lineStopDepartures[stopIndex])
                 -- end
-                average = average + lineStopDepartures[stopIndex] - lineStopDepartures[prevIndex]
+                average = average + lineStopDepartures[index] - lineStopDepartures[prevIndex]
             end
         end
         -- with every vehicle, there will always be an index like this:
@@ -364,7 +364,7 @@ local function getAverageTimeToNextDepartAtDestinations(vehicles, nStops, lineId
             average = fallbackLegDuration * 1000 -- useful when starting a new line
         end
 
-        averages[stopIndex] = math.ceil(average)
+        averages[index] = math.ceil(average)
     end
 
     buffer[lineId] = averages
@@ -417,7 +417,7 @@ local function getNextPredictions(stationId, station, nEntries, time, onlyTermin
                             log.print('vehicleId =', vehicleId or 'NIL')
                             local vehicle = api.engine.getComponent(vehicleId, api.type.ComponentType.TRANSPORT_VEHICLE)
                             -- vehicle has:
-                            -- stopIndex = 1, -- next stop index, base 0
+                            -- stopIndex = 1, -- last stop index or next stop index in base 0
                             -- lineStopDepartures = { -- last recorded departure times, they can be 0 if not yet recorded
                             --   [1] = 4591600,
                             --   [2] = 4498000,
@@ -476,7 +476,7 @@ local function getNextPredictions(stationId, station, nEntries, time, onlyTermin
                             -- },
                             -- sectionTimes tend to be similar but they don't account for the time spent standing
                             -- log.print('vehicle.stopIndex =', vehicle.stopIndex)
-                            local nextStopIndex = vehicle.stopIndex + 1 -- base 0 to base 1
+                            local nextStopIndex = vehicle.stopIndex + 1
                             local nStopsAway = hereIndex - nextStopIndex
                             if nStopsAway < 0 then nStopsAway = nStopsAway + nStops end
                             -- log.print('nStopsAway =', nStopsAway or 'NIL')
@@ -507,7 +507,10 @@ local function getNextPredictions(stationId, station, nEntries, time, onlyTermin
                                 nStopsAway = nStopsAway
                             }
 
-                            -- not a good calculation
+                            -- not a good calculation. You should, instead,
+                            -- add the highest departure time and subtract the lowest
+                            -- to the values you just calculated,
+                            -- but only if none is zero.
                             -- if #vehicles == 1 and averageTimeToDestinations > 0 then
                             --     -- if there's only one vehicle, make a second predictions eta + an entire line duration
                             --     predictions[#predictions+1] = {
@@ -515,8 +518,8 @@ local function getNextPredictions(stationId, station, nEntries, time, onlyTermin
                             --         terminalTag = terminal.tag,
                             --         originStationGroupId = lineData.stops[startIndex].stationGroup,
                             --         destinationStationGroupId = lineData.stops[lineTerminusIndex].stationGroup,
-                            --         arrivalTime = lastDepartureTime + remainingTime + remainingTime,
-                            --         departureTime = lastDepartureTime + remainingTime + getWaitingTimeMsec(line, hereIndex),
+                            --         arrivalTime = lastDepartureTime + remainingTime + remainingTime - getWaitingTimeMsec(line, hereIndex),
+                            --         departureTime = lastDepartureTime + remainingTime,
                             --         nStopsAway = nStopsAway
                             --     }
                             -- end
