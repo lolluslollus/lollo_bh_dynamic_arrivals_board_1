@@ -87,7 +87,7 @@ end
 local utils = {
     getNearbyStationCons = function(transf, searchRadius, isOnlyPassengers)
         if type(transf) ~= 'table' then return {} end
-        if tonumber(searchRadius) == nil then searchRadius = constants.searchRadius4NearbyStation2Join end
+        if tonumber(searchRadius) == nil then searchRadius = constants.searchRadius4NearbyStation2JoinMetres end
 
         -- LOLLO NOTE in the game and in this mod, there is one train station for each station group
         -- and viceversa. Station groups hold some information that stations don't, tho.

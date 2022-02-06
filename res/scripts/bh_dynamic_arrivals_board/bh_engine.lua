@@ -376,7 +376,7 @@ local function getLastDepartureTime(vehicle, time)
     -- LOLLO TODO choose one varying the waiting times at stations
     -- this is a little slower; it is 0 when a new train leaves the depot
     local result = math.max(table.unpack(vehicle.lineStopDepartures))
-    log.print('lastDepartureTime with unpack =', result)
+    -- log.print('lastDepartureTime with unpack =', result)
 
     -- useful when starting a new line or a new train
     if result == 0 then
@@ -555,7 +555,7 @@ local function getNextPredictions(stationId, station, nEntries, time, onlyTermin
         end
     end
 
-    log.print('predictions before sorting =') log.debugPrint(predictions)
+    -- log.print('predictions before sorting =') log.debugPrint(predictions)
     table.sort(predictions, function(a, b) return a.arrivalTime < b.arrivalTime end)
 
     local results = {}
@@ -572,7 +572,7 @@ local function updateWithNoIndexes()
     local time = api.engine.getComponent(api.engine.util.getWorld(), api.type.ComponentType.GAME_TIME).gameTime
     if not(time) then log.message("cannot get time!") return end
 
-    if math.fmod(time, constants.refreshPeriod) ~= 0 then --[[ log.print('skipping') ]] return end
+    if math.fmod(time, constants.refreshPeriodMsec) ~= 0 then --[[ log.print('skipping') ]] return end
     -- log.print('doing it')
 
     local state = stateManager.loadState()
@@ -748,7 +748,7 @@ local function update()
 end
 
 local function handleEvent(src, id, name, args)
-    if src ~= constants.eventSources.bh_gui_engine then return end
+    if src ~= constants.eventSource then return end
 
     log.print('handleEvent firing, src =', src, ', id =', id, ', name =', name, ', args =') log.debugPrint(args)
 

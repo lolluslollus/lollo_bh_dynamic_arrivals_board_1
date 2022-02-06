@@ -1,13 +1,13 @@
 local constants = {
-    refreshPeriod = 5000, -- refresh every 5 seconds
-    searchRadius4NearbyStation2Join = 50,
+    refreshPeriodMsec = 5000, -- refresh every 5 seconds
+    searchRadius4NearbyStation2JoinMetres = 50,
 
     guesstimatedStationWaitingTimeMsec = 30000,
 
-    eventId = 'bh_arrivals_manager',
-    eventSources = {
-        ['bh_gui_engine'] = 'bh_gui_engine.lua',
-    },
+    eventId = '__lollo_departures_arrivals_predictor__',
+    eventIdOLD = 'bh_arrivals_manager',
+    eventSource = 'lollo_departures_arrivals_predictor',
+    eventSourceOLD = 'bh_gui_engine.lua',
     events = {
         hide_warnings = 'hide_warnings',
         join_sign_to_station = 'join_sign_to_station',

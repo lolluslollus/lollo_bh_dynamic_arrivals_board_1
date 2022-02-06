@@ -9,8 +9,8 @@ local stationHelpers = require('bh_dynamic_arrivals_board.stationHelpers')
 local transfUtilsUG = require('transf')
 
 
-local function sendScriptEvent(id, name, args)
-    api.cmd.sendCommand(api.cmd.make.sendScriptEvent(constants.eventSources.bh_gui_engine, id, name, args))
+local function _sendScriptEvent(id, name, args)
+    api.cmd.sendCommand(api.cmd.make.sendScriptEvent(constants.eventSource, id, name, args))
 end
 
 local function joinSignBase(signConId, stationConId)
@@ -18,7 +18,7 @@ local function joinSignBase(signConId, stationConId)
         signConId = signConId,
         stationConId = stationConId
     }
-    sendScriptEvent(constants.eventId, constants.events.join_sign_to_station, eventArgs)
+    _sendScriptEvent(constants.eventId, constants.events.join_sign_to_station, eventArgs)
 end
 
 local function tryJoinSign(signConId, tentativeStationConId)
@@ -35,7 +35,7 @@ local function tryJoinSign(signConId, tentativeStationConId)
     if signTransf_lua == nil then return false end
 
     -- logger.print('conTransf =') logger.debugPrint(signTransf_lua)
-    local nearbyStationCons = stationHelpers.getNearbyStationCons(signTransf_lua, constants.searchRadius4NearbyStation2Join, true)
+    local nearbyStationCons = stationHelpers.getNearbyStationCons(signTransf_lua, constants.searchRadius4NearbyStation2JoinMetres, true)
     -- logger.print('#nearbyStationCons =', #nearbyStationCons)
     if #nearbyStationCons == 0 then
         guiHelpers.showWarningWindowWithMessage(_('CannotFindStationToJoin'))
@@ -91,7 +91,7 @@ local function handleEvent(id, name, args)
             local state = stateManager.getState()
             if toRemove and toRemove[1] and state.placed_signs[toRemove[1]] then
                 -- logger.print('remove_display_construction for con id =', toRemove[1])
-                sendScriptEvent(constants.eventId, constants.events.remove_display_construction, {signConId = toRemove[1]})
+                _sendScriptEvent(constants.eventId, constants.events.remove_display_construction, {signConId = toRemove[1]})
             end
         end
     elseif id == 'bulldozer' and name == 'builder.apply' then
@@ -111,7 +111,7 @@ local function handleEvent(id, name, args)
             local state = stateManager.getState()
             if state.placed_signs[signConId] then
                 -- logger.print('remove_display_construction for con id =', toRemove[1])
-                sendScriptEvent(constants.eventId, constants.events.remove_display_construction, {signConId = signConId})
+                _sendScriptEvent(constants.eventId, constants.events.remove_display_construction, {signConId = signConId})
             end
         end
     -- else

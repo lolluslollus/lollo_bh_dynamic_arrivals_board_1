@@ -226,7 +226,7 @@ guiHelpers.showWarningWindowWithState = function(text)
             window:setVisible(false, false)
             api.cmd.sendCommand(api.cmd.make.sendScriptEvent(
                 -- string.sub(debug.getinfo(1, 'S').source, 1),
-                constants.eventSources.bh_gui_engine,
+                constants.eventSource,
                 constants.eventId,
                 constants.events.hide_warnings,
                 {}
