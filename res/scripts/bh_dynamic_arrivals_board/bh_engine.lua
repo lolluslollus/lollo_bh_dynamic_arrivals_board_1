@@ -325,13 +325,13 @@ local function getAverageTimeToLeaveDestinationFromPrevious(vehicles, nStops, li
 
     if nStops < 1 then return {} end
 
-    local lineEntity = game.interface.getEntity(lineId) -- the new API hasn't got this yet,
-        -- only a dumb fixed waitingTime == 180 seconds
-        log.print('lineEntity.frequency =', lineEntity.frequency)
-        log.print('lineWaitingTime =', lineWaitingTime)
+    -- the new API hasn't got this yet, only a dumb fixed waitingTime == 180 seconds
+    local lineEntity = game.interface.getEntity(lineId)
+        -- log.print('lineEntity.frequency =', lineEntity.frequency)
+        -- log.print('lineWaitingTime =', lineWaitingTime)
     local fallbackLegDuration = (
-        (lineEntity.frequency > 0)-- LOLLO TODO I expect this to be a frequency and not a period: check it
-            and (1 / lineEntity.frequency * #vehicles)
+        (lineEntity.frequency > 0) -- this is a proper frequency and not a period
+            and (1 / lineEntity.frequency * #vehicles) -- the same vehicle calls every this seconds
             or lineWaitingTime -- should never happen
         ) / nStops * 1000
     log.print('fallbackLegDuration =', fallbackLegDuration)
