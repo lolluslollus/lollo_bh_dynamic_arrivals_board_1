@@ -1,0 +1,56 @@
+function data()
+    return {
+        order = 0,
+        params = {
+            albedo_scale = {
+                -- albedoScale = { 0.58, 0.6, 0.6, },
+                albedoScale = { 2.6, 2.6, 2.6, },
+            },
+            fade_out_range = {
+                fadeOutEndDist = 20000,
+                fadeOutStartDist = 10000,
+            },
+            map_albedo = {
+                -- fileName = "models/station/rail/era_c/era_c_trainstation_borders_2_albedo.dds",
+                -- fileName = "unknown_roughness_1k.tga",
+                -- fileName = "lollo_freestyle_train_station/metal_scratched_007_albedo.tga",
+                fileName = "lolloArrivalsDeparturesPredictor/metal_scratched_007_albedo_bc1a.dds",
+                type = "TWOD",
+                wrapS = "REPEAT",
+                wrapT = "REPEAT",
+            },
+            map_metal_gloss_ao = {
+                -- fileName = "models/station/rail/era_c/era_c_trainstation_borders_2_metal_gloss_ao.dds",
+                -- fileName = "unknown_roughness_1k.tga",
+                -- fileName = "lollo_freestyle_train_station/metal_scratched_007_metal_gloss_ao.tga",
+                fileName = "lolloArrivalsDeparturesPredictor/metal_scratched_007_metal_gloss_ao_bc3.dds",
+                type = "TWOD",
+                wrapS = "REPEAT",
+                wrapT = "REPEAT",
+            },
+            map_normal = {
+                -- fileName = "models/station/rail/era_c/era_c_trainstation_borders_2_normal.dds",
+                -- fileName = "unknown_roughness_1k.tga",
+                -- fileName = "lollo_freestyle_train_station/metal_scratched_007_normal.tga",
+                fileName = "lolloArrivalsDeparturesPredictor/metal_scratched_007_normal_bc5.dds",
+                redGreen = true,
+                type = "TWOD",
+                wrapS = "REPEAT",
+                wrapT = "REPEAT",
+            },
+            normal_scale = {
+                normalScale = 1,
+            },
+            polygon_offset = {
+                factor = 0,
+                forceDepthWrite = true,
+                units = 0,
+            },
+            two_sided = {
+                flipNormal = false,
+                twoSided = false,
+            },
+        },
+        type = "PHYSICAL_NRML_MAP",
+    }
+    end
