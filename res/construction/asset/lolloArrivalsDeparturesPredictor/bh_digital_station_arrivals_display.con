@@ -19,7 +19,8 @@ local function makeParams()
         key = configKey("style"),
         name = _("Style"),
         uiType = "ICON_BUTTON",
-        values = utils.getIcons(styles)
+        values = utils.getIcons(styles),
+        defaultIndex = 1
     }
 
     utils.addCargoOverrideParam(params, configKey)
