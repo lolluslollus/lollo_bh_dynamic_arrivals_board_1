@@ -318,14 +318,22 @@ local function getAverageSectionTimeToDestinations(vehicles, nStops, fallbackLeg
     return averages
 end
 
-local function getAverageTimeToNextDepartAtDestinations(vehicles, nStops, lineId, lineWaitingTime, buffer)
+local function getAverageTimeToLeaveDestinationFromPrevious(vehicles, nStops, lineId, lineWaitingTime, buffer)
     -- buffer
     if buffer[lineId] then log.print('using ATT buffer for lineID =', lineId) return buffer[lineId] end
     log.print('NOT using ATT buffer for lineID =', lineId)
 
-    local lineEntity = game.interface.getEntity(lineId)
-    local fallbackLegDuration = lineEntity.frequency > 0 and (1 / lineEntity.frequency) --[[ * #vehicles ]] or lineWaitingTime
-    -- local fallbackLegDuration2 = lineData.waitingTime -- not reliable, it is always 180
+    if nStops < 1 then return {} end
+
+    local lineEntity = game.interface.getEntity(lineId) -- the new API hasn't got this yet,
+        -- only a dumb fixed waitingTime == 180 seconds
+        log.print('lineEntity.frequency =', lineEntity.frequency)
+        log.print('lineWaitingTime =', lineWaitingTime)
+    local fallbackLegDuration = (
+        (lineEntity.frequency > 0)-- LOLLO TODO I expect this to be a frequency and not a period: check it
+            and (1 / lineEntity.frequency * #vehicles)
+            or lineWaitingTime -- should never happen
+        ) / nStops * 1000
     log.print('fallbackLegDuration =', fallbackLegDuration)
 
     local averages = {}
@@ -347,6 +355,9 @@ local function getAverageTimeToNextDepartAtDestinations(vehicles, nStops, lineId
                 --     print('lineStopDepartures[prevIndex] =', lineStopDepartures[prevIndex])
                 --     print('lineStopDepartures[stopIndex] =', lineStopDepartures[stopIndex])
                 -- end
+                -- LOLLO TODO to respond better to sudden changes,
+                -- you cound use a weighted average
+                -- with more weight for the latest data
                 average = average + lineStopDepartures[index] - lineStopDepartures[prevIndex]
             end
         end
@@ -361,7 +372,7 @@ local function getAverageTimeToNextDepartAtDestinations(vehicles, nStops, lineId
         if nVehicles4Average > 0 then
             average = average / nVehicles4Average
         else
-            average = fallbackLegDuration * 1000 -- useful when starting a new line
+            average = fallbackLegDuration -- useful when starting a new line
         end
 
         averages[index] = math.ceil(average)
@@ -371,7 +382,7 @@ local function getAverageTimeToNextDepartAtDestinations(vehicles, nStops, lineId
     return averages
 end
 
-local function getNextPredictions(stationId, station, nEntries, time, onlyTerminalId, predictionsBufferHelpers, averageTimeToNextDepartAtDestinationsBuffer)
+local function getNextPredictions(stationId, station, nEntries, time, onlyTerminalId, predictionsBufferHelpers, averageTimeToLeaveDestinationsFromPreviousBuffer)
     -- log.print('getNextPredictions starting')
     local predictions = {}
 
@@ -407,10 +418,10 @@ local function getNextPredictions(stationId, station, nEntries, time, onlyTermin
                         -- Here, I average the times across all the trains on this line.
                         -- If the trains are wildly different, which is stupid, this could be less accurate;
                         -- otherwise, it will be pretty accurate.
-                        -- local averageTimeToDestinations = getAverageSectionTimeToDestinations(vehicles, nStops, fallbackLineDuration, lineId)
-                        local averageTimeToDestinations = getAverageTimeToNextDepartAtDestinations(vehicles, nStops, lineId, line.waitingTime, averageTimeToNextDepartAtDestinationsBuffer)
-                        log.print('averageTimeToDestinations =') log.debugPrint(averageTimeToDestinations)
-                        -- log.print('#averageTimeToDestinations =', #averageTimeToDestinations or 'NIL') -- ok
+                        -- local averageTimeToReachDestinationFromPrevious = getAverageSectionTimeToDestinations(vehicles, nStops, fallbackLineDuration, lineId)
+                        local averageTimeToLeaveDestinationFromPrevious = getAverageTimeToLeaveDestinationFromPrevious(vehicles, nStops, lineId, line.waitingTime, averageTimeToLeaveDestinationsFromPreviousBuffer)
+                        log.print('averageTimeToLeaveDestinationFromPrevious =') log.debugPrint(averageTimeToLeaveDestinationFromPrevious)
+                        -- log.print('#averageTimeToLeaveDestinationFromPrevious =', #averageTimeToLeaveDestinationFromPrevious or 'NIL') -- ok
                         -- log.print('There are', #vehicles, 'vehicles')
 
                         for _, vehicleId in ipairs(vehicles) do
@@ -489,9 +500,9 @@ local function getNextPredictions(stationId, station, nEntries, time, onlyTermin
                             -- useful when starting a new line
                             if lastDepartureTime == 0 then lastDepartureTime = time print('bh_dynamic_arrivals_board WARNING: lastDepartureTime == 0') end
 
-                            local remainingTime = averageTimeToDestinations[hereIndex]
+                            local remainingTime = averageTimeToLeaveDestinationFromPrevious[hereIndex]
                             while nextStopIndex ~= hereIndex do
-                                remainingTime = remainingTime + averageTimeToDestinations[nextStopIndex]
+                                remainingTime = remainingTime + averageTimeToLeaveDestinationFromPrevious[nextStopIndex]
                                     -- + getWaitingTimeMsec(line, nextStopIndex) -- not needed since I check the departures
                                 nextStopIndex = nextStopIndex + 1
                                 if nextStopIndex > nStops then nextStopIndex = nextStopIndex - nStops end
@@ -511,7 +522,7 @@ local function getNextPredictions(stationId, station, nEntries, time, onlyTermin
                             -- add the highest departure time and subtract the lowest
                             -- to the values you just calculated,
                             -- but only if none is zero.
-                            -- if #vehicles == 1 and averageTimeToDestinations > 0 then
+                            -- if #vehicles == 1 and averageTimeToLeaveDestinationFromPrevious > 0 then
                             --     -- if there's only one vehicle, make a second predictions eta + an entire line duration
                             --     predictions[#predictions+1] = {
                             --         terminalId = terminalId,
@@ -565,7 +576,7 @@ local function updateWithNoIndexes()
     -- local newConstructions = {}
     -- local oldConstructions = {}
 
-    local averageTimeToNextDepartAtDestinationsBuffer = {}
+    local averageTimeToLeaveDestinationsFromPreviousBuffer = {}
     local predictionsBuffer = {
         byStation = {},
         byStationTerminal = {}
@@ -643,7 +654,7 @@ local function updateWithNoIndexes()
                                 time,
                                 terminalId, -- nil if config.singleTerminal == falsy
                                 predictionsBufferHelpers,
-                                averageTimeToNextDepartAtDestinationsBuffer
+                                averageTimeToLeaveDestinationsFromPreviousBuffer
                             )
                             if rawPredictions == nil then
                                 rawPredictions = nextPredictions
