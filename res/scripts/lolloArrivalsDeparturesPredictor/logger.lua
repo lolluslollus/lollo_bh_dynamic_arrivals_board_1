@@ -13,11 +13,11 @@ return {
         if constants.isTimersActive then
             local results
             local startSec = os.clock()
-            print('########' .. tostring(label or '') .. ' starting at', math.ceil(startSec * 1000), 'mSec')
+            print('######## ' .. tostring(label or '') .. ' starting at', math.ceil(startSec * 1000), 'mSec')
             -- results = {func()} -- func() may return several results, it's LUA
             results = func()
             local elapsedSec = os.clock() - startSec
-            print('########' .. tostring(label or '') .. ' took' .. math.ceil(elapsedSec * 1000) .. 'mSec')
+            print('######## ' .. tostring(label or '') .. ' took' .. math.ceil(elapsedSec * 1000) .. 'mSec')
             -- return table.unpack(results) -- LOLLO TODO test if we really need this
             return results
         else
