@@ -568,16 +568,16 @@ end
 
 ---@diagnostic disable-next-line: unused-function
 local function update()
-    local time = api.engine.getComponent(api.engine.util.getWorld(), api.type.ComponentType.GAME_TIME).gameTime
-    if not(time) then logger.print("ERROR: cannot get time") return end
+    local _time = api.engine.getComponent(api.engine.util.getWorld(), api.type.ComponentType.GAME_TIME).gameTime
+    if not(_time) then logger.print("ERROR: cannot get time") return end
 
-    if math.fmod(time, constants.refreshPeriodMsec) ~= 0 then --[[ logger.print('skipping') ]] return end
+    if math.fmod(_time, constants.refreshPeriodMsec) ~= 0 then --[[ logger.print('skipping') ]] return end
     -- logger.print('doing it')
 
     xpcall(
         function()
             local state = stateHelpers.loadState()
-            local clock_time = math.floor(time / 1000)
+            local clock_time = math.floor(_time / 1000)
             if clock_time == state.world_time then return end
 
             state.world_time = clock_time
@@ -662,27 +662,29 @@ local function update()
                             local isCargo = utils.getIsCargo(config, signCon, signState, param)
                             local terminalId = utils.getTerminalId(config, signCon, signState, param)
                             for _, stationId in pairs(stationIds) do
-                                local station = api.engine.getComponent(stationId, api.type.ComponentType.STATION)
-                                if isCargo == not(not(station.cargo)) then
-                                    local nextPredictions = getNextPredictions(
-                                        stationId,
-                                        station,
-                                        config.maxEntries,
-                                        time,
-                                        terminalId, -- nil if config.singleTerminal == falsy
-                                        predictionsBufferHelpers,
-                                        averageTimeToLeaveDestinationsFromPreviousBuffer
-                                    )
-                                    if rawPredictions == nil then
-                                        rawPredictions = nextPredictions
-                                    else
-                                        print('lolloArrivalsDeparturesPredictor WARNING this should never happen ONE')
-                                        arrayUtils.concatValues(rawPredictions, nextPredictions)
+                                if edgeUtils.isValidAndExistingId(stationId) then
+                                    local station = api.engine.getComponent(stationId, api.type.ComponentType.STATION)
+                                    if isCargo == not(not(station.cargo)) then
+                                        local nextPredictions = getNextPredictions(
+                                            stationId,
+                                            station,
+                                            config.maxEntries,
+                                            _time,
+                                            terminalId, -- nil if config.singleTerminal == falsy
+                                            predictionsBufferHelpers,
+                                            averageTimeToLeaveDestinationsFromPreviousBuffer
+                                        )
+                                        if rawPredictions == nil then
+                                            rawPredictions = nextPredictions
+                                        else
+                                            print('lolloArrivalsDeparturesPredictor WARNING this should never happen ONE')
+                                            arrayUtils.concatValues(rawPredictions, nextPredictions)
+                                        end
                                     end
                                 end
                             end
                             -- logger.print('single terminal rawPredictions =') logger.debugPrint(rawPredictions)
-                            formattedPredictions = utils.getFormattedPredictions(rawPredictions or {}, time)
+                            formattedPredictions = utils.getFormattedPredictions(rawPredictions or {}, _time)
                         end
 
                         -- rename the construction
@@ -772,6 +774,13 @@ local function handleEvent(src, id, name, args)
                 -- logger.print('signCon.fileName =', signCon.fileName)
                 local config = constructionHooks.getRegisteredConstructions()[signCon.fileName]
                 if not(config) then return end
+
+                -- rename the construction so it shows something at once
+                local _times = api.engine.getComponent(api.engine.util.getWorld(), api.type.ComponentType.GAME_TIME)
+                if _times and type(_times.gameTime) == "number" then
+                    local newName = utils.getNewSignConName({}, config, utils.formatClockString(math.floor(_times.gameTime / 1000)))
+                    api.cmd.sendCommand(api.cmd.make.setName(args.signConId, newName))
+                end
 
                 -- we need this for the station panel too,
                 -- to find out if it is closer to the cargo or the passenger station
