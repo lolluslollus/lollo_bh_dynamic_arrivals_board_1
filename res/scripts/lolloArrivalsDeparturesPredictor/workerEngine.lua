@@ -768,8 +768,8 @@ local function handleEvent(src, id, name, args)
                 local signCon = api.engine.getComponent(args.signConId, api.type.ComponentType.CONSTRUCTION)
                 if not(signCon) then return end
 
-                logger.print('constructionHooks.getRegisteredConstructions() =') logger.debugPrint(constructionHooks.getRegisteredConstructions())
-                logger.print('signCon.fileName =', signCon.fileName)
+                -- logger.print('constructionHooks.getRegisteredConstructions() =') logger.debugPrint(constructionHooks.getRegisteredConstructions())
+                -- logger.print('signCon.fileName =', signCon.fileName)
                 local config = constructionHooks.getRegisteredConstructions()[signCon.fileName]
                 if not(config) then return end
 
