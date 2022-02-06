@@ -9,7 +9,6 @@ local constants = {
 
     eventId = '__lollo_departures_arrivals_predictor__',
     eventIdOLD = 'bh_arrivals_manager',
-    eventSource = 'lollo_departures_arrivals_predictor',
     eventSourceOLD = 'bh_gui_engine.lua',
     events = {
         hide_warnings = 'hide_warnings',

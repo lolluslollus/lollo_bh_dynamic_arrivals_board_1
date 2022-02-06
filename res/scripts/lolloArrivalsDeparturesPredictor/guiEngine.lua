@@ -1,16 +1,18 @@
 -- NOTE that the state must be read-only here coz we are in the GUI thread
-local stateManager = require "lolloArrivalsDeparturesPredictor/stateHelpers"
-local constructionHooks = require "lolloArrivalsDeparturesPredictor/constructionHooks"
+local constructionHooks = require ("lolloArrivalsDeparturesPredictor.constructionHooks")
 local constants = require('lolloArrivalsDeparturesPredictor.constants')
 local edgeUtils = require('lolloArrivalsDeparturesPredictor.edgeUtils')
 local guiHelpers = require('lolloArrivalsDeparturesPredictor.guiHelpers')
 local logger = require('lolloArrivalsDeparturesPredictor.logger')
+local stateHelpers = require ("lolloArrivalsDeparturesPredictor.stateHelpers")
 local stationHelpers = require('lolloArrivalsDeparturesPredictor.stationHelpers')
 local transfUtilsUG = require('transf')
 
 
 local function _sendScriptEvent(id, name, args)
-    api.cmd.sendCommand(api.cmd.make.sendScriptEvent(constants.eventSource, id, name, args))
+    api.cmd.sendCommand(api.cmd.make.sendScriptEvent(
+        string.sub(debug.getinfo(1, 'S').source, 1), id, name, args)
+    )
 end
 
 local function joinSignBase(signConId, stationConId)
@@ -70,7 +72,7 @@ local function handleEvent(id, name, args)
 
         xpcall(
             function()
-                local state = stateManager.getState()
+                local state = stateHelpers.getState()
                 -- logger.print('state =') logger.debugPrint(state)
                 local stationConId = (state.placed_signs and state.placed_signs[args]) and state.placed_signs[args].stationConId or nil
                 if stationConId then return end
@@ -98,7 +100,7 @@ local function handleEvent(id, name, args)
             end
 
             local toRemove = args.proposal.toRemove
-            local state = stateManager.getState()
+            local state = stateHelpers.getState()
             if toRemove and toRemove[1] and state.placed_signs[toRemove[1]] then
                 -- logger.print('remove_display_construction for con id =', toRemove[1])
                 _sendScriptEvent(constants.eventId, constants.events.remove_display_construction, {signConId = toRemove[1]})
@@ -118,7 +120,7 @@ local function handleEvent(id, name, args)
         -- logger.print('construction.getRegisteredConstructions() =') logger.debugPrint(construction.getRegisteredConstructions())
         if args and args.proposal and args.proposal.toRemove and args.proposal.toRemove[1] then
             local signConId = args.proposal.toRemove[1]
-            local state = stateManager.getState()
+            local state = stateHelpers.getState()
             if state.placed_signs[signConId] then
                 -- logger.print('remove_display_construction for con id =', toRemove[1])
                 _sendScriptEvent(constants.eventId, constants.events.remove_display_construction, {signConId = signConId})

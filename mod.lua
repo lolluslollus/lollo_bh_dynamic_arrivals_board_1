@@ -22,6 +22,7 @@ function data()
 			}
 		},
 
+	--[[
 		runFn = function()
 			-- To add support for your own mod constructions, in your mod's runFn,
 			-- require "bh_dynamic_arrivals_board/constructionHooks" and call construction.registerConstruction
@@ -52,7 +53,6 @@ function data()
 				-- parameter name prefix (can help avoid conflicts with other mod params)
 				labelParamPrefix = "bh_digital_display_"
 			})
-
 			constructionHooks.registerConstruction("asset/lolloArrivalsDeparturesPredictor/bh_digital_station_departures_display.con", {
 				singleTerminal = false,
 				clock = true,
@@ -61,7 +61,6 @@ function data()
 				absoluteArrivalTime = true,
 				labelParamPrefix = "bh_departures_display_"
 			})
-
 			constructionHooks.registerConstruction("asset/lolloArrivalsDeparturesPredictor/bh_digital_station_arrivals_display.con", {
 				singleTerminal = false,
 				clock = true,
@@ -71,5 +70,6 @@ function data()
 				labelParamPrefix = "bh_arrivals_display_"
 			})
 		end,
- }
+	]]
+	}
 end

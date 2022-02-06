@@ -1,5 +1,5 @@
 
-local stateManager = require "lolloArrivalsDeparturesPredictor/stateHelpers"
+local stateHelpers = require "lolloArrivalsDeparturesPredictor/stateHelpers"
 local workerEngine = require "lolloArrivalsDeparturesPredictor/workerEngine"
 local guiEngine = require "lolloArrivalsDeparturesPredictor/guiEngine"
 
@@ -7,11 +7,11 @@ local guiEngine = require "lolloArrivalsDeparturesPredictor/guiEngine"
 function data()
     return {
         save = function()
-            return stateManager.getState()
+            return stateHelpers.getState()
         end,
 
         load = function(loadedstate)
-            stateManager.loadState(loadedstate)
+            stateHelpers.loadState(loadedstate)
         end,
 
         update = function()

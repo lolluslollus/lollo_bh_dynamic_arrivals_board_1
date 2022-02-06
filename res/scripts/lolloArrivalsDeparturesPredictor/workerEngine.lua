@@ -1,7 +1,7 @@
-local stateManager = require "lolloArrivalsDeparturesPredictor/stateHelpers"
+local stateHelpers = require "lolloArrivalsDeparturesPredictor/stateHelpers"
 local constructionHooks = require "lolloArrivalsDeparturesPredictor/constructionHooks"
 
-local logger = require "lolloArrivalsDeparturesPredictor/logger"
+local logger = require ("lolloArrivalsDeparturesPredictor.logger")
 local arrayUtils = require('lolloArrivalsDeparturesPredictor.arrayUtils')
 local constants = require('lolloArrivalsDeparturesPredictor.constants')
 local edgeUtils = require('lolloArrivalsDeparturesPredictor.edgeUtils')
@@ -567,7 +567,7 @@ local function getNextPredictions(stationId, station, nEntries, time, onlyTermin
 end
 
 ---@diagnostic disable-next-line: unused-function
-local function updateWithNoIndexes()
+local function update()
     local time = api.engine.getComponent(api.engine.util.getWorld(), api.type.ComponentType.GAME_TIME).gameTime
     if not(time) then logger.print("ERROR: cannot get time") return end
 
@@ -576,7 +576,7 @@ local function updateWithNoIndexes()
 
     xpcall(
         function()
-            local state = stateManager.loadState()
+            local state = stateHelpers.loadState()
             local clock_time = math.floor(time / 1000)
             if clock_time == state.world_time then return end
 
@@ -635,13 +635,13 @@ local function updateWithNoIndexes()
                 -- sign is no more around: clean the state
                 for signConId, signState in pairs(state.placed_signs) do
                     if not(edgeUtils.isValidAndExistingId(signConId)) then
-                        stateManager.removePlacedSign(signConId)
+                        stateHelpers.removePlacedSign(signConId)
                     end
                 end
                 -- station is no more around: bulldoze its signs
                 for signConId, signState in pairs(state.placed_signs) do
                     if not(edgeUtils.isValidAndExistingId(signState.stationConId)) then
-                        stateManager.removePlacedSign(signConId)
+                        stateHelpers.removePlacedSign(signConId)
                         utils.bulldozeConstruction(signConId)
                     end
                 end
@@ -749,30 +749,27 @@ local function updateWithNoIndexes()
     )
 end
 
-local function update()
-    -- updateWithNoIndexes()
-    updateWithNoIndexes()
-end
-
 local function handleEvent(src, id, name, args)
-    if src ~= constants.eventSource then return end
+    if id ~= constants.eventId then return end
 
     xpcall(
         function()
             logger.print('handleEvent firing, src =', src, ', id =', id, ', name =', name, ', args =') logger.debugPrint(args)
 
             if name == constants.events.remove_display_construction then
-                logger.print('state before =') logger.debugPrint(stateManager.getState())
-                stateManager.removePlacedSign(args.signConId)
+                logger.print('state before =') logger.debugPrint(stateHelpers.getState())
+                stateHelpers.removePlacedSign(args.signConId)
                 utils.bulldozeConstruction(args.signConId)
-                logger.print('state after =') logger.debugPrint(stateManager.getState())
+                logger.print('state after =') logger.debugPrint(stateHelpers.getState())
             elseif name == constants.events.join_sign_to_station then
-                logger.print('state before =') logger.debugPrint(stateManager.getState())
+                logger.print('state before =') logger.debugPrint(stateHelpers.getState())
                 if not(args) or not(edgeUtils.isValidAndExistingId(args.signConId)) then return end
 
                 local signCon = api.engine.getComponent(args.signConId, api.type.ComponentType.CONSTRUCTION)
                 if not(signCon) then return end
 
+                logger.print('constructionHooks.getRegisteredConstructions() =') logger.debugPrint(constructionHooks.getRegisteredConstructions())
+                logger.print('signCon.fileName =', signCon.fileName)
                 local config = constructionHooks.getRegisteredConstructions()[signCon.fileName]
                 if not(config) then return end
 
@@ -789,14 +786,14 @@ local function handleEvent(src, id, name, args)
                     args.stationConId
                 )
                 logger.print('freshly calculated nearestTerminal =') logger.debugPrint(nearestTerminal)
-                stateManager.setPlacedSign(
+                stateHelpers.setPlacedSign(
                     args.signConId,
                     {
                         stationConId = args.stationConId,
                         nearestTerminal = nearestTerminal,
                     }
                 )
-                logger.print('state after =') logger.debugPrint(stateManager.getState())
+                logger.print('state after =') logger.debugPrint(stateHelpers.getState())
             end
         end,
         logger.errorHandler
