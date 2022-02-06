@@ -492,7 +492,7 @@ local function getNextPredictions(stationId, station, nEntries, time, onlyTermin
                             if nStopsAway < 0 then nStopsAway = nStopsAway + nStops end
                             -- log.print('nStopsAway =', nStopsAway or 'NIL')
 
-                            -- LOLLO TODO choose one
+                            -- LOLLO TODO choose one varying the waiting times at stations
                             -- local lastDepartureTime = math.max(table.unpack(vehicle.lineStopDepartures))
                             local lastDepartureTime = math.ceil(vehicle.doorsTime / 1000 + 1000)
                             -- log.print('lastDepartureTime with unpack and with doorsTime =', lastDepartureTime, lastDepartureTime2)
