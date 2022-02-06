@@ -57,7 +57,7 @@ return {
 							"lolloArrivalsDeparturesPredictor/rough_alu.mtl",
 							"lolloArrivalsDeparturesPredictor/glass_dark.mtl",
 						},
-						mesh = "lolloArrivalsDeparturesPredictor/bh_digital_display_tall_flat_back_lod0.msh",
+						mesh = "lolloArrivalsDeparturesPredictor/bh_digital_display_tall_flat_back_hanging_lod0.msh",
 						name = "bh_digital_display_tall",
 						transf = { 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, },
 					},
