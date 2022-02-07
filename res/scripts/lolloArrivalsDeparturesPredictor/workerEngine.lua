@@ -97,6 +97,7 @@ utils.getFormattedPredictions = function(predictions, time)
                 originString = "-",
                 destinationString = "-",
                 etaMinutesString = _texts.due,
+                etdMinutesString = "-",
                 arrivalTimeString = "--:--",
                 departureTimeString = "--:--",
                 -- arrivalTerminal = (rawEntry.terminalTag or 0) + 1, -- the terminal tag has base 0
@@ -120,9 +121,13 @@ utils.getFormattedPredictions = function(predictions, time)
 
             fmtEntry.arrivalTimeString = utils.formatClockStringHHMM(rawEntry.arrivalTime / 1000)
             fmtEntry.departureTimeString = utils.formatClockStringHHMM(rawEntry.departureTime / 1000)
-            local expectedMinutes = math.floor((rawEntry.arrivalTime - time) / 60000)
-            if expectedMinutes > 0 then
-                fmtEntry.etaMinutesString = expectedMinutes .. _texts.minutesShort
+            local expectedMinutesToArrival = math.floor((rawEntry.arrivalTime - time) / 60000)
+            if expectedMinutesToArrival > 0 then
+                fmtEntry.etaMinutesString = expectedMinutesToArrival .. _texts.minutesShort
+            end
+            local expectedMinutesToDeparture = math.floor((rawEntry.departureTime - time) / 60000)
+            if expectedMinutesToDeparture > 0 then
+                fmtEntry.etdMinutesString = expectedMinutesToDeparture .. _texts.minutesShort
             end
 
             results[#results+1] = fmtEntry
@@ -133,6 +138,7 @@ utils.getFormattedPredictions = function(predictions, time)
             originString = _texts.sorryNoService,
             destinationString = _texts.sorryNoService,
             etaMinutesString = "-",
+            etdMinutesString = "-",
             arrivalTimeString = "--:--",
             departureTimeString = "--:--",
             arrivalTerminal = "-"
@@ -150,7 +156,7 @@ utils.getNewSignConName = function(formattedPredictions, config, clockString)
         for _, prediction in ipairs(formattedPredictions) do
             result = result .. '@_' .. i .. '_@' .. prediction.destinationString
             i = i + 1
-            result = result .. '@_' .. i .. '_@' .. (config.absoluteArrivalTime and prediction.departureTimeString or prediction.etaMinutesString)
+            result = result .. '@_' .. i .. '_@' .. (config.absoluteArrivalTime and prediction.departureTimeString or prediction.etdMinutesString)
             -- result = result .. '@_' .. i .. '_@' .. (config.absoluteArrivalTime and prediction.arrivalTimeString or prediction.etaMinutesString)
             i = i + 1
         end
