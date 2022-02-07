@@ -154,7 +154,7 @@ utils.getFormattedPredictions = function(predictions, time)
     return results
 end
 
-utils.getNewSignConName = function(formattedPredictions, config, clockString)
+utils.getNewSignConName = function(formattedPredictions, config, clockString, signState)
     local result = ''
     if config.singleTerminal then
         local i = 1
@@ -167,6 +167,14 @@ utils.getNewSignConName = function(formattedPredictions, config, clockString)
         end
         if config.clock and clockString then
             result = result .. '@_' .. constants.nameTags.clock .. '_@' .. clockString
+        end
+        if config.track then
+            if signState and signState.nearestTerminal and signState.nearestTerminal.terminalId then
+                -- LOLLO TODO terminal id or terminal tag + 1?
+                result = result .. '@_' .. constants.nameTags.track .. '_@' .. signState.nearestTerminal.terminalId
+            else
+                result = result .. '@_' .. constants.nameTags.track .. '_@' .. '-'
+            end
         end
     else
         if config.isArrivals then
@@ -701,7 +709,8 @@ local function update()
                     local newName = utils.getNewSignConName(
                         formattedPredictions,
                         config,
-                        utils.formatClockString(_clock_time)
+                        utils.formatClockString(_clock_time),
+                        signState
                     )
                     api.cmd.sendCommand(api.cmd.make.setName(signConId, newName))
 

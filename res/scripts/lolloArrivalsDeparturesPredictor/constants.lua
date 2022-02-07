@@ -8,8 +8,6 @@ local constants = {
     guesstimatedStationWaitingTimeMsec = 30000,
 
     eventId = '__lollo_departures_arrivals_predictor__',
-    eventIdOLD = 'bh_arrivals_manager',
-    eventSourceOLD = 'bh_gui_engine.lua',
     events = {
         hide_warnings = 'hide_warnings',
         join_sign_to_station = 'join_sign_to_station',
@@ -20,6 +18,7 @@ local constants = {
         clock = 'clock',
         footer = 'footer',
         header = 'header',
+        track = 'track',
     },
 
     paramPrefix = 'display_'

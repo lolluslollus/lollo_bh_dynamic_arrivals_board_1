@@ -2,14 +2,15 @@ local arrayUtils = require('lolloArrivalsDeparturesPredictor.arrayUtils')
 local stringUtils = require('lolloArrivalsDeparturesPredictor.stringUtils')
 
 local targetConstructions = {
-    ["asset/lolloArrivalsDeparturesPredictor/bh_digital_display.con"] = {
+    ["asset/lolloArrivalsDeparturesPredictor/platform_departures_display.con"] = {
         singleTerminal = true,
         clock = true,
         isArrivals = false,
         maxEntries = 2,
+        track = true,
         absoluteArrivalTime = false,
         -- LOLLO NOTE adding a prefix is good for respecting other constructions, but I could very well use a constant instead of this
-        paramPrefix = 'bh_digital_display_',
+        paramPrefix = 'platform_departures_display_',
     },
     ["asset/lolloArrivalsDeparturesPredictor/station_departures_display.con"] = {
         singleTerminal = false,

@@ -1,0 +1,46 @@
+function data()
+	local constants = require('lolloArrivalsDeparturesPredictor.constants')
+	local modelHelpers = require('lolloArrivalsDeparturesPredictor.modelHelpers')
+
+	return {
+		-- boundingInfo = {
+		-- 	bbMax = { 0.55691999197006, 0.068626686930656, 4.5999999046326, },
+		-- 	bbMin = { -0.56290584802628, -0.068626686930656, 3.1049461364746, },
+		-- },
+		-- collider = {
+		-- 	params = {
+		-- 		halfExtents = { 0.55991291999817, 0.068626686930656, 0.74752688407898, },
+		-- 	},
+		-- 	transf = { 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, },
+		-- 	type = "BOX",
+		-- },
+		boundingInfo = modelHelpers.getVoidBoundingInfo(),
+		collider = modelHelpers.getVoidCollider(),
+		lods = {
+			{
+				node = {
+					children = {
+						{
+							materials = {
+								"lolloArrivalsDeparturesPredictor/rough_alu_opaque.mtl",
+								"lolloArrivalsDeparturesPredictor/glass_dark.mtl",
+							},
+							mesh = "lolloArrivalsDeparturesPredictor/platform_display_floating_lod0.msh",
+							name = "bh_digital_display_tall",
+							transf = { 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, },
+						},
+					},
+					name = "RootNode",
+					transf = { 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, },
+				},
+				static = false,
+				visibleFrom = 0,
+				visibleTo = 250,
+			},
+		},
+		metadata = {
+			labelList = modelHelpers.getPlatformBoardLabelList(),
+		},
+		version = 1,
+	}
+end

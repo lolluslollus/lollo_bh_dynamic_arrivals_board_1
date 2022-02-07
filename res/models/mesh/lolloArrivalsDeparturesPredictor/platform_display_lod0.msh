@@ -1,0 +1,98 @@
+function data()
+return {
+	matConfigs = {
+		{ 0, 0, 0, }, 
+	},
+	subMeshes = {
+		{
+			indices = {
+				normal = {
+					count = 912,
+					offset = 17324,
+				},
+				position = {
+					count = 912,
+					offset = 18236,
+				},
+				tangent = {
+					count = 912,
+					offset = 15500,
+				},
+				uv0 = {
+					count = 912,
+					offset = 16412,
+				},
+			},
+			materials = {
+				"station/train/passenger/alu.mtl", 
+			},
+		}, {
+			indices = {
+				normal = {
+					count = 48,
+					offset = 19244,
+				},
+				position = {
+					count = 48,
+					offset = 19292,
+				},
+				tangent = {
+					count = 48,
+					offset = 19148,
+				},
+				uv0 = {
+					count = 48,
+					offset = 19196,
+				},
+			},
+			materials = {
+				"lolloArrivalsDeparturesPredictor/glass.mtl", 
+			},
+		}, {
+			indices = {
+				normal = {
+					count = 4728,
+					offset = 28796,
+				},
+				position = {
+					count = 4728,
+					offset = 33524,
+				},
+				tangent = {
+					count = 4728,
+					offset = 19340,
+				},
+				uv0 = {
+					count = 4728,
+					offset = 24068,
+				},
+			},
+			materials = {
+				"lolloArrivalsDeparturesPredictor/mast.mtl", 
+			},
+		}, 
+	},
+	vertexAttr = {
+		normal = {
+			count = 2724,
+			numComp = 3,
+			offset = 9704,
+		},
+		position = {
+			count = 3072,
+			numComp = 3,
+			offset = 12428,
+		},
+		tangent = {
+			count = 6976,
+			numComp = 4,
+			offset = 0,
+		},
+		uv0 = {
+			count = 2728,
+			numComp = 2,
+			offset = 6976,
+		},
+	},
+}
+end

@@ -4,7 +4,7 @@ local constructionutil = require("constructionutil")
 local transf = require('transf')
 local utils = require("lolloArrivalsDeparturesPredictor.paramHelpers")
 
-local _styles = { "digital_display_name", "digital_display_nopole_name", "digital_display_floating_name" }
+local _styles = { "platform_board", "platform_board_floating", }
 
 local _paramPrefix = constructionHooks.getParamPrefixFromCon()
 -- print('_paramPrefix =') debugPrint(_paramPrefix)
@@ -15,7 +15,7 @@ local function getParamName(name)
 end
 
 local function getMdl(style)
-    return "lolloArrivalsDeparturesPredictor/bh_manchester_metrolink_" .. style .. ".mdl"
+    return "lolloArrivalsDeparturesPredictor/" .. style .. ".mdl"
 end
 
 local function getParams()
@@ -72,10 +72,9 @@ function data()
             if align ~= 0 then
                 -- offset.y == 0 is the middle of the track, since this is a track asset.
                 -- This is good for the terminal detection.
-                -- offset.y = offset.y - 4.95
-                offset.y = offset.y - 3.7 -- a bit less so it looks good on thin platforms
-                -- offset.z = offset.z + 0.54
-                offset.z = offset.z + 0.3 -- a bit less so it fits freestyle stations
+                offset.y = offset.y - 3.7 -- to fit thin platforms
+                -- offset.z = offset.z + 1.3 -- to fit stock stations
+                offset.z = offset.z + 1.6 -- to fit freestyle stations
             end
 
             local style = _styles[params[getParamName("style")]+1]
