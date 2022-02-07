@@ -18,7 +18,7 @@ local _texts = {
     fromSpace = _('FromSpace'),
     minutesShort = _('MinutesShort'),
     origin = _('Origin'),
-    platform = _('Platform'),
+    platform = _('PlatformShort'),
     sorryNoService = _('SorryNoService'),
     time = _('Time'),
     to = _('To'),
@@ -159,6 +159,9 @@ utils.getNewSignConName = function(formattedPredictions, config, clockString, si
     if config.singleTerminal then
         local i = 1
         for _, prediction in ipairs(formattedPredictions) do
+            if config.track and i == 1 then
+                result = result .. '@_' .. constants.nameTags.track .. '_@' .. prediction.arrivalTerminal
+            end
             result = result .. '@_' .. i .. '_@' .. prediction.destinationString
             i = i + 1
             result = result .. '@_' .. i .. '_@' .. (config.absoluteArrivalTime and prediction.departureTimeString or prediction.etdMinutesString)
@@ -167,14 +170,6 @@ utils.getNewSignConName = function(formattedPredictions, config, clockString, si
         end
         if config.clock and clockString then
             result = result .. '@_' .. constants.nameTags.clock .. '_@' .. clockString
-        end
-        if config.track then
-            if signState and signState.nearestTerminal and signState.nearestTerminal.terminalId then
-                -- LOLLO TODO terminal id or terminal tag + 1?
-                result = result .. '@_' .. constants.nameTags.track .. '_@' .. signState.nearestTerminal.terminalId
-            else
-                result = result .. '@_' .. constants.nameTags.track .. '_@' .. '-'
-            end
         end
     else
         if config.isArrivals then

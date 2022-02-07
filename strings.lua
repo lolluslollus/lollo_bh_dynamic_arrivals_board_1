@@ -56,6 +56,8 @@ display construction and it will manage its display updates when placed in game.
 [b]Please report any bugs with this mod so I can try to address them.[/b]
 			]],
             ["ModName"] = "Dynamic Departures / Arrivals Boards",
+            ["AlignFree"] = 'Free',
+            ["AlignPlatform"] = 'Platform',
             ["ArrivalsAllCaps"] = "ARRIVALS",
             ["Auto"] = "Auto",
             ["Cargo"] = "Cargo",
@@ -79,7 +81,7 @@ display construction and it will manage its display updates when placed in game.
             ["NoJoin"] = "Do not join",
             ["Origin"] = "Origin",
             ["Passengers"] = "Passengers",
-            ["Platform"] = "Plat",
+            ["PlatformShort"] = "Plat",
             ["SorryNoService"] = "Sorry No Service",
             ["StationPickerWindowTitle"] = "Pick a station to join",
             ["StationSection"] = "Station Section",

@@ -4,7 +4,7 @@ local constructionutil = require("constructionutil")
 local transf = require('transf')
 local utils = require("lolloArrivalsDeparturesPredictor.paramHelpers")
 
-local _styles = { "platform_board", "platform_board_floating", }
+local _styles = { "platform_departures_board", "platform_departures_board_floating", }
 
 local _paramPrefix = constructionHooks.getParamPrefixFromCon()
 -- print('_paramPrefix =') debugPrint(_paramPrefix)
@@ -29,7 +29,7 @@ local function getParams()
     params[#params+1] = {
         key = getParamName("snapTrackPlatformAlign"),
         name = _("Snapping Align"),
-        values = { _("Free"), _("Platform") },
+        values = { _("AlignFree"), _("AlignPlatform") },
         defaultIndex = 1
     }
 
@@ -48,7 +48,7 @@ function data()
         description = {
             name = _("DynamicArrivalsSingleTerminalName"),
             description = _("DynamicArrivalsSingleTerminalDesc"),
-            icon = "ui/construction/asset/lolloArrivalsDeparturesPredictor/bh_digital_display_construction@2x.tga"
+            icon = "ui/construction/asset/lolloArrivalsDeparturesPredictor/platform_departures_display@2x.tga"
         },
         availability = {},
         buildMode = "SINGLE",
