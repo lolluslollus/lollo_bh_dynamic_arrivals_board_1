@@ -3,8 +3,8 @@ function data()
         order = 0,
         params = {
             albedo_scale = {
-                -- albedoScale = { 0.58, 0.6, 0.6, },
-                albedoScale = { 2.6, 2.6, 2.6, },
+                albedoScale = { 1.28, 1.28, 0.7, },
+                -- albedoScale = { 1.38, 1.38, 0.8, },
             },
             fade_out_range = {
                 fadeOutEndDist = 20000,
@@ -17,7 +17,8 @@ function data()
                 wrapT = "REPEAT",
             },
             map_metal_gloss_ao = {
-                fileName = "lolloArrivalsDeparturesPredictor/metal_scratched_007_metal_gloss_ao_bc3.dds",
+                -- fileName = "lolloArrivalsDeparturesPredictor/metal_scratched_007_metal_gloss_ao_bc3.dds",
+                fileName = "lolloArrivalsDeparturesPredictor/metal_scratched_007_opaque_metal_gloss_ao_bc3.dds",
                 type = "TWOD",
                 wrapS = "REPEAT",
                 wrapT = "REPEAT",

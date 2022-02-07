@@ -59,7 +59,8 @@ return {
 				children = {
 					{
 						materials = {
-							"lolloArrivalsDeparturesPredictor/rough_alu.mtl",
+							-- "lolloArrivalsDeparturesPredictor/rough_alu.mtl",
+							"lolloArrivalsDeparturesPredictor/rough_alu_opaque.mtl",
 							"lolloArrivalsDeparturesPredictor/glass_dark.mtl",
 						},
 						mesh = "lolloArrivalsDeparturesPredictor/bh_digital_display_tall_flat_back_wide_hanging_lod0.msh",

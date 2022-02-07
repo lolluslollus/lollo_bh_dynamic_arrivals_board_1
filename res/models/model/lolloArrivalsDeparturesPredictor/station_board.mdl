@@ -56,7 +56,8 @@ return {
 						materials = {
 							"railroad/power_pole_us.mtl",
 							"railroad/power_pole_us_alpha.mtl",
-							"lolloArrivalsDeparturesPredictor/rough_alu.mtl",
+							-- "lolloArrivalsDeparturesPredictor/rough_alu.mtl",
+							"lolloArrivalsDeparturesPredictor/rough_alu_opaque.mtl",
 							"lolloArrivalsDeparturesPredictor/glass_dark.mtl",
 						},
 						mesh = "lolloArrivalsDeparturesPredictor/bh_digital_display_tall_flat_back_lod0.msh",
