@@ -62,7 +62,7 @@ local function getNodeIds4Terminal(frozenNodeIds, startNodeId)
                     if newNodeIds[i] and not(visitedNodeIds_Indexed[newNodeIds[i]]) and _frozenNodeIds_Indexed[newNodeIds[i]] then nextNodes[#nextNodes+1] = newNodeIds[i] end
                 end
             end
-            logger.print('FIVE')
+            -- logger.print('FIVE')
             return nextNodes
         end
     end

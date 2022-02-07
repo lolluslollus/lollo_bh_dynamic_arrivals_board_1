@@ -584,20 +584,22 @@ local function update()
     local _time = api.engine.getComponent(api.engine.util.getWorld(), api.type.ComponentType.GAME_TIME).gameTime
     if not(_time) then logger.print("ERROR: cannot get time") return end
 
-    if math.fmod(_time, constants.refreshPeriodMsec) ~= 0 then --[[ logger.print('skipping') ]] return end
+    if math.fmod(_time, constants.refreshPeriodMsec) ~= 0 then
+        -- logger.print('skipping')
+    return end
     -- logger.print('doing it')
 
     xpcall(
         function()
-            local state = stateHelpers.loadState()
+            local startTick = os.clock()
+
+            local state = stateHelpers.getState()
             local _clock_time = math.floor(_time / 1000)
             if _clock_time == state.world_time then return end
 
             state.world_time = _clock_time
-            -- performance profiling
-            local startTick = os.clock()
 
-            local speed = (api.engine.getComponent(api.engine.util.getWorld(), api.type.ComponentType.GAME_SPEED).speedup) or 1
+            -- local speed = (api.engine.getComponent(api.engine.util.getWorld(), api.type.ComponentType.GAME_SPEED).speedup) or 1
 
             -- local newConstructions = {}
             -- local oldConstructions = {}

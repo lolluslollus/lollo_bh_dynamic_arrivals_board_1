@@ -18,8 +18,6 @@ local funcs = {
         end
 
         _initState()
-
-        return persistent_state
     end,
     getState = function()
         return persistent_state
@@ -31,6 +29,10 @@ local funcs = {
         end
 
         persistent_state.placed_signs[key] = nil
+    end,
+    saveState = function()
+        _initState()
+        return persistent_state
     end,
     setPlacedSign = function(key, value)
         if not(key) and not(value) then return end
