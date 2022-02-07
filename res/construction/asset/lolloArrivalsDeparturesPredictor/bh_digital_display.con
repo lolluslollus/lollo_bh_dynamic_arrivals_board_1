@@ -6,7 +6,7 @@ local utils = require("lolloArrivalsDeparturesPredictor.paramHelpers")
 local styles = { "digital_display_name", "digital_display_nopole_name", "digital_display_floating_name" }
 
 -- I use a utility function to join the param label registered with the engine, with the individual param names
-local function getParamPrefix(name)
+local function getParamName(name)
     return constants.paramPrefix .. name
 end
 
@@ -17,23 +17,23 @@ end
 local function getParams()
     local params = {}
     params[#params+1] = {
-        key = getParamPrefix("style"),
+        key = getParamName("style"),
         name = _("Style"),
         uiType = "ICON_BUTTON",
         values = utils.getIcons(styles)
     }
     params[#params+1] = {
-        key = getParamPrefix("snapTrackPlatformAlign"),
+        key = getParamName("snapTrackPlatformAlign"),
         name = _("Snapping Align"),
         values = { _("Free"), _("Platform") },
         defaultIndex = 1
     }
 
     -- since the terminal placement logic is not perfect, provide a param to override the terminal this sign is linked to
-    utils.addCargoOverrideParam(params, getParamPrefix)
-    utils.addTerminalOverrideParam(params, getParamPrefix)
-    utils.addRotateParams(params, getParamPrefix)
-    utils.addOffsetParams(params, getParamPrefix)
+    utils.addCargoOverrideParam(params, getParamName)
+    utils.addTerminalOverrideParam(params, getParamName)
+    utils.addRotateParams(params, getParamName)
+    utils.addOffsetParams(params, getParamName)
 
     return params
 end
@@ -57,14 +57,14 @@ function data()
             local result = { }
             result.models = {}
 
-            local align = params[getParamPrefix("snapTrackPlatformAlign")] or 1
+            local align = params[getParamName("snapTrackPlatformAlign")] or 1
 
-            local rotate = utils.getRotateValue(params, getParamPrefix)
+            local rotate = utils.getRotateValue(params, getParamName)
             if align ~= 0 then
                 rotate.x = rotate.x + math.pi / 2
             end
 
-            local offset = utils.getOffsetValue(params, getParamPrefix)
+            local offset = utils.getOffsetValue(params, getParamName)
             if align ~= 0 then
                 -- offset.y == 0 is the middle of the track, since this is a track asset.
                 -- This is good for the terminal detection.
@@ -74,7 +74,7 @@ function data()
                 offset.z = offset.z + 0.3 -- a bit less so it fits freestyle stations
             end
 
-            local style = styles[params[getParamPrefix("style")]+1]
+            local style = styles[params[getParamName("style")]+1]
             result.models[#result.models + 1] = {
                 id = getMdl(style),
                 transf = constructionutil.rotateTransf(params, transf.rotZYXTransl(rotate, offset))

@@ -5,7 +5,7 @@ local utils = require("lolloArrivalsDeparturesPredictor.paramHelpers")
 
 local styles = { "station_board", "station_board_hanging", "station_board_floating", "station_wide_board", "station_wide_board_hanging", "station_wide_board_floating" }
 
-local function getParamPrefix(name)
+local function getParamName(name)
     return constants.paramPrefix .. name
 end
 
@@ -17,16 +17,16 @@ local function getParams()
     local params = {}
 
     params[#params+1] = {
-        key = getParamPrefix("style"),
+        key = getParamName("style"),
         name = _("Style"),
         uiType = "ICON_BUTTON",
         values = utils.getIcons(styles),
         defaultIndex = 3
     }
 
-    utils.addCargoOverrideParam(params, getParamPrefix)
-    utils.addRotateParams(params, getParamPrefix)
-    utils.addOffsetParams(params, getParamPrefix)
+    utils.addCargoOverrideParam(params, getParamName)
+    utils.addRotateParams(params, getParamName)
+    utils.addOffsetParams(params, getParamName)
 
     return params
 end
@@ -43,7 +43,7 @@ function data()
         availability = {},
         buildMode = "SINGLE",
         categories = { "badgerrhax" },
-        order = 13,
+        order = 12,
         skipCollision = true,
         autoRemovable = false,
         params = getParams(),
@@ -52,10 +52,10 @@ function data()
             local result = { }
             result.models = {}
 
-            local rotate = utils.getRotateValue(params, getParamPrefix)
-            local offset = utils.getOffsetValue(params, getParamPrefix)
+            local rotate = utils.getRotateValue(params, getParamName)
+            local offset = utils.getOffsetValue(params, getParamName)
 
-            local style = styles[params[getParamPrefix("style")]+1]
+            local style = styles[params[getParamName("style")]+1]
             result.models[#result.models + 1] = {
                 id = getMdl(style),
                 transf = constructionutil.rotateTransf(params, transf.rotZYXTransl(rotate, offset))

@@ -1,5 +1,5 @@
 local helpers = {
-    addOffsetParams = function(params, paramPrefixFunc)
+    addOffsetParams = function(params, getParamName)
         local offsetMajorValues = {}
         local offsetMinorValues = {}
         for i = -10, 10 do
@@ -11,42 +11,42 @@ local helpers = {
         offsetMinorValues[math.ceil(#offsetMinorValues/2)] = "0"
 
         params[#params+1] = {
-            key = paramPrefixFunc("x_offset_major"),
+            key = getParamName("x_offset_major"),
             name = _("X Offset"),
             values = offsetMajorValues,
             uiType = "SLIDER",
             defaultIndex = #offsetMajorValues / 2
         }
         params[#params+1] = {
-            key = paramPrefixFunc("x_offset_minor"),
+            key = getParamName("x_offset_minor"),
             name = _("X Offset (fine)"),
             values = offsetMinorValues,
             uiType = "SLIDER",
             defaultIndex = #offsetMinorValues / 2
         }
         params[#params+1] = {
-            key = paramPrefixFunc("y_offset_major"),
+            key = getParamName("y_offset_major"),
             name = _("Y Offset"),
             values = offsetMajorValues,
             uiType = "SLIDER",
             defaultIndex = #offsetMajorValues / 2
         }
         params[#params+1] = {
-            key = paramPrefixFunc("y_offset_minor"),
+            key = getParamName("y_offset_minor"),
             name = _("Y Offset (fine)"),
             values = offsetMinorValues,
             uiType = "SLIDER",
             defaultIndex = #offsetMinorValues / 2
         }
         params[#params+1] = {
-            key = paramPrefixFunc("z_offset_major"),
+            key = getParamName("z_offset_major"),
             name = _("Z Offset"),
             values = offsetMajorValues,
             uiType = "SLIDER",
             defaultIndex = #offsetMajorValues / 2
         }
         params[#params+1] = {
-            key = paramPrefixFunc("z_offset_minor"),
+            key = getParamName("z_offset_minor"),
             name = _("Z Offset (fine)"),
             values = offsetMinorValues,
             uiType = "SLIDER",
@@ -55,7 +55,7 @@ local helpers = {
 
         return params
     end,
-    getOffsetValue = function(params, paramPrefixFunc)
+    getOffsetValue = function(params, getParamName)
         local offsetMajorValues = {}
         local offsetMinorValues = {}
         for i = -10, 10 do
@@ -66,16 +66,16 @@ local helpers = {
         end
         offsetMinorValues[math.ceil(#offsetMinorValues/2)] = 0
 
-        local xMin = offsetMinorValues[params[paramPrefixFunc("x_offset_minor")]+1]
-        local xMaj = offsetMajorValues[params[paramPrefixFunc("x_offset_major")]+1]
-        local yMin = offsetMinorValues[params[paramPrefixFunc("y_offset_minor")]+1]
-        local yMaj = offsetMajorValues[params[paramPrefixFunc("y_offset_major")]+1]
-        local zMin = offsetMinorValues[params[paramPrefixFunc("z_offset_minor")]+1]
-        local zMaj = offsetMajorValues[params[paramPrefixFunc("z_offset_major")]+1]
+        local xMin = offsetMinorValues[params[getParamName("x_offset_minor")]+1]
+        local xMaj = offsetMajorValues[params[getParamName("x_offset_major")]+1]
+        local yMin = offsetMinorValues[params[getParamName("y_offset_minor")]+1]
+        local yMaj = offsetMajorValues[params[getParamName("y_offset_major")]+1]
+        local zMin = offsetMinorValues[params[getParamName("z_offset_minor")]+1]
+        local zMaj = offsetMajorValues[params[getParamName("z_offset_major")]+1]
 
         return { x = xMaj + xMin, y = yMaj + yMin, z = zMaj + zMin }
     end,
-    addRotateParams = function(params, paramPrefixFunc)
+    addRotateParams = function(params, getParamName)
         local fineRotateValues = {}
         for i = -11, 11, 0.25 do
             fineRotateValues[#fineRotateValues+1] = tostring(i)
@@ -87,7 +87,7 @@ local helpers = {
         end
 
         params[#params+1] = {
-            key = paramPrefixFunc("x_rotate"),
+            key = getParamName("x_rotate"),
             name = _("X Rotate"),
             values = bigRotateValues,
             uiType = "SLIDER",
@@ -95,21 +95,21 @@ local helpers = {
         }
 
         params[#params+1] = {
-            key = paramPrefixFunc("x_rotate_fine"),
+            key = getParamName("x_rotate_fine"),
             name = _("X Rotate (fine)"),
             values = fineRotateValues,
             uiType = "SLIDER",
             defaultIndex = #fineRotateValues / 2
         }
         params[#params+1] = {
-            key = paramPrefixFunc("y_rotate_fine"),
+            key = getParamName("y_rotate_fine"),
             name = _("Y Rotate (fine)"),
             values = fineRotateValues,
             uiType = "SLIDER",
             defaultIndex = #fineRotateValues / 2
         }
         params[#params+1] = {
-            key = paramPrefixFunc("z_rotate_fine"),
+            key = getParamName("z_rotate_fine"),
             name = _("Z Rotate (fine)"),
             values = fineRotateValues,
             uiType = "SLIDER",
@@ -118,7 +118,7 @@ local helpers = {
 
         return params
     end,
-    getRotateValue = function(params, paramPrefixFunc)
+    getRotateValue = function(params, getParamName)
         local fineRotateValues = {}
         for i = -11, 11, 0.25 do
             fineRotateValues[#fineRotateValues+1] = math.rad(i)
@@ -129,14 +129,14 @@ local helpers = {
             bigRotateValues[#bigRotateValues+1] = math.rad(i)
         end
 
-        local xBig = bigRotateValues[params[paramPrefixFunc("x_rotate")]+1]
-        local xFine = fineRotateValues[params[paramPrefixFunc("x_rotate_fine")]+1]
-        local yFine = fineRotateValues[params[paramPrefixFunc("y_rotate_fine")]+1]
-        local zFine = fineRotateValues[params[paramPrefixFunc("z_rotate_fine")]+1]
+        local xBig = bigRotateValues[params[getParamName("x_rotate")]+1]
+        local xFine = fineRotateValues[params[getParamName("x_rotate_fine")]+1]
+        local yFine = fineRotateValues[params[getParamName("y_rotate_fine")]+1]
+        local zFine = fineRotateValues[params[getParamName("z_rotate_fine")]+1]
 
         return { x = xBig + xFine, y = yFine, z = zFine }
     end,
-    addTerminalOverrideParam = function(params, paramPrefixFunc)
+    addTerminalOverrideParam = function(params, getParamName)
         local terminals = {}
         for i = 1, 25 do -- what's the most terminals a station might have?
             if i == 1 then
@@ -147,7 +147,7 @@ local helpers = {
         end
 
         params[#params+1] = {
-            key = paramPrefixFunc("terminal_override"),
+            key = getParamName("terminal_override"),
             name = _("Terminal"),
             values = terminals,
             uiType = "COMBOBOX"
@@ -155,9 +155,9 @@ local helpers = {
 
         return params
     end,
-    addCargoOverrideParam = function(params, paramPrefixFunc)
+    addCargoOverrideParam = function(params, getParamName)
         params[#params+1] = {
-            key = paramPrefixFunc("cargo_override"),
+            key = getParamName("cargo_override"),
             name = _("StationSection"),
             values = {_('Auto'), _('Passengers'), _('Cargo')},
             uiType = "BUTTON"
