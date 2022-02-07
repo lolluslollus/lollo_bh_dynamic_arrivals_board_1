@@ -2,21 +2,20 @@ function data()
 	local constants = require('lolloArrivalsDeparturesPredictor.constants')
 	local modelHelpers = require('lolloArrivalsDeparturesPredictor.modelHelpers')
 
-	-- stick this in the model editor under "options - config - name"
-	local _testText = "@_header_@Departures@_1_@To@_2_@Platform@_3_@TimeLong@_4_@Brignole@_5_@2@_6_@1:50@_7_@Torino Porta Nuova Molto molto molto lungo@_8_@21@_9_@19:42@_10_@Sestri Levante@_11_@12@_12_@19:48@_13_@Milano Centrale@_14_@24@_15_@19:59@_16_@Milano Centrale@_17_@24@_18_@20:59@_19_@Milano Centrale@_20_@24@_21_@21:59@_22_@Milano Centrale@_23_@24@_24_@22:59@_25_@Ventimiglia - Marseille@_26_@24@_27_@23:59@_clock_@01:12:20@"
-
 	return {
-		boundingInfo = {
-			bbMax = { 0.55691999197006, 0.068626686930656, 4.5999999046326, },
-			bbMin = { -0.56290584802628, -0.068626686930656, 3.1049461364746, },
-		},
-		collider = {
-			params = {
-				halfExtents = { 0.55991291999817, 0.068626686930656, 0.74752688407898, },
-			},
-			transf = { 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, },
-			type = "BOX",
-		},
+		-- boundingInfo = {
+		-- 	bbMax = { 0.55691999197006, 0.068626686930656, 4.5999999046326, },
+		-- 	bbMin = { -0.56290584802628, -0.068626686930656, 3.1049461364746, },
+		-- },
+		-- collider = {
+		-- 	params = {
+		-- 		halfExtents = { 0.55991291999817, 0.068626686930656, 0.74752688407898, },
+		-- 	},
+		-- 	transf = { 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, },
+		-- 	type = "BOX",
+		-- },
+		boundingInfo = modelHelpers.getVoidBoundingInfo(),
+		collider = modelHelpers.getVoidCollider(),
 		lods = {
 			{
 				node = {
@@ -37,7 +36,7 @@ function data()
 				},
 				static = false,
 				visibleFrom = 0,
-				visibleTo = 272.82086181641,
+				visibleTo = 250,
 			},
 		},
 		metadata = {

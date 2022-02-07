@@ -39,7 +39,7 @@ function data()
 				},
 				static = false,
 				visibleFrom = 0,
-				visibleTo = 445.90875244141,
+				visibleTo = 250,
 			},
 		},
 		metadata = {
