@@ -5,23 +5,20 @@ local targetConstructions = {
         isArrivals = false,
         maxEntries = 2,
         absoluteArrivalTime = false,
-        labelParamPrefix = "bh_digital_display_"
     },
-    ["asset/lolloArrivalsDeparturesPredictor/bh_digital_station_departures_display.con"] = {
+    ["asset/lolloArrivalsDeparturesPredictor/station_departures_display.con"] = {
         singleTerminal = false,
         clock = true,
         isArrivals = false,
         maxEntries = 8,
         absoluteArrivalTime = true,
-        labelParamPrefix = "bh_departures_display_"
     },
-    ["asset/lolloArrivalsDeparturesPredictor/bh_digital_station_arrivals_display.con"] = {
+    ["asset/lolloArrivalsDeparturesPredictor/station_arrivals_display.con"] = {
         singleTerminal = false,
         clock = true,
         isArrivals = true,
         maxEntries = 8,
         absoluteArrivalTime = true,
-        labelParamPrefix = "bh_arrivals_display_"
     }
 }
 -- LOLLO TODO I am surprised this works across the many different lua modes.
@@ -36,8 +33,6 @@ return {
             print('lolloArrivalsDeparturesPredictor WARNING: cannot read the construction config, fileName =', index or 'NIL')
             config = {}
         end
-
-        if not config.labelParamPrefix then config.labelParamPrefix = '' end
 
         return config
     end,

@@ -165,10 +165,10 @@ local helpers = {
 
         return params
     end,
-    getIcons = function(nameStubs)
+    getIcons = function(names)
         local icons = {}
-        for _, v in ipairs(nameStubs) do
-            icons[#icons+1] = "ui/parameters/lolloArrivalsDeparturesPredictor/bh_" .. v .. ".tga"
+        for _, name in ipairs(names) do
+            icons[#icons+1] = "ui/parameters/lolloArrivalsDeparturesPredictor/" .. name .. ".tga"
         end
         return icons
     end,

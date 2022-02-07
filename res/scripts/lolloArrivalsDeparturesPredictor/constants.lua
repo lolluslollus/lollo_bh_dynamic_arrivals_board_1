@@ -3,7 +3,7 @@ local constants = {
     isTimersActive = true,
 
     refreshPeriodMsec = 5000, -- refresh every 5 seconds
-    searchRadius4NearbyStation2JoinMetres = 50,
+    searchRadius4NearbyStation2JoinMetres = 250,
 
     guesstimatedStationWaitingTimeMsec = 30000,
 
@@ -18,7 +18,9 @@ local constants = {
 
     nameTags = {
         clock = 'clock',
-    }
+    },
+
+    paramPrefix = 'display_'
 }
 
 return constants

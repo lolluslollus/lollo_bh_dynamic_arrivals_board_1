@@ -1,38 +1,39 @@
-local constructionutil = require "constructionutil"
-local transf = require "transf"
-local utils = require "lolloArrivalsDeparturesPredictor/paramHelpers"
+local constants = require('lolloArrivalsDeparturesPredictor.constants')
+local constructionutil = require("constructionutil")
+local transf = require('transf')
+local utils = require("lolloArrivalsDeparturesPredictor.paramHelpers")
 
 local styles = { "digital_display_name", "digital_display_nopole_name", "digital_display_floating_name" }
 
 -- I use a utility function to join the param label registered with the engine, with the individual param names
-local function configKey(name)
-    return "bh_digital_display_" .. name
+local function getParamPrefix(name)
+    return constants.paramPrefix .. name
 end
 
-local function mdl(style)
+local function getMdl(style)
     return "lolloArrivalsDeparturesPredictor/bh_manchester_metrolink_" .. style .. ".mdl"
 end
 
-local function makeParams()
+local function getParams()
     local params = {}
     params[#params+1] = {
-        key = configKey("style"),
+        key = getParamPrefix("style"),
         name = _("Style"),
         uiType = "ICON_BUTTON",
         values = utils.getIcons(styles)
     }
     params[#params+1] = {
-        key = configKey("snapTrackPlatformAlign"),
+        key = getParamPrefix("snapTrackPlatformAlign"),
         name = _("Snapping Align"),
         values = { _("Free"), _("Platform") },
         defaultIndex = 1
     }
 
     -- since the terminal placement logic is not perfect, provide a param to override the terminal this sign is linked to
-    utils.addCargoOverrideParam(params, configKey)
-    utils.addTerminalOverrideParam(params, configKey)
-    utils.addRotateParams(params, configKey)
-    utils.addOffsetParams(params, configKey)
+    utils.addCargoOverrideParam(params, getParamPrefix)
+    utils.addTerminalOverrideParam(params, getParamPrefix)
+    utils.addRotateParams(params, getParamPrefix)
+    utils.addOffsetParams(params, getParamPrefix)
 
     return params
 end
@@ -51,19 +52,19 @@ function data()
         order = 13,
         skipCollision = true,
         autoRemovable = false,
-        params = makeParams(),
+        params = getParams(),
         updateFn = function(params)
             local result = { }
             result.models = {}
 
-            local align = params[configKey("snapTrackPlatformAlign")] or 1
+            local align = params[getParamPrefix("snapTrackPlatformAlign")] or 1
 
-            local rotate = utils.getRotateValue(params, configKey)
+            local rotate = utils.getRotateValue(params, getParamPrefix)
             if align ~= 0 then
                 rotate.x = rotate.x + math.pi / 2
             end
 
-            local offset = utils.getOffsetValue(params, configKey)
+            local offset = utils.getOffsetValue(params, getParamPrefix)
             if align ~= 0 then
                 -- offset.y == 0 is the middle of the track, since this is a track asset.
                 -- This is good for the terminal detection.
@@ -73,11 +74,15 @@ function data()
                 offset.z = offset.z + 0.3 -- a bit less so it fits freestyle stations
             end
 
-            local style = styles[params[configKey("style")]+1]
+            local style = styles[params[getParamPrefix("style")]+1]
             result.models[#result.models + 1] = {
-                id = mdl(style),
+                id = getMdl(style),
                 transf = constructionutil.rotateTransf(params, transf.rotZYXTransl(rotate, offset))
             }
+            -- result.models[#result.models + 1] = {
+            --     id = 'lolloArrivalsDeparturesPredictor/icon/blue.mdl',
+            --     transf = {1, 0, 0, 0,  0, 1, 0, 0,  0, 0, 1, 0,  0, 0, 0, 1}
+            -- }
 
             -- local labelValues = {
             -- 	params[configKey("arrival_1_dest")], -- these are some of the params provided by the arrivals engine when updating this construction

@@ -128,9 +128,9 @@ utils.getFormattedPredictions = function(predictions, time)
             results[#results+1] = fmtEntry
         end
     end
-    while #results < 2 do
+    while #results < 1 do
         results[#results+1] = {
-            originString = "-",
+            originString = _texts.sorryNoService,
             destinationString = _texts.sorryNoService,
             etaMinutesString = "-",
             arrivalTimeString = "--:--",
@@ -656,11 +656,11 @@ local function update()
                         local formattedPredictions = {}
                         local config = constructionHooks.getRegisteredConstructionOrDefault(signCon.fileName)
                         if (config.maxEntries or 0) > 0 then -- config.maxEntries is tied to the construction type, like our tables
-                            local function param(name) return config.labelParamPrefix .. name end
+                            local function getParam(name) return constants.paramPrefix .. name end
                             local rawPredictions = nil
                             -- the player may have changed the cargo flag or the terminal in the construction params
-                            local isCargo = utils.getIsCargo(config, signCon, signState, param)
-                            local terminalId = utils.getTerminalId(config, signCon, signState, param)
+                            local isCargo = utils.getIsCargo(config, signCon, signState, getParam)
+                            local terminalId = utils.getTerminalId(config, signCon, signState, getParam)
                             for _, stationId in pairs(stationIds) do
                                 if edgeUtils.isValidAndExistingId(stationId) then
                                     local station = api.engine.getComponent(stationId, api.type.ComponentType.STATION)

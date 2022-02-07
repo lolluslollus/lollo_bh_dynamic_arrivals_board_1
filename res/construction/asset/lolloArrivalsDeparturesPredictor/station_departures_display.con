@@ -1,31 +1,32 @@
-local constructionutil = require "constructionutil"
-local transf = require "transf"
-local utils = require "lolloArrivalsDeparturesPredictor/paramHelpers"
+local constants = require('lolloArrivalsDeparturesPredictor.constants')
+local constructionutil = require("constructionutil")
+local transf = require("transf")
+local utils = require("lolloArrivalsDeparturesPredictor.paramHelpers")
 
-local styles = { "tall_board_name", "tall_wide_board_name" }
+local styles = { "station_board", "station_board_hanging", "station_board_floating", "station_wide_board", "station_wide_board_hanging", "station_wide_board_floating" }
 
-local function configKey(name)
-    return "bh_arrivals_display_" .. name
+local function getParamPrefix(name)
+    return constants.paramPrefix .. name
 end
 
-local function mdl(style)
-    return "lolloArrivalsDeparturesPredictor/bh_dynamic_" .. style .. ".mdl"
+local function getMdl(style)
+    return "lolloArrivalsDeparturesPredictor/" .. style .. ".mdl"
 end
 
-local function makeParams()
+local function getParams()
     local params = {}
 
     params[#params+1] = {
-        key = configKey("style"),
+        key = getParamPrefix("style"),
         name = _("Style"),
         uiType = "ICON_BUTTON",
         values = utils.getIcons(styles),
-        defaultIndex = 1
+        defaultIndex = 3
     }
 
-    utils.addCargoOverrideParam(params, configKey)
-    utils.addRotateParams(params, configKey)
-    utils.addOffsetParams(params, configKey)
+    utils.addCargoOverrideParam(params, getParamPrefix)
+    utils.addRotateParams(params, getParamPrefix)
+    utils.addOffsetParams(params, getParamPrefix)
 
     return params
 end
@@ -35,9 +36,9 @@ function data()
         -- type = "ASSET_TRACK",
         type = "ASSET_DEFAULT",
         description = {
-            name = _("DynamicArrivalsSummaryBoardName"),
-            description = _("DynamicArrivalsSummaryBoardDesc"),
-            icon = "ui/construction/asset/lolloArrivalsDeparturesPredictor/bh_digital_summary_construction@2x.tga"
+            name = _("DynamicDeparturesSummaryBoardName"),
+            description = _("DynamicDeparturesSummaryBoardDesc"),
+            icon = "ui/construction/asset/lolloArrivalsDeparturesPredictor/station_departures_display@2x.tga"
         },
         availability = {},
         buildMode = "SINGLE",
@@ -45,20 +46,24 @@ function data()
         order = 13,
         skipCollision = true,
         autoRemovable = false,
-        params = makeParams(),
+        params = getParams(),
         updateFn = function(params)
             -- print('LOLLO params =') debugPrint(params)
             local result = { }
             result.models = {}
 
-            local rotate = utils.getRotateValue(params, configKey)
-            local offset = utils.getOffsetValue(params, configKey)
+            local rotate = utils.getRotateValue(params, getParamPrefix)
+            local offset = utils.getOffsetValue(params, getParamPrefix)
 
-            local style = styles[params[configKey("style")]+1]
+            local style = styles[params[getParamPrefix("style")]+1]
             result.models[#result.models + 1] = {
-                id = mdl(style),
+                id = getMdl(style),
                 transf = constructionutil.rotateTransf(params, transf.rotZYXTransl(rotate, offset))
             }
+            -- result.models[#result.models + 1] = {
+            --     id = 'lolloArrivalsDeparturesPredictor/icon/blue.mdl',
+            --     transf = {1, 0, 0, 0,  0, 1, 0, 0,  0, 0, 1, 0,  0, 0, 0, 1}
+            -- }
 
 --[[ 			local labelValues = {}
             for i = 1, 29 do
