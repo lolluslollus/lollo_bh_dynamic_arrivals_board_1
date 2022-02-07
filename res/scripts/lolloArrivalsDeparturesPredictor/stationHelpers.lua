@@ -39,7 +39,9 @@ local function _getNodeIdsOfEdge(edgeId)
 
     return {baseEdge.node0, baseEdge.node1} -- an edge always has 2 nodes
 end
-
+-- LOLLO TODO with certain configurations, the nearest terminal estimator
+-- may be more accurate if you check the distance between point and edge,
+-- rather than point and point.
 local function getNodeIds4Terminal(frozenNodeIds, startNodeId)
     local _frozenNodeIds_Indexed = _getIdsIndexed(frozenNodeIds)
     local _map = api.engine.system.streetSystem.getNode2TrackEdgeMap()
