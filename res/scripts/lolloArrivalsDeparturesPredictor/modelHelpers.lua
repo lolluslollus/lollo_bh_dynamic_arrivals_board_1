@@ -24,7 +24,7 @@ local constants = require('lolloArrivalsDeparturesPredictor.constants')
 -- for platform bouards, stick this in the model editor under "options - config - name"
 -- local _testText = "@_1_@Brignole@_2_@12:25@_3_@Ü Bigottu@_4_@1:11@_clock_@01:12:20@"
 -- for station boards, stick this in the model editor under "options - config - name"
--- local _testText = "@_header_@Departures@_1_@To@_2_@Platform@_3_@TimeLong@_4_@Brignole@_5_@2@_6_@1:50@_7_@Torino Porta Nuova Molto molto molto lungo@_8_@21@_9_@19:42@_10_@Sestri Levante@_11_@12@_12_@19:48@_13_@Milano Centrale@_14_@24@_15_@19:59@_16_@Milano Centrale@_17_@24@_18_@20:59@_19_@Milano Centrale@_20_@24@_21_@21:59@_22_@Milano Centrale@_23_@24@_24_@22:59@_25_@Ventimiglia - Marseille@_26_@24@_27_@23:59@_clock_@01:12:20@"
+-- local _testText = "@_header_@Departures@_footer_@VeryVeryVeryLongLongLongTextTextText@_1_@To@_2_@Platform@_3_@TimeLong@_4_@Brignole@_5_@2@_6_@1:50@_7_@Torino Porta Nuova Molto molto molto lungo@_8_@21@_9_@19:42@_10_@Sestri Levante@_11_@12@_12_@19:48@_13_@Milano Centrale@_14_@24@_15_@19:59@_16_@Milano Centrale@_17_@24@_18_@20:59@_19_@Milano Centrale@_20_@24@_21_@21:59@_22_@Milano Centrale@_23_@24@_24_@22:59@_25_@Ventimiglia - Marseille@_26_@24@_27_@23:59@_clock_@01:12:20@"
 
 local function getRegexParams(counter)
     return {
@@ -726,13 +726,32 @@ local utils = {
                 -- 	filter = "CUSTOM",
                 -- 	fitting = "CUT",
                 -- 	nLines = 1,
-                -- 	params = params(constants.nameTags.clock),
+                -- 	params = getRegexParams(constants.nameTags.clock),
                 -- 	renderMode = "EMISSIVE",
                 -- 	size = { 1.02, 0.15, },
-                -- 	transf = { 1, 0, -0, 0, 0, 0, 1, 0, 0, -1, 0, 0, -0.5, -0.07, 2.6, 1, },
+                -- 	transf = { 1, 0, 0, 0, 0, 0, 1, 0, 0, -1, 0, 0, -0.5, -0.07, 2.6, 1, },
                 -- 	type = "NAME",
                 -- 	verticalAlignment = "CENTER",
                 -- },
+                {
+                	alignment = "CENTER",
+                	alpha = 1,
+                	alphaMode = "CUTOUT",
+                	childId = "",
+                	-- color = { 1, 1, 1, },
+                    color = { 1, 0.54, 0, },
+                	-- filter = "CUSTOM",
+                    filter = "NONE",
+                	fitting = "CUT",
+                	nLines = 2,
+                	-- params = getRegexParams(constants.nameTags.footer),
+                	renderMode = "EMISSIVE",
+                	size = {5.5, 1},
+                    transf = { 0.2, 0, 0, 0,  0, 0, 0.2, 0,  0, 1, 0, 0,  -0.55, -0.06, 2.6, 1, },
+                	-- type = "NAME",
+                    type = "COMPANY_NAME",
+                	verticalAlignment = "CENTER",
+                },
             },
         }
     end,
@@ -1254,13 +1273,32 @@ local utils = {
                 -- 	filter = "CUSTOM",
                 -- 	fitting = "CUT",
                 -- 	nLines = 1,
-                -- 	params = params(constants.nameTags.clock),
+                -- 	params = getRegexParams(constants.nameTags.clock),
                 -- 	renderMode = "EMISSIVE",
                 -- 	size = { 1.02, 0.15, },
                 -- 	transf = { 1, 0, -0, 0, 0, 0, 1, 0, 0, -1, 0, 0, -0.5, -0.07, 2.6, 1, },
                 -- 	type = "NAME",
                 -- 	verticalAlignment = "CENTER",
                 -- },
+                {
+                	alignment = "CENTER",
+                	alpha = 1,
+                	alphaMode = "CUTOUT",
+                	childId = "",
+                	-- color = { 1, 1, 1, },
+                    color = { 1, 0.54, 0, },
+                	-- filter = "CUSTOM",
+                    filter = "NONE",
+                	fitting = "CUT",
+                	nLines = 2,
+                	-- params = getRegexParams(constants.nameTags.footer),
+                	renderMode = "EMISSIVE",
+                	size = {10, 1},
+                    transf = { 0.2, 0, 0, 0,  0, 0, 0.2, 0,  0, 1, 0, 0,  -1.01, -0.06, 2.6, 1, },
+                	-- type = "NAME",
+                    type = "COMPANY_NAME",
+                	verticalAlignment = "CENTER",
+                },
             },
         }
     end,

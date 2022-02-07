@@ -1,5 +1,5 @@
-local stateHelpers = require "lolloArrivalsDeparturesPredictor/stateHelpers"
-local constructionHooks = require "lolloArrivalsDeparturesPredictor/constructionHooks"
+local stateHelpers = require("lolloArrivalsDeparturesPredictor.stateHelpers")
+local constructionHooks = require("lolloArrivalsDeparturesPredictor.constructionHooks")
 
 local logger = require ("lolloArrivalsDeparturesPredictor.logger")
 local arrayUtils = require('lolloArrivalsDeparturesPredictor.arrayUtils')
@@ -10,6 +10,7 @@ local transfUtilsUG = require('transf')
 
 local _texts = {
     arrivalsAllCaps = _("ArrivalsAllCaps"),
+    companyNamePrefix1 = _("CompanyNamePrefix1"),
     departuresAllCaps = _("DeparturesAllCaps"),
     destination = _('Destination'),
     due = _('Due'),

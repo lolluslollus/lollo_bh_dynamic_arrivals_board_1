@@ -59,6 +59,7 @@ display construction and it will manage its display updates when placed in game.
             ["ArrivalsAllCaps"] = "ARRIVALS",
             ["Auto"] = "Auto",
             ["Cargo"] = "Cargo",
+            ["CompanyNamePrefix1"] = "A service provided by ",
             ["DeparturesAllCaps"] = "DEPARTURES",
             ["Destination"] = "Destination",
             ["Due"] = "Due",

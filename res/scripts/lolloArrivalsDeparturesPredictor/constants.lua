@@ -18,6 +18,7 @@ local constants = {
 
     nameTags = {
         clock = 'clock',
+        footer = 'footer',
         header = 'header',
     },
 
