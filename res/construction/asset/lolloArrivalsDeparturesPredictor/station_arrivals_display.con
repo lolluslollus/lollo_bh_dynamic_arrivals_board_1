@@ -1,17 +1,17 @@
-local constants = require('lolloArrivalsDeparturesPredictor.constants')
+-- local constants = require('lolloArrivalsDeparturesPredictor.constants')
+local constructionHooks = require('lolloArrivalsDeparturesPredictor.constructionHooks')
 local constructionutil = require("constructionutil")
 local transf = require("transf")
 local utils = require("lolloArrivalsDeparturesPredictor.paramHelpers")
 
-local styles = { "station_board", "station_board_hanging", "station_board_floating", "station_wide_board", "station_wide_board_hanging", "station_wide_board_floating" }
---[[
-    -- this won't work here
-local _currentFilePathAbsolute = debugPrint(string.sub(debug.getinfo(1, 'S').source, 1))
-local _currentFilePathRelative = _currentFilePathAbsolute:split('/res/construction/')[2]
--- "asset/lolloArrivalsDeparturesPredictor/station_arrivals_display.con"
-]]
+local _styles = { "station_board", "station_board_hanging", "station_board_floating", "station_wide_board", "station_wide_board_hanging", "station_wide_board_floating" }
+
+local _paramPrefix = constructionHooks.getParamPrefixFromCon()
+-- print('_paramPrefix =') debugPrint(_paramPrefix)
+
 local function getParamName(name)
-    return constants.paramPrefix .. name
+    -- return constants.paramPrefix .. name
+    return _paramPrefix .. name
 end
 
 local function getMdl(style)
@@ -25,7 +25,7 @@ local function getParams()
         key = getParamName("style"),
         name = _("Style"),
         uiType = "ICON_BUTTON",
-        values = utils.getIcons(styles),
+        values = utils.getIcons(_styles),
         defaultIndex = 3
     }
 
@@ -60,7 +60,7 @@ function data()
             local rotate = utils.getRotateValue(params, getParamName)
             local offset = utils.getOffsetValue(params, getParamName)
 
-            local style = styles[params[getParamName("style")]+1]
+            local style = _styles[params[getParamName("style")]+1]
             result.models[#result.models + 1] = {
                 id = getMdl(style),
                 transf = constructionutil.rotateTransf(params, transf.rotZYXTransl(rotate, offset))

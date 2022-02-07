@@ -1,13 +1,17 @@
-local constants = require('lolloArrivalsDeparturesPredictor.constants')
+-- local constants = require('lolloArrivalsDeparturesPredictor.constants')
+local constructionHooks = require('lolloArrivalsDeparturesPredictor.constructionHooks')
 local constructionutil = require("constructionutil")
 local transf = require('transf')
 local utils = require("lolloArrivalsDeparturesPredictor.paramHelpers")
 
-local styles = { "digital_display_name", "digital_display_nopole_name", "digital_display_floating_name" }
+local _styles = { "digital_display_name", "digital_display_nopole_name", "digital_display_floating_name" }
 
--- I use a utility function to join the param label registered with the engine, with the individual param names
+local _paramPrefix = constructionHooks.getParamPrefixFromCon()
+-- print('_paramPrefix =') debugPrint(_paramPrefix)
+
 local function getParamName(name)
-    return constants.paramPrefix .. name
+    -- return constants.paramPrefix .. name
+    return _paramPrefix .. name
 end
 
 local function getMdl(style)
@@ -20,7 +24,7 @@ local function getParams()
         key = getParamName("style"),
         name = _("Style"),
         uiType = "ICON_BUTTON",
-        values = utils.getIcons(styles)
+        values = utils.getIcons(_styles)
     }
     params[#params+1] = {
         key = getParamName("snapTrackPlatformAlign"),
@@ -74,7 +78,7 @@ function data()
                 offset.z = offset.z + 0.3 -- a bit less so it fits freestyle stations
             end
 
-            local style = styles[params[getParamName("style")]+1]
+            local style = _styles[params[getParamName("style")]+1]
             result.models[#result.models + 1] = {
                 id = getMdl(style),
                 transf = constructionutil.rotateTransf(params, transf.rotZYXTransl(rotate, offset))

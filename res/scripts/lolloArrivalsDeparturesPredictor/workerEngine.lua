@@ -656,7 +656,7 @@ local function update()
                         local formattedPredictions = {}
                         local config = constructionHooks.getRegisteredConstructionOrDefault(signCon.fileName)
                         if (config.maxEntries or 0) > 0 then -- config.maxEntries is tied to the construction type, like our tables
-                            local function getParam(name) return constants.paramPrefix .. name end
+                            local function getParam(name) return config.paramPrefix .. name end
                             local rawPredictions = nil
                             -- the player may have changed the cargo flag or the terminal in the construction params
                             local isCargo = utils.getIsCargo(config, signCon, signState, getParam)
