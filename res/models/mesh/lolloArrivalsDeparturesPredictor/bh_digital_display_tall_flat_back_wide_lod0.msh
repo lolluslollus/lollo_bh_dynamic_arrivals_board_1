@@ -10,19 +10,19 @@ return {
 			indices = {
 				normal = {
 					count = 432,
-					offset = 3524,
+					offset = 3460,
 				},
 				position = {
 					count = 432,
-					offset = 3092,
+					offset = 2596,
 				},
 				tangent = {
 					count = 432,
-					offset = 2660,
+					offset = 3028,
 				},
 				uv0 = {
 					count = 432,
-					offset = 2228,
+					offset = 3892,
 				},
 			},
 			materials = {
@@ -33,19 +33,19 @@ return {
 			indices = {
 				normal = {
 					count = 192,
-					offset = 4532,
+					offset = 4708,
 				},
 				position = {
 					count = 192,
-					offset = 4340,
+					offset = 4324,
 				},
 				tangent = {
 					count = 192,
-					offset = 4148,
+					offset = 4516,
 				},
 				uv0 = {
 					count = 192,
-					offset = 3956,
+					offset = 4900,
 				},
 			},
 			materials = {
@@ -56,19 +56,19 @@ return {
 			indices = {
 				normal = {
 					count = 360,
-					offset = 5804,
+					offset = 5812,
 				},
 				position = {
 					count = 360,
-					offset = 5444,
+					offset = 5092,
 				},
 				tangent = {
 					count = 360,
-					offset = 5084,
+					offset = 5452,
 				},
 				uv0 = {
 					count = 360,
-					offset = 4724,
+					offset = 6172,
 				},
 			},
 			materials = {
@@ -79,19 +79,19 @@ return {
 			indices = {
 				normal = {
 					count = 24,
-					offset = 6236,
+					offset = 6580,
 				},
 				position = {
 					count = 24,
-					offset = 6212,
+					offset = 6532,
 				},
 				tangent = {
 					count = 24,
-					offset = 6188,
+					offset = 6556,
 				},
 				uv0 = {
 					count = 24,
-					offset = 6164,
+					offset = 6604,
 				},
 			},
 			materials = {
@@ -101,24 +101,24 @@ return {
 	},
 	vertexAttr = {
 		normal = {
-			count = 204,
+			count = 300,
 			numComp = 3,
-			offset = 2024,
+			offset = 1424,
 		},
 		position = {
 			count = 960,
 			numComp = 3,
-			offset = 1064,
+			offset = 0,
 		},
 		tangent = {
-			count = 192,
+			count = 464,
 			numComp = 4,
-			offset = 872,
+			offset = 960,
 		},
 		uv0 = {
 			count = 872,
 			numComp = 2,
-			offset = 0,
+			offset = 1724,
 		},
 	},
 }
