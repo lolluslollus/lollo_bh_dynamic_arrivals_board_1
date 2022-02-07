@@ -18,6 +18,7 @@ local constants = {
 
     nameTags = {
         clock = 'clock',
+        header = 'header',
     },
 
     paramPrefix = 'display_'

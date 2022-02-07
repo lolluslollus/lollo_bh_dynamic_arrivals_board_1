@@ -9,14 +9,18 @@ local stationHelpers = require('lolloArrivalsDeparturesPredictor.stationHelpers'
 local transfUtilsUG = require('transf')
 
 local _texts = {
+    arrivalsAllCaps = _("ArrivalsAllCaps"),
+    departuresAllCaps = _("DeparturesAllCaps"),
     destination = _('Destination'),
     due = _('Due'),
-    from = _('FromSpace'),
+    from = _('From'),
+    fromSpace = _('FromSpace'),
     minutesShort = _('MinutesShort'),
     origin = _('Origin'),
     platform = _('Platform'),
     sorryNoService = _('SorryNoService'),
     time = _('Time'),
+    to = _('To'),
 }
 
 local utils = {
@@ -112,7 +116,7 @@ utils.getFormattedPredictions = function(predictions, time)
             end
             local originStationGroupName = api.engine.getComponent(rawEntry.originStationGroupId, api.type.ComponentType.NAME)
             if originStationGroupName and originStationGroupName.name then
-                -- fmtEntry.originString = _texts.from .. originStationGroupName.name
+                -- fmtEntry.originString = _texts.fromSpace .. originStationGroupName.name
                 fmtEntry.originString = originStationGroupName.name
                 -- LOLLO NOTE sanitize away the characters that we use in the regex in the model
                 fmtEntry.originString:gsub('_', ' ')
@@ -160,12 +164,12 @@ utils.getNewSignConName = function(formattedPredictions, config, clockString)
             -- result = result .. '@_' .. i .. '_@' .. (config.absoluteArrivalTime and prediction.arrivalTimeString or prediction.etaMinutesString)
             i = i + 1
         end
-        if config.clock and clockString then -- it might also be clock_time, check it
+        if config.clock and clockString then
             result = result .. '@_' .. constants.nameTags.clock .. '_@' .. clockString
         end
     else
         if config.isArrivals then
-            result = '@_1_@' .. _texts.origin .. '@_2_@' .. _texts.platform .. '@_3_@' .. _texts.time
+            result = '@_1_@' .. _texts.from .. '@_2_@' .. _texts.platform .. '@_3_@' .. _texts.time
             local i = 4
             for _, prediction in ipairs(formattedPredictions) do
                 result = result .. '@_' .. i .. '_@' .. prediction.originString
@@ -175,11 +179,12 @@ utils.getNewSignConName = function(formattedPredictions, config, clockString)
                 result = result .. '@_' .. i .. '_@' .. prediction.arrivalTimeString
                 i = i + 1
             end
-            if config.clock and clockString then -- it might also be clock_time, check it
+            if config.clock and clockString then
                 result = result .. '@_' .. constants.nameTags.clock .. '_@' .. clockString
             end
+            result = result .. '@_' .. constants.nameTags.header .. '_@' .. _texts.arrivalsAllCaps
         else
-            result = '@_1_@' .. _texts.destination .. '@_2_@' .. _texts.platform .. '@_3_@' .. _texts.time
+            result = '@_1_@' .. _texts.to .. '@_2_@' .. _texts.platform .. '@_3_@' .. _texts.time
             local i = 4
             for _, prediction in ipairs(formattedPredictions) do
                 result = result .. '@_' .. i .. '_@' .. prediction.destinationString
@@ -189,9 +194,10 @@ utils.getNewSignConName = function(formattedPredictions, config, clockString)
                 result = result .. '@_' .. i .. '_@' .. prediction.departureTimeString
                 i = i + 1
             end
-            if config.clock and clockString then -- it might also be clock_time, check it
+            if config.clock and clockString then
                 result = result .. '@_' .. constants.nameTags.clock .. '_@' .. clockString
             end
+            result = result .. '@_' .. constants.nameTags.header .. '_@' .. _texts.departuresAllCaps
         end
     end
     return result .. '@'
@@ -583,16 +589,14 @@ local function update()
     xpcall(
         function()
             local state = stateHelpers.loadState()
-            local clock_time = math.floor(_time / 1000)
-            if clock_time == state.world_time then return end
+            local _clock_time = math.floor(_time / 1000)
+            if _clock_time == state.world_time then return end
 
-            state.world_time = clock_time
-
-            local speed = (api.engine.getComponent(api.engine.util.getWorld(), api.type.ComponentType.GAME_SPEED).speedup) or 1
-
+            state.world_time = _clock_time
             -- performance profiling
             local startTick = os.clock()
-            local clockString = utils.formatClockString(clock_time)
+
+            local speed = (api.engine.getComponent(api.engine.util.getWorld(), api.type.ComponentType.GAME_SPEED).speedup) or 1
 
             -- local newConstructions = {}
             -- local oldConstructions = {}
@@ -635,107 +639,106 @@ local function update()
                 end,
             }
 
-            logger.profile(
-                "update signs",
-                function()
-                -- sign is no more around: clean the state
-                for signConId, signState in pairs(state.placed_signs) do
-                    if not(edgeUtils.isValidAndExistingId(signConId)) then
-                        stateHelpers.removePlacedSign(signConId)
-                    end
+            -- sign is no more around: clean the state
+            for signConId, signState in pairs(state.placed_signs) do
+                if not(edgeUtils.isValidAndExistingId(signConId)) then
+                    stateHelpers.removePlacedSign(signConId)
                 end
-                -- station is no more around: bulldoze its signs
-                for signConId, signState in pairs(state.placed_signs) do
-                    if not(edgeUtils.isValidAndExistingId(signState.stationConId)) then
-                        stateHelpers.removePlacedSign(signConId)
-                        utils.bulldozeConstruction(signConId)
-                    end
+            end
+            -- station is no more around: bulldoze its signs
+            for signConId, signState in pairs(state.placed_signs) do
+                if not(edgeUtils.isValidAndExistingId(signState.stationConId)) then
+                    stateHelpers.removePlacedSign(signConId)
+                    utils.bulldozeConstruction(signConId)
                 end
-                -- now the state is clean
-                for signConId, signState in pairs(state.placed_signs) do
-                    -- logger.print('signConId =') logger.debugPrint(signConId)
-                    -- logger.print('signState =') logger.debugPrint(signState)
-                    local signCon = api.engine.getComponent(signConId, api.type.ComponentType.CONSTRUCTION)
-                    local stationIds = api.engine.getComponent(signState.stationConId, api.type.ComponentType.CONSTRUCTION).stations
-                    -- logger.print('signCon =') logger.debugPrint(signCon)
-                    if signCon then
-                        local formattedPredictions = {}
-                        local config = constructionHooks.getRegisteredConstructionOrDefault(signCon.fileName)
-                        if (config.maxEntries or 0) > 0 then -- config.maxEntries is tied to the construction type, like our tables
-                            local function getParam(name) return config.paramPrefix .. name end
-                            local rawPredictions = nil
-                            -- the player may have changed the cargo flag or the terminal in the construction params
-                            local isCargo = utils.getIsCargo(config, signCon, signState, getParam)
-                            local terminalId = utils.getTerminalId(config, signCon, signState, getParam)
-                            for _, stationId in pairs(stationIds) do
-                                if edgeUtils.isValidAndExistingId(stationId) then
-                                    local station = api.engine.getComponent(stationId, api.type.ComponentType.STATION)
-                                    if isCargo == not(not(station.cargo)) then
-                                        local nextPredictions = getNextPredictions(
-                                            stationId,
-                                            station,
-                                            config.maxEntries,
-                                            _time,
-                                            terminalId, -- nil if config.singleTerminal == falsy
-                                            predictionsBufferHelpers,
-                                            averageTimeToLeaveDestinationsFromPreviousBuffer
-                                        )
-                                        if rawPredictions == nil then
-                                            rawPredictions = nextPredictions
-                                        else
-                                            print('lolloArrivalsDeparturesPredictor WARNING this should never happen ONE')
-                                            arrayUtils.concatValues(rawPredictions, nextPredictions)
-                                        end
+            end
+            -- now the state is clean
+            for signConId, signState in pairs(state.placed_signs) do
+                -- logger.print('signConId =') logger.debugPrint(signConId)
+                -- logger.print('signState =') logger.debugPrint(signState)
+                local signCon = api.engine.getComponent(signConId, api.type.ComponentType.CONSTRUCTION)
+                local stationIds = api.engine.getComponent(signState.stationConId, api.type.ComponentType.CONSTRUCTION).stations
+                -- logger.print('signCon =') logger.debugPrint(signCon)
+                if signCon then
+                    local formattedPredictions = {}
+                    local config = constructionHooks.getRegisteredConstructionOrDefault(signCon.fileName)
+                    if (config.maxEntries or 0) > 0 then -- config.maxEntries is tied to the construction type, like our tables
+                        local function getParam(name) return config.paramPrefix .. name end
+                        local rawPredictions = nil
+                        -- the player may have changed the cargo flag or the terminal in the construction params
+                        local isCargo = utils.getIsCargo(config, signCon, signState, getParam)
+                        local terminalId = utils.getTerminalId(config, signCon, signState, getParam)
+                        for _, stationId in pairs(stationIds) do
+                            if edgeUtils.isValidAndExistingId(stationId) then
+                                local station = api.engine.getComponent(stationId, api.type.ComponentType.STATION)
+                                if isCargo == not(not(station.cargo)) then
+                                    local nextPredictions = getNextPredictions(
+                                        stationId,
+                                        station,
+                                        config.maxEntries,
+                                        _time,
+                                        terminalId, -- nil if config.singleTerminal == falsy
+                                        predictionsBufferHelpers,
+                                        averageTimeToLeaveDestinationsFromPreviousBuffer
+                                    )
+                                    if rawPredictions == nil then
+                                        rawPredictions = nextPredictions
+                                    else
+                                        print('lolloArrivalsDeparturesPredictor WARNING this should never happen ONE')
+                                        arrayUtils.concatValues(rawPredictions, nextPredictions)
                                     end
                                 end
                             end
-                            -- logger.print('single terminal rawPredictions =') logger.debugPrint(rawPredictions)
-                            formattedPredictions = utils.getFormattedPredictions(rawPredictions or {}, _time)
                         end
-
-                        -- rename the construction
-                        local newName = utils.getNewSignConName(formattedPredictions, config, clockString)
-                        api.cmd.sendCommand(api.cmd.make.setName(signConId, newName))
-
-                        -- -- rebuild the sign construction
-                        -- local newCon = api.type.SimpleProposal.ConstructionEntity.new()
-
-                        -- local newParams = {}
-                        -- for oldKey, oldVal in pairs(signCon.params) do
-                        --     newParams[oldKey] = oldVal
-                        -- end
-
-                        -- if config.clock then
-                        --     newParams[param("time_string")] = clockString
-                        --     newParams[param("game_time")] = clock_time
-                        -- end
-
-                        -- newParams[param("num_arrivals")] = #formattedArrivals
-
-                        -- for i, a in ipairs(formattedArrivals) do
-                        --     local paramName = "arrival_" .. i .. "_"
-                        --     newParams[param(paramName .. "dest")] = a.destinationString
-                        --     newParams[param(paramName .. "time")] = config.absoluteArrivalTime and a.arrivalTimeString or a.etaMinutesString
-                        --     if not config.singleTerminal and a.arrivalTerminal then
-                        --         newParams[param(paramName .. "terminal")] = a.arrivalTerminal
-                        --     end
-                        -- end
-
-                        -- newParams.seed = signCon.params.seed + 1
-
-                        -- newCon.fileName = signCon.fileName
-                        -- newCon.params = newParams
-                        -- newCon.transf = signCon.transf
-                        -- newCon.playerEntity = api.engine.util.getPlayer()
-
-                        -- newConstructions[#newConstructions+1] = newCon
-                        -- oldConstructions[#oldConstructions+1] = signConId
-
-                        -- logger.print('newCon =') logger.debugPrint(newCon)
+                        -- logger.print('single terminal rawPredictions =') logger.debugPrint(rawPredictions)
+                        formattedPredictions = utils.getFormattedPredictions(rawPredictions or {}, _time)
                     end
+
+                    -- rename the construction
+                    local newName = utils.getNewSignConName(
+                        formattedPredictions,
+                        config,
+                        utils.formatClockString(_clock_time)
+                    )
+                    api.cmd.sendCommand(api.cmd.make.setName(signConId, newName))
+
+                    -- -- rebuild the sign construction
+                    -- local newCon = api.type.SimpleProposal.ConstructionEntity.new()
+
+                    -- local newParams = {}
+                    -- for oldKey, oldVal in pairs(signCon.params) do
+                    --     newParams[oldKey] = oldVal
+                    -- end
+
+                    -- if config.clock then
+                    --     newParams[param("time_string")] = clockString
+                    --     newParams[param("game_time")] = clock_time
+                    -- end
+
+                    -- newParams[param("num_arrivals")] = #formattedArrivals
+
+                    -- for i, a in ipairs(formattedArrivals) do
+                    --     local paramName = "arrival_" .. i .. "_"
+                    --     newParams[param(paramName .. "dest")] = a.destinationString
+                    --     newParams[param(paramName .. "time")] = config.absoluteArrivalTime and a.arrivalTimeString or a.etaMinutesString
+                    --     if not config.singleTerminal and a.arrivalTerminal then
+                    --         newParams[param(paramName .. "terminal")] = a.arrivalTerminal
+                    --     end
+                    -- end
+
+                    -- newParams.seed = signCon.params.seed + 1
+
+                    -- newCon.fileName = signCon.fileName
+                    -- newCon.params = newParams
+                    -- newCon.transf = signCon.transf
+                    -- newCon.playerEntity = api.engine.util.getPlayer()
+
+                    -- newConstructions[#newConstructions+1] = newCon
+                    -- oldConstructions[#oldConstructions+1] = signConId
+
+                    -- logger.print('newCon =') logger.debugPrint(newCon)
                 end
-                end
-            )
+            end
 
             -- if #newConstructions > 0 then
             --         local proposal = api.type.SimpleProposal.new()
@@ -784,7 +787,11 @@ local function handleEvent(src, id, name, args)
                 -- rename the construction so it shows something at once
                 local _times = api.engine.getComponent(api.engine.util.getWorld(), api.type.ComponentType.GAME_TIME)
                 if _times and type(_times.gameTime) == "number" then
-                    local newName = utils.getNewSignConName({}, config, utils.formatClockString(math.floor(_times.gameTime / 1000)))
+                    local newName = utils.getNewSignConName(
+                        {},
+                        config,
+                        utils.formatClockString(math.floor(_times.gameTime / 1000))
+                    )
                     api.cmd.sendCommand(api.cmd.make.setName(args.signConId, newName))
                 end
 

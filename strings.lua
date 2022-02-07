@@ -56,8 +56,10 @@ display construction and it will manage its display updates when placed in game.
 [b]Please report any bugs with this mod so I can try to address them.[/b]
 			]],
             ["ModName"] = "Dynamic Departures / Arrivals Boards",
+            ["ArrivalsAllCaps"] = "ARRIVALS",
             ["Auto"] = "Auto",
             ["Cargo"] = "Cargo",
+            ["DeparturesAllCaps"] = "DEPARTURES",
             ["Destination"] = "Destination",
             ["Due"] = "Due",
             ["DynamicArrivalsSingleTerminalName"] = "Dynamic Arrivals Single Terminal",
@@ -68,6 +70,7 @@ display construction and it will manage its display updates when placed in game.
             ["DynamicDeparturesSummaryBoardDesc"] = "A digital display showing trains departing from all terminals at a nearby station. It will be bulldozed when the station is bulldozed and you unpause the game.",
             ["CannotFindStationToJoin"] = "Cannot find a nearby station to join",
             ["FromSpace"] = "From ",
+            ["From"] = "From",
             ["GoBack"] = "Go back",
             ["GoThere"] = "Go there",
             ["Join"] = "Join",
@@ -80,6 +83,7 @@ display construction and it will manage its display updates when placed in game.
             ["StationPickerWindowTitle"] = "Pick a station to join",
             ["StationSection"] = "Station Section",
             ["Time"] = "Time",
+            ["To"] = "To",
             ["WarningWindowTitle"] = "Warning",
         },
     }
