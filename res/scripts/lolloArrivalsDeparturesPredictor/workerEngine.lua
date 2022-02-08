@@ -401,8 +401,10 @@ local function getLastDepartureTime(vehicle, time)
             result = time
             logger.print('lastDepartureTime == 0, doorsTime <= 0, a train has just left the depot')
         end
-        logger.print('vehicle.lineStopDepartures') logger.debugPrint(vehicle.lineStopDepartures)
-        logger.print('vehicle.doorsTime') logger.debugPrint(vehicle.doorsTime)
+        logger.print('vehicle.lineStopDepartures =') logger.debugPrint(vehicle.lineStopDepartures)
+        logger.print('vehicle.doorsTime =') logger.debugPrint(vehicle.doorsTime)
+        logger.print('time =') logger.debugPrint(time)
+        if result > time then logger.warn('doorsTime > time') end
     else
         logger.print('lineStopDepartures OK, last departure time = ' .. result .. ', lastDoorsTime would yield ' .. (math.ceil(vehicle.doorsTime / 1000) + 1000))
     end
@@ -588,7 +590,7 @@ end
 ---@diagnostic disable-next-line: unused-function
 local function update()
     local _time = api.engine.getComponent(api.engine.util.getWorld(), api.type.ComponentType.GAME_TIME).gameTime
-    if not(_time) then logger.print("ERROR: cannot get time") return end
+    if not(_time) then logger.err('cannot get time') return end
 
     if math.fmod(_time, constants.refreshPeriodMsec) ~= 0 then
         -- logger.print('skipping')
@@ -650,7 +652,7 @@ local function update()
                 -- logger.print('signState =') logger.debugPrint(signState)
                 if not(edgeUtils.isValidAndExistingId(signConId)) then
                     -- sign is no more around: clean the state
-                    logger.print('lolloArrivalsDeparturesPredictor WARNING: signConId' .. (signConId or 'NIL') .. ' is no more around ONE')
+                    logger.warn('signConId' .. (signConId or 'NIL') .. ' is no more around ONE')
                     stateHelpers.removePlacedSign(signConId)
                 else
                     -- an entity with the id of our sign is still around
@@ -658,7 +660,7 @@ local function update()
                     -- logger.print('signCon =') logger.debugPrint(signCon)
                     if not(signCon) or not(constructionHooks.getRegisteredConstructions()[signCon.fileName]) then
                         -- sign is no more around: clean the state
-                        logger.print('lolloArrivalsDeparturesPredictor WARNING: signConId' .. (signConId or 'NIL') .. ' is no more around TWO')
+                        logger.warn('signConId' .. (signConId or 'NIL') .. ' is no more around TWO')
                         stateHelpers.removePlacedSign(signConId)
                     else
                         local formattedPredictions = {}
@@ -667,14 +669,14 @@ local function update()
                         if (config.maxEntries or 0) > 0 then
                             if not(edgeUtils.isValidAndExistingId(signState.stationConId)) then
                                 -- station is no more around: bulldoze its signs
-                                logger.print('lolloArrivalsDeparturesPredictor WARNING: signConId' .. (signConId or 'NIL') .. ' is no more around THREE')
+                                logger.warn('signConId' .. (signConId or 'NIL') .. ' is no more around THREE')
                                 stateHelpers.removePlacedSign(signConId)
                                 utils.bulldozeConstruction(signConId)
                             else
                                 local stationCon = api.engine.getComponent(signState.stationConId, api.type.ComponentType.CONSTRUCTION)
                                 if not(stationCon) or not(stationCon.stations) or #stationCon.stations == 0 then
                                     -- station is no more around: bulldoze its signs
-                                    logger.print('lolloArrivalsDeparturesPredictor WARNING: signConId' .. (signConId or 'NIL') .. ' is no more around FOUR')
+                                    logger.warn('signConId' .. (signConId or 'NIL') .. ' is no more around FOUR')
                                     stateHelpers.removePlacedSign(signConId)
                                     utils.bulldozeConstruction(signConId)
                                 else
@@ -701,7 +703,7 @@ local function update()
                                                 if rawPredictions == nil then
                                                     rawPredictions = nextPredictions
                                                 else
-                                                    print('lolloArrivalsDeparturesPredictor WARNING this should never happen ONE')
+                                                    logger.warn('this concat should never be required ONE')
                                                     arrayUtils.concatValues(rawPredictions, nextPredictions)
                                                 end
                                             end

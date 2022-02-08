@@ -2,11 +2,27 @@ local constants = require('lolloArrivalsDeparturesPredictor.constants')
 
 return {
     print = function(...)
-        if not(constants.isExtendedLoggerActive) then return end
+        if not(constants.isExtendedLogActive) then return end
         print(...)
     end,
+    warn = function(label, ...)
+        if not(constants.isWarningLogActive) then return end
+        print('lolloArrivalsDeparturesPredictor WARNING: ' .. label, ...)
+    end,
+    err = function(label, ...)
+        if not(constants.isErrorLogActive) then return end
+        print('lolloArrivalsDeparturesPredictor ERROR: ' .. label, ...)
+    end,
     debugPrint = function(whatever)
-        if not(constants.isExtendedLoggerActive) then return end
+        if not(constants.isExtendedLogActive) then return end
+        debugPrint(whatever)
+    end,
+    warningDebugPrint = function(whatever)
+        if not(constants.isWarningLogActive) then return end
+        debugPrint(whatever)
+    end,
+    errorDebugPrint = function(whatever)
+        if not(constants.isErrorLogActive) then return end
         debugPrint(whatever)
     end,
     profile = function(label, func)

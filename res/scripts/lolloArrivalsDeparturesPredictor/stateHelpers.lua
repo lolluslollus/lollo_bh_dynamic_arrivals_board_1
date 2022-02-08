@@ -1,3 +1,5 @@
+local logger = require('lolloArrivalsDeparturesPredictor.logger')
+
 local persistent_state = {}
 
 local _initState = function()
@@ -24,7 +26,8 @@ local funcs = {
     end,
     removePlacedSign = function(key)
         if not(key) or not(persistent_state.placed_signs) then
-            print('lolloArrivalsDeparturesPredictor ERROR: cannot remove state element')
+            logger.err('cannot remove placed_signs with key '.. (key or 'NIL') ..' from state')
+            logger.errorDebugPrint(persistent_state)
             return
         end
 
@@ -35,11 +38,11 @@ local funcs = {
         return persistent_state
     end,
     setPlacedSign = function(key, value)
-        if not(key) and not(value) then return end
+        if not(key) then return end
 
         if persistent_state.placed_signs == nil then
-            print('lolloArrivalsDeparturesPredictor WARNING no state while setting a state element')
-            persistent_state.placed_signs = {}
+            logger.warn('no placed_signs during setPlacedSign()')
+            _initState()
         end
         persistent_state.placed_signs[key] = value
     end,

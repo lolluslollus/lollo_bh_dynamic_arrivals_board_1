@@ -1,5 +1,7 @@
 local constants = {
-    isExtendedLoggerActive = true,
+    isExtendedLogActive = true,
+    isWarningLogActive = true,
+    isErrorLogActive = true,
     isTimersActive = true,
 
     refreshPeriodMsec = 5000, -- refresh every 5 seconds
