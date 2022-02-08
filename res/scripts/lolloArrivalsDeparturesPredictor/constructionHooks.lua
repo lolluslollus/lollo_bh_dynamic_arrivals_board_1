@@ -35,37 +35,29 @@ local funcs = {
     getRegisteredConstructions = function()
         return targetConstructions
     end,
-    getRegisteredConstructionOrDefault = function(index)
-        local config = targetConstructions[index]
-        if not config then
-            print('lolloArrivalsDeparturesPredictor WARNING: cannot read the construction config, fileName =', index or 'NIL')
-            config = {}
-        end
-
-        return config
-    end,
     registerConstruction = function(conPath, params)
         targetConstructions[conPath] = params
     end,
+    getParamPrefixFromCon = function()
+        -- -- Only to be called from .con files! -- --
+        -- This is the proper way of getting a different paramPrefix for every construction,
+        -- keeping the "truth" in one place only.
+
+        -- returns the current file path
+        -- local _currentFilePathAbsolute = debug.getinfo(1, 'S').source
+        -- returns the caller file path (one level up in the stack)
+        local _currentFilePathAbsolute = debug.getinfo(2, 'S').source
+        assert(
+            stringUtils.stringEndsWith(_currentFilePathAbsolute, '.con'),
+            'lolloArrivalsDeparturesPredictor ERROR: getParamPrefixFromCon was called from ' .. (_currentFilePathAbsolute or 'NIL')
+        )
+        -- print('_currentFilePathAbsolute =') debugPrint(_currentFilePathAbsolute)
+        ---@diagnostic disable-next-line: undefined-field
+        local _currentFilePathRelative = arrayUtils.getLast(_currentFilePathAbsolute:split('/res/construction/'))
+        -- print('_currentFilePathRelative =') debugPrint(_currentFilePathRelative)
+
+        return targetConstructions[_currentFilePathRelative].paramPrefix
+    end,
 }
-funcs.getParamPrefixFromCon = function()
-    -- -- Only to be called from .con files! -- --
-    -- This is the proper way of getting a different paramPrefix for every construction,
-    -- keeping the "truth" in one place only.
-
-    -- returns the current file path
-    -- local _currentFilePathAbsolute = debug.getinfo(1, 'S').source
-    -- returns the caller file path (one level up in the stack)
-    local _currentFilePathAbsolute = debug.getinfo(2, 'S').source
-    assert(
-        stringUtils.stringEndsWith(_currentFilePathAbsolute, '.con'),
-        'lolloArrivalsDeparturesPredictor ERROR: getParamPrefixFromCon was called from ' .. (_currentFilePathAbsolute or 'NIL')
-    )
-    -- print('_currentFilePathAbsolute =') debugPrint(_currentFilePathAbsolute)
-    ---@diagnostic disable-next-line: undefined-field
-    local _currentFilePathRelative = arrayUtils.getLast(_currentFilePathAbsolute:split('/res/construction/'))
-
-    return funcs.getRegisteredConstructionOrDefault(_currentFilePathRelative).paramPrefix
-end
 
 return funcs

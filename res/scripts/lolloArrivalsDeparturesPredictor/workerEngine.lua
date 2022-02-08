@@ -604,9 +604,6 @@ local function update()
 
             -- local speed = (api.engine.getComponent(api.engine.util.getWorld(), api.type.ComponentType.GAME_SPEED).speedup) or 1
 
-            -- local newConstructions = {}
-            -- local oldConstructions = {}
-
             local averageTimeToLeaveDestinationsFromPreviousBuffer = {}
             local predictionsBuffer = {
                 byStation = {},
@@ -648,7 +645,8 @@ local function update()
             -- LOLLO TODO as I bulldoze and rebuild things, maybe while paused,
             -- strange objects can take up the entity id of a station I have bulldozed,
             -- or a sign I have bulldozed.
-            -- They keep hanging around in my state, which is no good.
+            -- As a consequence, they will pass the following checks
+            -- and they will keep hanging around in my state, which is no good.
             -- The errors are caught, but then the signs may fail to update.
             -- Solution: sanitise them here.
 
@@ -674,7 +672,7 @@ local function update()
                 -- logger.print('signCon =') logger.debugPrint(signCon)
                 if signCon then
                     local formattedPredictions = {}
-                    local config = constructionHooks.getRegisteredConstructionOrDefault(signCon.fileName)
+                    local config = constructionHooks.getRegisteredConstructions()[signCon.fileName]
                     if (config.maxEntries or 0) > 0 then -- config.maxEntries is tied to the construction type, like our tables
                         local function getParam(name) return config.paramPrefix .. name end
                         local rawPredictions = nil
@@ -714,57 +712,8 @@ local function update()
                         utils.formatClockString(_clock_time)
                     )
                     api.cmd.sendCommand(api.cmd.make.setName(signConId, newName))
-
-                    -- -- rebuild the sign construction
-                    -- local newCon = api.type.SimpleProposal.ConstructionEntity.new()
-
-                    -- local newParams = {}
-                    -- for oldKey, oldVal in pairs(signCon.params) do
-                    --     newParams[oldKey] = oldVal
-                    -- end
-
-                    -- if config.clock then
-                    --     newParams[param("time_string")] = clockString
-                    --     newParams[param("game_time")] = clock_time
-                    -- end
-
-                    -- newParams[param("num_arrivals")] = #formattedArrivals
-
-                    -- for i, a in ipairs(formattedArrivals) do
-                    --     local paramName = "arrival_" .. i .. "_"
-                    --     newParams[param(paramName .. "dest")] = a.destinationString
-                    --     newParams[param(paramName .. "time")] = config.absoluteArrivalTime and a.arrivalTimeString or a.etaMinutesString
-                    --     if not config.singleTerminal and a.arrivalTerminal then
-                    --         newParams[param(paramName .. "terminal")] = a.arrivalTerminal
-                    --     end
-                    -- end
-
-                    -- newParams.seed = signCon.params.seed + 1
-
-                    -- newCon.fileName = signCon.fileName
-                    -- newCon.params = newParams
-                    -- newCon.transf = signCon.transf
-                    -- newCon.playerEntity = api.engine.util.getPlayer()
-
-                    -- newConstructions[#newConstructions+1] = newCon
-                    -- oldConstructions[#oldConstructions+1] = signConId
-
-                    -- logger.print('newCon =') logger.debugPrint(newCon)
                 end
             end
-
-            -- if #newConstructions > 0 then
-            --         local proposal = api.type.SimpleProposal.new()
-            --         for i = 1, #newConstructions do
-            --         proposal.constructionsToAdd[i] = newConstructions[i]
-            --         end
-            --         proposal.constructionsToRemove = oldConstructions
-
-            --         logger.profile("buildProposal command", function()
-            --         -- changing params on a construction doesn't seem to change the entity id which indicates it doesn't completely "replace" it but i don't know how expensive this command actually is...
-            --         api.cmd.sendCommand(api.cmd.make.buildProposal(proposal, api.type.Context:new(), true))
-            --         end)
-            -- end
 
             local executionTime = math.ceil((os.clock() - startTick) * 1000)
             print("Full update took " .. executionTime .. "ms")
