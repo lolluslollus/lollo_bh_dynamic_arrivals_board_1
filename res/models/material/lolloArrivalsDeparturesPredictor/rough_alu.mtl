@@ -44,4 +44,4 @@ function data()
         },
         type = "PHYSICAL_NRML_MAP",
     }
-    end
+end
