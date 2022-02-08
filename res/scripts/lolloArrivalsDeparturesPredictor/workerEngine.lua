@@ -394,8 +394,17 @@ local function getLastDepartureTime(vehicle, time)
 
     -- useful when starting a new line or a new train
     if result == 0 then
-        result = time
-        logger.print('lastDepartureTime == 0, a train has just left the depot')
+        if vehicle.doorsTime > 0 then
+            result = math.ceil(vehicle.doorsTime / 1000) + 1000
+            logger.print('lastDepartureTime == 0, falling back to doorsTime')
+        else
+            result = time
+            logger.print('lastDepartureTime == 0, doorsTime <= 0, a train has just left the depot')
+        end
+        logger.print('vehicle.lineStopDepartures') logger.debugPrint(vehicle.lineStopDepartures)
+        logger.print('vehicle.doorsTime') logger.debugPrint(vehicle.doorsTime)
+    else
+        logger.print('lineStopDepartures OK, last departure time = ' .. result .. ', lastDoorsTime would yield ' .. (math.ceil(vehicle.doorsTime / 1000) + 1000))
     end
 
 --[[
@@ -403,16 +412,7 @@ local function getLastDepartureTime(vehicle, time)
     and -1 when a vehicle has just left the depot
     It is always a little sooner then lastDepartureTime, by about 1 second,
     but it may vary.
-
-    local result2 = math.ceil(vehicle.doorsTime / 1000)
-    logger.print('lastDepartureTime with doorsTime =', result2)
-
-    -- useful when starting a new line or a new train
-    if result2 == 0 then
-        result2 = time
-        logger.print('lolloArrivalsDeparturesPredictor WARNING: lastDepartureTime == 0')
-        result2 = result2 + 1000
-    end ]]
+]]
 
     return result
 end
