@@ -154,7 +154,7 @@ utils.getFormattedPredictions = function(predictions, time)
     return results
 end
 
-utils.getNewSignConName = function(formattedPredictions, config, clockString, signState)
+utils.getNewSignConName = function(formattedPredictions, config, clockString)
     local result = ''
     if config.singleTerminal then
         local i = 1
@@ -645,6 +645,13 @@ local function update()
                 end,
             }
 
+            -- LOLLO TODO as I bulldoze and rebuild things, maybe while paused,
+            -- strange objects can take up the entity id of a station I have bulldozed,
+            -- or a sign I have bulldozed.
+            -- They keep hanging around in my state, which is no good.
+            -- The errors are caught, but then the signs may fail to update.
+            -- Solution: sanitise them here.
+
             -- sign is no more around: clean the state
             for signConId, signState in pairs(state.placed_signs) do
                 if not(edgeUtils.isValidAndExistingId(signConId)) then
@@ -704,8 +711,7 @@ local function update()
                     local newName = utils.getNewSignConName(
                         formattedPredictions,
                         config,
-                        utils.formatClockString(_clock_time),
-                        signState
+                        utils.formatClockString(_clock_time)
                     )
                     api.cmd.sendCommand(api.cmd.make.setName(signConId, newName))
 

@@ -26,7 +26,7 @@ function data()
 								"lolloArrivalsDeparturesPredictor/rough_alu_opaque.mtl",
 								"lolloArrivalsDeparturesPredictor/glass_dark.mtl",
 							},
-							mesh = "lolloArrivalsDeparturesPredictor/bh_digital_display_tall_flat_back_wide_floating_lod0.msh",
+							mesh = "lolloArrivalsDeparturesPredictor/station_display_wide_floating_lod0.msh",
 							name = "bh_digital_display_tall",
 							transf = { 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, },
 						},
