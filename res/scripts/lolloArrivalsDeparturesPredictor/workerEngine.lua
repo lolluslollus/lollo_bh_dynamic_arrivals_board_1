@@ -388,7 +388,6 @@ local function getAverageTimeToLeaveDestinationFromPrevious(vehicles, nStops, li
 end
 
 local function getLastDepartureTime(vehicle, time)
-    -- LOLLO TODO choose one varying the waiting times at stations
     -- this is a little slower; it is 0 when a new train leaves the depot
     local result = math.max(table.unpack(vehicle.lineStopDepartures))
     -- logger.print('lastDepartureTime with unpack =', result)
@@ -399,8 +398,11 @@ local function getLastDepartureTime(vehicle, time)
         logger.print('lastDepartureTime == 0, a train has just left the depot')
     end
 
---[[     -- this is 0 when a new train leaves the depot
-    -- doorsTime == -1 when a vehicle has just left the depot
+--[[
+    doorsTime is 0 when a new train leaves the depot
+    and -1 when a vehicle has just left the depot
+    It is always a little sooner then lastDepartureTime, by about 1 second,
+    but it may vary.
 
     local result2 = math.ceil(vehicle.doorsTime / 1000)
     logger.print('lastDepartureTime with doorsTime =', result2)
@@ -444,7 +446,8 @@ local function getNextPredictions(stationId, station, nEntries, time, onlyTermin
                 if line then
                     local vehicles = api.engine.system.transportVehicleSystem.getLineVehicles(lineId)
                     if #vehicles > 0 then
-                        local hereIndex, startIndex, endIndex = getHereStartEndIndexes(line, stationGroupId, stationIndexInStationGroupBase0, terminal.tag) -- LOLLO TODO tag or id - 1?
+                         -- LOLLO TODO tag or id - 1?
+                        local hereIndex, startIndex, endIndex = getHereStartEndIndexes(line, stationGroupId, stationIndexInStationGroupBase0, terminal.tag)
                         local nStops = #line.stops
                         logger.print('hereIndex, startIndex, endIndex, nStops =', hereIndex, startIndex, endIndex, nStops)
                         -- Here, I average the times across all the trains on this line.
@@ -642,76 +645,78 @@ local function update()
                 end,
             }
 
-            -- LOLLO TODO as I bulldoze and rebuild things, maybe while paused,
-            -- strange objects can take up the entity id of a station I have bulldozed,
-            -- or a sign I have bulldozed.
-            -- As a consequence, they will pass the following checks
-            -- and they will keep hanging around in my state, which is no good.
-            -- The errors are caught, but then the signs may fail to update.
-            -- Solution: sanitise them here.
-
-            -- sign is no more around: clean the state
-            for signConId, signState in pairs(state.placed_signs) do
-                if not(edgeUtils.isValidAndExistingId(signConId)) then
-                    stateHelpers.removePlacedSign(signConId)
-                end
-            end
-            -- station is no more around: bulldoze its signs
-            for signConId, signState in pairs(state.placed_signs) do
-                if not(edgeUtils.isValidAndExistingId(signState.stationConId)) then
-                    stateHelpers.removePlacedSign(signConId)
-                    utils.bulldozeConstruction(signConId)
-                end
-            end
-            -- now the state is clean
             for signConId, signState in pairs(state.placed_signs) do
                 -- logger.print('signConId =') logger.debugPrint(signConId)
                 -- logger.print('signState =') logger.debugPrint(signState)
-                local signCon = api.engine.getComponent(signConId, api.type.ComponentType.CONSTRUCTION)
-                local stationIds = api.engine.getComponent(signState.stationConId, api.type.ComponentType.CONSTRUCTION).stations
-                -- logger.print('signCon =') logger.debugPrint(signCon)
-                if signCon then
-                    local formattedPredictions = {}
-                    local config = constructionHooks.getRegisteredConstructions()[signCon.fileName]
-                    if (config.maxEntries or 0) > 0 then -- config.maxEntries is tied to the construction type, like our tables
-                        local function getParam(name) return config.paramPrefix .. name end
-                        local rawPredictions = nil
-                        -- the player may have changed the cargo flag or the terminal in the construction params
-                        local isCargo = utils.getIsCargo(config, signCon, signState, getParam)
-                        local terminalId = utils.getTerminalId(config, signCon, signState, getParam)
-                        for _, stationId in pairs(stationIds) do
-                            if edgeUtils.isValidAndExistingId(stationId) then
-                                local station = api.engine.getComponent(stationId, api.type.ComponentType.STATION)
-                                if isCargo == not(not(station.cargo)) then
-                                    local nextPredictions = getNextPredictions(
-                                        stationId,
-                                        station,
-                                        config.maxEntries,
-                                        _time,
-                                        terminalId, -- nil if config.singleTerminal == falsy
-                                        predictionsBufferHelpers,
-                                        averageTimeToLeaveDestinationsFromPreviousBuffer
-                                    )
-                                    if rawPredictions == nil then
-                                        rawPredictions = nextPredictions
-                                    else
-                                        print('lolloArrivalsDeparturesPredictor WARNING this should never happen ONE')
-                                        arrayUtils.concatValues(rawPredictions, nextPredictions)
+                if not(edgeUtils.isValidAndExistingId(signConId)) then
+                    -- sign is no more around: clean the state
+                    stateHelpers.removePlacedSign(signConId)
+                else
+                    -- an entity with the id of our sign is still around
+                    local signCon = api.engine.getComponent(signConId, api.type.ComponentType.CONSTRUCTION)
+                    -- logger.print('signCon =') logger.debugPrint(signCon)
+                    if not(signCon) or not(constructionHooks.getRegisteredConstructions()[signCon.fileName]) then
+                        -- sign is no more around: clean the state
+                        stateHelpers.removePlacedSign(signConId)
+                    else
+                        local formattedPredictions = {}
+                        local config = constructionHooks.getRegisteredConstructions()[signCon.fileName]
+                        -- LOLLO TODO config.maxEntries is tied to the construction type, make sure the same-type signs have the same maxEntries
+                        if (config.maxEntries or 0) > 0 then
+                            if not(edgeUtils.isValidAndExistingId(signState.stationConId)) then
+                                -- station is no more around: bulldoze its signs
+                                stateHelpers.removePlacedSign(signConId)
+                                utils.bulldozeConstruction(signConId)
+                            else
+                                local stationCon = api.engine.getComponent(signState.stationConId, api.type.ComponentType.CONSTRUCTION)
+                                if not(stationCon) or not(stationCon.stations) or #stationCon.stations == 0 then
+                                    -- station is no more around: bulldoze its signs
+                                    stateHelpers.removePlacedSign(signConId)
+                                    utils.bulldozeConstruction(signConId)
+                                else
+                                    local stationIds = stationCon.stations
+                                    local function _getParamName(subfix) return config.paramPrefix .. subfix end
+                                    local rawPredictions = nil
+                                    -- the player may have changed the cargo flag or the terminal in the construction params
+                                    local isCargo = utils.getIsCargo(config, signCon, signState, _getParamName)
+                                    local terminalId = utils.getTerminalId(config, signCon, signState, _getParamName)
+
+                                    for _, stationId in pairs(stationIds) do
+                                        if edgeUtils.isValidAndExistingId(stationId) then
+                                            local station = api.engine.getComponent(stationId, api.type.ComponentType.STATION)
+                                            if isCargo == not(not(station.cargo)) then
+                                                local nextPredictions = getNextPredictions(
+                                                    stationId,
+                                                    station,
+                                                    config.maxEntries,
+                                                    _time,
+                                                    terminalId, -- nil if config.singleTerminal == falsy
+                                                    predictionsBufferHelpers,
+                                                    averageTimeToLeaveDestinationsFromPreviousBuffer
+                                                )
+                                                if rawPredictions == nil then
+                                                    rawPredictions = nextPredictions
+                                                else
+                                                    print('lolloArrivalsDeparturesPredictor WARNING this should never happen ONE')
+                                                    arrayUtils.concatValues(rawPredictions, nextPredictions)
+                                                end
+                                            end
+                                        end
                                     end
+                                    -- logger.print('single terminal rawPredictions =') logger.debugPrint(rawPredictions)
+                                    formattedPredictions = utils.getFormattedPredictions(rawPredictions or {}, _time)
                                 end
                             end
                         end
-                        -- logger.print('single terminal rawPredictions =') logger.debugPrint(rawPredictions)
-                        formattedPredictions = utils.getFormattedPredictions(rawPredictions or {}, _time)
-                    end
 
-                    -- rename the construction
-                    local newName = utils.getNewSignConName(
-                        formattedPredictions,
-                        config,
-                        utils.formatClockString(_clock_time)
-                    )
-                    api.cmd.sendCommand(api.cmd.make.setName(signConId, newName))
+                        -- rename the construction
+                        local newName = utils.getNewSignConName(
+                            formattedPredictions,
+                            config,
+                            utils.formatClockString(_clock_time)
+                        )
+                        api.cmd.sendCommand(api.cmd.make.setName(signConId, newName))
+                    end
                 end
             end
 
