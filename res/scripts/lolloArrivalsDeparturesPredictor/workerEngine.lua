@@ -650,6 +650,7 @@ local function update()
                 -- logger.print('signState =') logger.debugPrint(signState)
                 if not(edgeUtils.isValidAndExistingId(signConId)) then
                     -- sign is no more around: clean the state
+                    logger.print('lolloArrivalsDeparturesPredictor WARNING: signConId' .. (signConId or 'NIL') .. ' is no more around ONE')
                     stateHelpers.removePlacedSign(signConId)
                 else
                     -- an entity with the id of our sign is still around
@@ -657,6 +658,7 @@ local function update()
                     -- logger.print('signCon =') logger.debugPrint(signCon)
                     if not(signCon) or not(constructionHooks.getRegisteredConstructions()[signCon.fileName]) then
                         -- sign is no more around: clean the state
+                        logger.print('lolloArrivalsDeparturesPredictor WARNING: signConId' .. (signConId or 'NIL') .. ' is no more around TWO')
                         stateHelpers.removePlacedSign(signConId)
                     else
                         local formattedPredictions = {}
@@ -665,12 +667,14 @@ local function update()
                         if (config.maxEntries or 0) > 0 then
                             if not(edgeUtils.isValidAndExistingId(signState.stationConId)) then
                                 -- station is no more around: bulldoze its signs
+                                logger.print('lolloArrivalsDeparturesPredictor WARNING: signConId' .. (signConId or 'NIL') .. ' is no more around THREE')
                                 stateHelpers.removePlacedSign(signConId)
                                 utils.bulldozeConstruction(signConId)
                             else
                                 local stationCon = api.engine.getComponent(signState.stationConId, api.type.ComponentType.CONSTRUCTION)
                                 if not(stationCon) or not(stationCon.stations) or #stationCon.stations == 0 then
                                     -- station is no more around: bulldoze its signs
+                                    logger.print('lolloArrivalsDeparturesPredictor WARNING: signConId' .. (signConId or 'NIL') .. ' is no more around FOUR')
                                     stateHelpers.removePlacedSign(signConId)
                                     utils.bulldozeConstruction(signConId)
                                 else
