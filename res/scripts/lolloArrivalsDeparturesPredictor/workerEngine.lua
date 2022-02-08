@@ -397,14 +397,14 @@ local function getLastDepartureTime(vehicle, time)
         if vehicle.doorsTime > 0 then
             result = math.ceil(vehicle.doorsTime / 1000) + 1000
             logger.print('lastDepartureTime == 0, falling back to doorsTime')
+            if result > time then logger.warn('doorsTime > time, doorsTime = ' .. result .. ', time = ' .. time) end
         else
             result = time
-            logger.print('lastDepartureTime == 0, doorsTime <= 0, a train has just left the depot')
+            logger.print('lastDepartureTime == 0 AND vehicle.doorsTime == ' .. (vehicle.doorsTime or 'NIL') .. ', a train has just left the depot')
         end
-        logger.print('vehicle.lineStopDepartures =') logger.debugPrint(vehicle.lineStopDepartures)
-        logger.print('vehicle.doorsTime =') logger.debugPrint(vehicle.doorsTime)
-        logger.print('time =') logger.debugPrint(time)
-        if result > time then logger.warn('doorsTime > time') end
+        -- logger.print('vehicle.lineStopDepartures =') logger.debugPrint(vehicle.lineStopDepartures)
+        -- logger.print('vehicle.doorsTime =') logger.debugPrint(vehicle.doorsTime)
+        -- logger.print('time =') logger.debugPrint(time)
     else
         logger.print('lineStopDepartures OK, last departure time = ' .. result .. ', lastDoorsTime would yield ' .. (math.ceil(vehicle.doorsTime / 1000) + 1000))
     end

@@ -1,9 +1,4 @@
 local constants = {
-    isExtendedLogActive = true,
-    isWarningLogActive = true,
-    isErrorLogActive = true,
-    isTimersActive = true,
-
     refreshPeriodMsec = 5000, -- refresh every 5 seconds
     searchRadius4NearbyStation2JoinMetres = 250,
 
