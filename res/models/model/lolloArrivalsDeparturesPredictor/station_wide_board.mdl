@@ -30,7 +30,7 @@ function data()
 			},
 		},
 		metadata = {
-			labelList = modelHelpers.getStationWideBoardLabelList(),
+			labelList = modelHelpers.getStationWideDisplayLabelList(),
 		},
 		version = 1,
 	}

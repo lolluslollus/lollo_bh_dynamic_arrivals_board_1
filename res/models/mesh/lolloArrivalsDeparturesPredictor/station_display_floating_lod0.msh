@@ -46,7 +46,7 @@ return {
 				},
 			},
 			materials = {
-				"lolloArrivalsDeparturesPredictor/board.mtl", 
+				"lolloArrivalsDeparturesPredictor/display.mtl", 
 			},
 		}, 
 	},

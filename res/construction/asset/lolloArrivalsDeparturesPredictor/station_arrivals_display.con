@@ -1,10 +1,10 @@
 local constants = require('lolloArrivalsDeparturesPredictor.constants')
-local constructionProps = require('lolloArrivalsDeparturesPredictor.constructionProps')
+local constructionConfigs = require('lolloArrivalsDeparturesPredictor.constructionConfigs')
 local constructionHelpers = require('lolloArrivalsDeparturesPredictor.constructionHelpers')
 
 local _styles = { 'station_board', 'station_board_hanging', 'station_board_floating', 'station_wide_board', 'station_wide_board_hanging', 'station_wide_board_floating' }
 
-local _paramPrefix = constructionProps.getParamPrefixFromCon()
+local _paramPrefix = constructionConfigs.getParamPrefixFromCon()
 
 local function _getParamName(name)
     -- return constants.paramPrefix .. name

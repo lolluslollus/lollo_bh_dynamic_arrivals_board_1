@@ -1,130 +1,159 @@
 local constants = require('lolloArrivalsDeparturesPredictor.constants')
 local stringUtils = require('lolloArrivalsDeparturesPredictor.stringUtils')
 
-local _boardsOnOffButtonId = 'lollo_arrivals_departures_predictor_boards_on_off_button'
+local _dynamicOnOffButtonId = 'lollo_arrivals_departures_predictor_dynamic_on_off_button'
 local _stationPickerWindowId = 'lollo_arrivals_departures_predictor_picker_window'
 local _warningWindowWithMessageId = 'lollo_arrivals_departures_predictor_warning_window_with_message'
 
 local _texts = {
-    boardsOff = _('BoardsOff'),
-    boardsOn = _('BoardsOn'),
+    dynamicOff = _('DynamicDisplaysOff'),
+    dynamicOn = _('DynamicDisplaysOn'),
     goBack = _('GoBack'),
     goThere = _('GoThere'), -- cannot put this directly inside the loop for some reason
     join = _('Join'),
-    noJoin = _('NoJoin'),
     stationPickerWindowTitle = _('StationPickerWindowTitle'),
     warningWindowTitle = _('WarningWindowTitle'),
 }
 
 local _windowXShift = -200
 
-local guiHelpers = {
-    isShowingWarning = false,
+local utils = {
     moveCamera = function(position)
         local cameraData = game.gui.getCamera()
         game.gui.setCamera({position[1], position[2], cameraData[3], cameraData[4], cameraData[5]})
+    end,
+    modifyOnOffButtonLayout = function(layout, isOn)
+        if isOn then
+            layout:addItem(api.gui.comp.ImageView.new('ui/design/components/checkbox_valid.tga'), api.gui.util.Alignment.HORIZONTAL, api.gui.util.Alignment.VERTICAL)
+            layout:addItem(api.gui.comp.TextView.new(_texts.dynamicOn), api.gui.util.Alignment.HORIZONTAL, api.gui.util.Alignment.VERTICAL)
+        else
+            layout:addItem(api.gui.comp.ImageView.new('ui/design/components/checkbox_invalid.tga'), api.gui.util.Alignment.HORIZONTAL, api.gui.util.Alignment.VERTICAL)
+            layout:addItem(api.gui.comp.TextView.new(_texts.dynamicOff), api.gui.util.Alignment.HORIZONTAL, api.gui.util.Alignment.VERTICAL)
+        end
     end
 }
 
-guiHelpers.showNearbyStationPicker = function(isTheNewObjectCargo, stationCons, tentativeStationConId, joinCallback)
-    -- print('showNearbyStationPicker starting')
-    local layout = api.gui.layout.BoxLayout.new('VERTICAL')
-    local window = api.gui.util.getById(_stationPickerWindowId)
-    if window == nil then
-        window = api.gui.comp.Window.new(_texts.stationPickerWindowTitle, layout)
-        window:setId(_stationPickerWindowId)
-    else
-        window:setContent(layout)
-        window:setVisible(true, false)
-    end
+local guiHelpers = {
+    showNearbyStationPicker = function(isTheNewObjectCargo, stationCons, tentativeStationConId, joinCallback)
+        -- print('showNearbyStationPicker starting')
+        local layout = api.gui.layout.BoxLayout.new('VERTICAL')
+        local window = api.gui.util.getById(_stationPickerWindowId)
+        if window == nil then
+            window = api.gui.comp.Window.new(_texts.stationPickerWindowTitle, layout)
+            window:setId(_stationPickerWindowId)
+        else
+            window:setContent(layout)
+            window:setVisible(true, false)
+        end
 
-    local function addJoinButtons()
-        if type(stationCons) ~= 'table' then return end
+        local function addJoinButtons()
+            if type(stationCons) ~= 'table' then return end
 
-        local components = {}
-        for _, stationCon in pairs(stationCons) do
-            local name = api.gui.comp.TextView.new(stationCon.uiName or stationCon.name or '')
-            local cargoIcon = stationCon.isCargo
-                and api.gui.comp.ImageView.new('ui/icons/construction-menu/category_cargo.tga')
-                or api.gui.comp.TextView.new('')
-            local passengerIcon = stationCon.isPassenger
-                and api.gui.comp.ImageView.new('ui/icons/construction-menu/category_passengers.tga')
-                or api.gui.comp.TextView.new('')
+            local components = {}
+            for _, stationCon in pairs(stationCons) do
+                local name = api.gui.comp.TextView.new(stationCon.uiName or stationCon.name or '')
+                local cargoIcon = stationCon.isCargo
+                    and api.gui.comp.ImageView.new('ui/icons/construction-menu/category_cargo.tga')
+                    or api.gui.comp.TextView.new('')
+                local passengerIcon = stationCon.isPassenger
+                    and api.gui.comp.ImageView.new('ui/icons/construction-menu/category_passengers.tga')
+                    or api.gui.comp.TextView.new('')
 
-            local gotoButtonLayout = api.gui.layout.BoxLayout.new('HORIZONTAL')
-            gotoButtonLayout:addItem(api.gui.comp.ImageView.new('ui/design/window-content/locate_small.tga'))
-            gotoButtonLayout:addItem(api.gui.comp.TextView.new(_texts.goThere))
-            local gotoButton = api.gui.comp.Button.new(gotoButtonLayout, true)
-            gotoButton:onClick(
-                function()
-                    guiHelpers.moveCamera(stationCon.position)
-                    -- game.gui.setCamera({con.position[1], con.position[2], 100, 0, 0})
+                local gotoButtonLayout = api.gui.layout.BoxLayout.new('HORIZONTAL')
+                gotoButtonLayout:addItem(api.gui.comp.ImageView.new('ui/design/window-content/locate_small.tga'))
+                gotoButtonLayout:addItem(api.gui.comp.TextView.new(_texts.goThere))
+                local gotoButton = api.gui.comp.Button.new(gotoButtonLayout, true)
+                gotoButton:onClick(
+                    function()
+                        utils.moveCamera(stationCon.position)
+                        -- game.gui.setCamera({con.position[1], con.position[2], 100, 0, 0})
+                    end
+                )
+
+                local joinButtonLayout = api.gui.layout.BoxLayout.new('HORIZONTAL')
+                joinButtonLayout:addItem(api.gui.comp.ImageView.new('ui/design/components/checkbox_valid.tga'))
+                joinButtonLayout:addItem(api.gui.comp.TextView.new(_texts.join))
+                local joinButton = api.gui.comp.Button.new(joinButtonLayout, true)
+                joinButton:onClick(
+                    function()
+                        if type(joinCallback) == 'function' then joinCallback(stationCon.id) end
+                        window:setVisible(false, false)
+                    end
+                )
+                if stationCon.id == tentativeStationConId then
+                    joinButton:setEnabled(false)
                 end
-            )
 
-            local joinButtonLayout = api.gui.layout.BoxLayout.new('HORIZONTAL')
-            joinButtonLayout:addItem(api.gui.comp.ImageView.new('ui/design/components/checkbox_valid.tga'))
-            joinButtonLayout:addItem(api.gui.comp.TextView.new(_texts.join))
-            local joinButton = api.gui.comp.Button.new(joinButtonLayout, true)
-            joinButton:onClick(
-                function()
-                    if type(joinCallback) == 'function' then joinCallback(stationCon.id) end
-                    window:setVisible(false, false)
-                end
-            )
-            if stationCon.id == tentativeStationConId then
-                joinButton:setEnabled(false)
+                components[#components + 1] = {name, cargoIcon, passengerIcon, gotoButton, joinButton}
             end
 
-            components[#components + 1] = {name, cargoIcon, passengerIcon, gotoButton, joinButton}
-        end
-
-        if #components > 0 then
-            local guiStationsTable = api.gui.comp.Table.new(#components, 'NONE')
-            guiStationsTable:setNumCols(5)
-            for _, value in pairs(components) do
-                guiStationsTable:addRow(value)
+            if #components > 0 then
+                local guiStationsTable = api.gui.comp.Table.new(#components, 'NONE')
+                guiStationsTable:setNumCols(5)
+                for _, value in pairs(components) do
+                    guiStationsTable:addRow(value)
+                end
+                layout:addItem(guiStationsTable)
             end
-            layout:addItem(guiStationsTable)
         end
-    end
 
-    addJoinButtons()
+        addJoinButtons()
 
-    -- window:setHighlighted(true)
-    local position = api.gui.util.getMouseScreenPos()
-    window:setPosition(position.x + _windowXShift, position.y)
-    window:onClose(
-        function()
-            window:setVisible(false, false)
+        -- window:setHighlighted(true)
+        local position = api.gui.util.getMouseScreenPos()
+        window:setPosition(position.x + _windowXShift, position.y)
+        window:onClose(
+            function()
+                window:setVisible(false, false)
+            end
+        )
+    end,
+    showWarningWindowWithMessage = function(text)
+        local layout = api.gui.layout.BoxLayout.new('VERTICAL')
+        local window = api.gui.util.getById(_warningWindowWithMessageId)
+        if window == nil then
+            window = api.gui.comp.Window.new(_texts.warningWindowTitle, layout)
+            window:setId(_warningWindowWithMessageId)
+        else
+            window:setContent(layout)
+            window:setVisible(true, false)
         end
-    )
-end
 
-guiHelpers.showWarningWindowWithMessage = function(text)
-    guiHelpers.isShowingWarning = true
-    local layout = api.gui.layout.BoxLayout.new('VERTICAL')
-    local window = api.gui.util.getById(_warningWindowWithMessageId)
-    if window == nil then
-        window = api.gui.comp.Window.new(_texts.warningWindowTitle, layout)
-        window:setId(_warningWindowWithMessageId)
-    else
-        window:setContent(layout)
-        window:setVisible(true, false)
-    end
+        layout:addItem(api.gui.comp.TextView.new(text))
 
-    layout:addItem(api.gui.comp.TextView.new(text))
+        window:setHighlighted(true)
+        local position = api.gui.util.getMouseScreenPos()
+        window:setPosition(position.x + _windowXShift, position.y)
+        -- window:addHideOnCloseHandler()
+        window:onClose(
+            function()
+                window:setVisible(false, false)
+            end
+        )
+    end,
+    initNotausButton = function(isDynamicOn, funcOfBool)
+        if api.gui.util.getById(_dynamicOnOffButtonId) then return end
 
-    window:setHighlighted(true)
-    local position = api.gui.util.getMouseScreenPos()
-    window:setPosition(position.x + _windowXShift, position.y)
-    -- window:addHideOnCloseHandler()
-    window:onClose(
-        function()
-            window:setVisible(false, false)
-        end
-    )
-end
+        local buttonLayout = api.gui.layout.BoxLayout.new('HORIZONTAL')
+        utils.modifyOnOffButtonLayout(buttonLayout, isDynamicOn)
+        local button = api.gui.comp.ToggleButton.new(buttonLayout)
+        button:setSelected(isDynamicOn, false)
+        button:onToggle(function(isOn) -- isOn is boolean
+            print('toggled; isOn = ', isOn)
+            while buttonLayout:getNumItems() > 0 do
+                local item0 = buttonLayout:getItem(0)
+                buttonLayout:removeItem(item0)
+            end
+            utils.modifyOnOffButtonLayout(buttonLayout, isOn)
+            button:setSelected(isOn, false)
+            funcOfBool(isOn)
+        end)
+
+        button:setId(_dynamicOnOffButtonId)
+
+        api.gui.util.getById('gameInfo'):getLayout():addItem(button) -- adds a button in the right place
+    end,
+}
 
 local _fuckAround = function()
     local _mbl = api.gui.util.getById('mainButtonsLayout')
@@ -160,39 +189,6 @@ local _fuckAround = function()
     api.gui.util.getById('LolloButton'):getLayout():getItem(0):getNumItems() -- returns 2, coz I put two things into my button
     -- adds a third icon to my button
     api.gui.util.getById('LolloButton'):getLayout():getItem(0):addItem(api.gui.comp.ImageView.new('ui/design/components/checkbox_valid.tga'))
-end
-
-local _modifyOnOffButtonLayout = function(layout, isOn)
-    if isOn then
-        layout:addItem(api.gui.comp.ImageView.new('ui/design/components/checkbox_valid.tga'), api.gui.util.Alignment.HORIZONTAL, api.gui.util.Alignment.VERTICAL)
-        layout:addItem(api.gui.comp.TextView.new(_texts.boardsOn), api.gui.util.Alignment.HORIZONTAL, api.gui.util.Alignment.VERTICAL)
-    else
-        layout:addItem(api.gui.comp.ImageView.new('ui/design/components/checkbox_invalid.tga'), api.gui.util.Alignment.HORIZONTAL, api.gui.util.Alignment.VERTICAL)
-        layout:addItem(api.gui.comp.TextView.new(_texts.boardsOff), api.gui.util.Alignment.HORIZONTAL, api.gui.util.Alignment.VERTICAL)
-    end
-end
-
-guiHelpers.initNotausButton = function(isBoardsOn, funcOfBool)
-    if api.gui.util.getById(_boardsOnOffButtonId) then return end
-
-    local buttonLayout = api.gui.layout.BoxLayout.new('HORIZONTAL')
-    _modifyOnOffButtonLayout(buttonLayout, isBoardsOn)
-    local button = api.gui.comp.ToggleButton.new(buttonLayout)
-    button:setSelected(isBoardsOn, false)
-    button:onToggle(function(isOn) -- isOn is boolean
-        print('toggled; isOn = ', isOn)
-        while buttonLayout:getNumItems() > 0 do
-            local item0 = buttonLayout:getItem(0)
-            buttonLayout:removeItem(item0)
-        end
-        _modifyOnOffButtonLayout(buttonLayout, isOn)
-        button:setSelected(isOn, false)
-        funcOfBool(isOn)
-    end)
-
-    button:setId(_boardsOnOffButtonId)
-
-    api.gui.util.getById('gameInfo'):getLayout():addItem(button) -- adds a button in the right place
 end
 
 return guiHelpers

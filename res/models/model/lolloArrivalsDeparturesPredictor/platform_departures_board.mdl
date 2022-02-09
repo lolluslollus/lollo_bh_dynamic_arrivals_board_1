@@ -30,7 +30,7 @@ function data()
 			},
 		},
 		metadata = {
-			labelList = modelHelpers.getPlatformBoardLabelList(),
+			labelList = modelHelpers.getPlatformDisplayLabelList(),
 		},
 		version = 1,
 	}

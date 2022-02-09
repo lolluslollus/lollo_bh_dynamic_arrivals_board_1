@@ -28,7 +28,7 @@ function data()
 			},
 		},
 		metadata = {
-			labelList = modelHelpers.getStationBoardLabelList(),
+			labelList = modelHelpers.getStationDisplayLabelList(),
 		},
 		version = 1,
 	}

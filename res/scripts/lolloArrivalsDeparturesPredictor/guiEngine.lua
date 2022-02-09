@@ -1,4 +1,4 @@
-local constructionProps = require ("lolloArrivalsDeparturesPredictor.constructionProps")
+local constructionConfigs = require ("lolloArrivalsDeparturesPredictor.constructionConfigs")
 local constants = require('lolloArrivalsDeparturesPredictor.constants')
 local edgeUtils = require('lolloArrivalsDeparturesPredictor.edgeUtils')
 local guiHelpers = require('lolloArrivalsDeparturesPredictor.guiHelpers')
@@ -68,7 +68,7 @@ local function handleEvent(id, name, args)
         local con = api.engine.getComponent(args, api.type.ComponentType.CONSTRUCTION)
         if not(con) or not(con.fileName) then return end
 
-        local config = constructionProps.getRegisteredConstructions()[con.fileName]
+        local config = constructionConfigs.getConConfigs()[con.fileName]
         if not(config) then return end
 
         xpcall(
@@ -84,12 +84,12 @@ local function handleEvent(id, name, args)
         )
     elseif id == 'constructionBuilder' and name == 'builder.apply' then
         -- logger.print('LOLLO caught gui event, id = ', id, ' name = ', name, ' args = ') -- logger.debugPrint(args)
-        -- logger.print('construction.getRegisteredConstructions() =') logger.debugPrint(construction.getRegisteredConstructions())
+        -- logger.print('construction.getConConfigs() =') logger.debugPrint(construction.getConConfigs())
 
         if args and args.proposal then
             local toAdd = args.proposal.toAdd
             if toAdd and toAdd[1] then
-                local config = constructionProps.getRegisteredConstructions()[toAdd[1].fileName]
+                local config = constructionConfigs.getConConfigs()[toAdd[1].fileName]
                 -- logger.print('conProps =') logger.debugPrint(config)
                 if config and args.result and args.result[1] then
                     xpcall(
@@ -119,7 +119,7 @@ local function handleEvent(id, name, args)
         -- I tried 20480 characters or more, that will do.
         -- The only drawback is, when hovering they show a long tooltip - with one row only, luckily.
         -- logger.print('LOLLO caught gui event, id = ', id, ' name = ', name, ' args = ') -- logger.debugPrint(args)
-        -- logger.print('construction.getRegisteredConstructions() =') logger.debugPrint(construction.getRegisteredConstructions())
+        -- logger.print('construction.getConConfigs() =') logger.debugPrint(construction.getConConfigs())
 
         if args and args.proposal and args.proposal.toRemove and args.proposal.toRemove[1] then
             local signConId = args.proposal.toRemove[1]

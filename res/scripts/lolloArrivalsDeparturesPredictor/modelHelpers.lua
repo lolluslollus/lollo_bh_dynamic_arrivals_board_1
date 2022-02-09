@@ -21,9 +21,9 @@ local constants = require('lolloArrivalsDeparturesPredictor.constants')
     https://www.cplusplus.com/reference/regex/regex_constants/
 ]]
 
--- for platform bouards, stick this in the model editor under "options - config - name"
+-- for platform panels, stick this in the model editor under "options - config - name"
 -- local _testText = "@_track_@88@_1_@Brignole@_2_@12:25@_3_@Ü Bigottu@_4_@1:11@_clock_@01:12:20@"
--- for station boards, stick this in the model editor under "options - config - name"
+-- for station panels, stick this in the model editor under "options - config - name"
 -- local _testText = "@_header_@Departures@_footer_@VeryVeryVeryLongLongLongTextTextText@_1_@To@_2_@Platform@_3_@TimeLong@_4_@Brignole@_5_@2@_6_@1:50@_7_@Torino Porta Nuova Molto molto molto lungo@_8_@21@_9_@19:42@_10_@Sestri Levante@_11_@12@_12_@19:48@_13_@Milano Centrale@_14_@24@_15_@19:59@_16_@Milano Centrale@_17_@24@_18_@20:59@_19_@Milano Centrale@_20_@24@_21_@21:59@_22_@Milano Centrale@_23_@24@_24_@22:59@_25_@Ventimiglia - Marseille@_26_@24@_27_@23:59@_clock_@01:12:20@"
 
 local function getRegexParams(counter)
@@ -40,175 +40,7 @@ local function getRegexParams(counter)
 end
 
 local utils = {
-    getManchesterMetrolinkLabelList = function()
-        return {
-            labels = {
-                -- face A
-                {
-                    alignment = "LEFT",
-                    alpha = 1,
-                    alphaMode = "CUTOUT",
-                    childId = "",
-                    color = { 1, 0.541, 0, },
-                    filter = "CUSTOM",
-                    fitting = "CUT",
-                    nLines = 1,
-                    params = getRegexParams(1),
-                    renderMode = "EMISSIVE",
-                    size = { 0.97, 0.1, },
-                    transf = { 1, 0, 0, 0, 0, -0.139, 0.99, 0, 0, -0.99, -0.139, 0, 0.4, -0.09, 4.35, 1, },
-                    type = "NAME",
-                    verticalAlignment = "CENTER",
-                },
-                {
-                    alignment = "LEFT",
-                    alpha = 1,
-                    alphaMode = "CUTOUT",
-                    childId = "",
-                    color = { 1, 0.541, 0, },
-                    filter = "CUSTOM",
-                    fitting = "CUT",
-                    nLines = 1,
-                    params = getRegexParams(3),
-                    renderMode = "EMISSIVE",
-                    size = { 0.97, 0.1, },
-                    transf = { 1, 0, 0, 0, 0, -0.139, 0.99, 0, 0, -0.99, -0.139, 0, 0.4, -0.09, 4.25, 1, },
-                    type = "NAME",
-                    verticalAlignment = "CENTER",
-                },
-                {
-                    alignment = "CENTER",
-                    alpha = 1,
-                    alphaMode = "CUTOUT",
-                    childId = "",
-                    color = { 1, 0.541, 0, },
-                    filter = "CUSTOM",
-                    fitting = "CUT",
-                    nLines = 1,
-                    params = getRegexParams(constants.nameTags.clock),
-                    renderMode = "EMISSIVE",
-                    size = { 1.27, 0.14, },
-                    transf = { 1, 0, -0, 0, 0, -0.139, 0.99, 0, 0, -0.99, -0.139, 0, 0.4, -0.07, 4.1, 1, },
-                    type = "NAME",
-                    verticalAlignment = "BOTTOM",
-                },
-                {
-                    alignment = "RIGHT",
-                    alpha = 1,
-                    alphaMode = "CUTOUT",
-                    childId = "",
-                    color = { 1, 0.541, 0, },
-                    filter = "CUSTOM",
-                    fitting = "CUT",
-                    nLines = 1,
-                    params = getRegexParams(2),
-                    renderMode = "EMISSIVE",
-                    size = { 0.3, 0.1, },
-                    transf = { 1, 0, -0, 0, 0, -0.139, 0.99, 0, 0, -0.99, -0.139, 0, 1.37, -0.09, 4.35, 1, },
-                    type = "NAME",
-                    verticalAlignment = "CENTER",
-                },
-                {
-                    alignment = "RIGHT",
-                    alpha = 1,
-                    alphaMode = "CUTOUT",
-                    childId = "",
-                    color = { 1, 0.541, 0, },
-                    filter = "CUSTOM",
-                    fitting = "CUT",
-                    nLines = 1,
-                    params = getRegexParams(4),
-                    renderMode = "EMISSIVE",
-                    size = { 0.3, 0.1, },
-                    transf = { 1, 0, -0, 0, 0, -0.139, 0.99, 0, 0, -0.99, -0.139, 0, 1.37, -0.08, 4.25, 1, },
-                    type = "NAME",
-                    verticalAlignment = "CENTER",
-                },
-                -- face B
-                {
-                	alignment = "LEFT",
-                	alpha = 1,
-                	alphaMode = "CUTOUT",
-                	childId = "",
-                	color = { 1, 0.541, 0, },
-                	filter = "CUSTOM",
-                	fitting = "CUT",
-                	nLines = 1,
-                	params = getRegexParams(1),
-                	renderMode = "EMISSIVE",
-                	size = { 0.97, 0.1, },
-                	transf = { -1, 0, -0, 0, 0, 0.139, 0.99, 0, 0, 0.99, -0.139, 0, 1.66, 0.09, 4.35, 1, },
-                	type = "NAME",
-                	verticalAlignment = "CENTER",
-                },
-                {
-                	alignment = "LEFT",
-                	alpha = 1,
-                	alphaMode = "CUTOUT",
-                	childId = "",
-                	color = { 1, 0.541, 0, },
-                	filter = "CUSTOM",
-                	fitting = "CUT",
-                	nLines = 1,
-                	params = getRegexParams(3),
-                	renderMode = "EMISSIVE",
-                	size = { 0.97, 0.1, },
-                	transf = { -1, 0, -0, 0, 0, 0.139, 0.99, 0, 0, 0.99, -0.139, 0, 1.66, 0.08, 4.25, 1, },
-                	type = "NAME",
-                	verticalAlignment = "CENTER",
-                },
-                {
-                	alignment = "CENTER",
-                	alpha = 1,
-                	alphaMode = "CUTOUT",
-                	childId = "",
-                	color = { 1, 0.541, 0, },
-                	filter = "CUSTOM",
-                	fitting = "CUT",
-                	nLines = 1,
-                	params = getRegexParams(constants.nameTags.clock),
-                	renderMode = "EMISSIVE",
-                	size = { 1.27, 0.14, },
-                	transf = { -1, 0, -0, 0, 0, 0.139, 0.99, 0, 0, 0.99, -0.139, 0, 1.66, 0.07, 4.1, 1, },
-                	type = "NAME",
-                	verticalAlignment = "BOTTOM",
-                },
-                {
-                	alignment = "RIGHT",
-                	alpha = 1,
-                	alphaMode = "CUTOUT",
-                	childId = "",
-                	color = { 1, 0.541, 0, },
-                	filter = "CUSTOM",
-                	fitting = "CUT",
-                	nLines = 1,
-                	params = getRegexParams(2),
-                	renderMode = "EMISSIVE",
-                	size = { 0.3, 0.1, },
-                	transf = { -1, 0, -0, 0, 0, 0.139, 0.99, 0, 0, 0.99, -0.139, 0, 0.7, 0.09, 4.35, 1, },
-                	type = "NAME",
-                	verticalAlignment = "CENTER",
-                },
-                {
-                	alignment = "RIGHT",
-                	alpha = 1,
-                	alphaMode = "CUTOUT",
-                	childId = "",
-                	color = { 1, 0.541, 0, },
-                	filter = "CUSTOM",
-                	fitting = "CUT",
-                	nLines = 1,
-                	params = getRegexParams(4),
-                	renderMode = "EMISSIVE",
-                	size = { 0.3, 0.1, },
-                	transf = { -1, 0, -0, 0, 0, 0.139, 0.99, 0, 0, 0.99, -0.139, 0, 0.7, 0.08, 4.25, 1, },
-                	type = "NAME",
-                	verticalAlignment = "CENTER",
-                },
-            },
-        }
-    end,
-    getPlatformBoardLabelList = function()
+    getPlatformDisplayLabelList = function()
         local _zed0 = 2.67
         local _dZed = -0.1
         local function zed(counter)
@@ -420,7 +252,7 @@ local utils = {
             },
         }
     end,
-    getStationBoardLabelList = function()
+    getStationDisplayLabelList = function()
         local _zed0 = 3.65
         local _dZed = -0.1
         local function zed(counter)
@@ -967,7 +799,7 @@ local utils = {
             },
         }
     end,
-    getStationWideBoardLabelList = function()
+    getStationWideDisplayLabelList = function()
         local _zed0 = 3.65
         local _dZed = -0.1
         local function zed(counter)
