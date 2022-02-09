@@ -1,5 +1,3 @@
-local constructionHooks = require ("lolloArrivalsDeparturesPredictor.constructionHooks")
-
 function data()
 	return {
 		info = {

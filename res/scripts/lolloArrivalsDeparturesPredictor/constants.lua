@@ -12,6 +12,8 @@ local constants = {
         toggle_notaus = 'toggle_notaus'
     },
 
+    idTransf = { 1, 0, 0, 0,  0, 1, 0, 0,  0, 0, 1, 0,  0, 0, 0, 1 },
+
     nameTags = {
         clock = 'clock',
         footer = 'footer',

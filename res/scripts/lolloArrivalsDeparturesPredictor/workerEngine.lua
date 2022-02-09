@@ -1,17 +1,16 @@
-local stateHelpers = require("lolloArrivalsDeparturesPredictor.stateHelpers")
-local constructionHooks = require("lolloArrivalsDeparturesPredictor.constructionHooks")
-
-local logger = require ("lolloArrivalsDeparturesPredictor.logger")
+local logger = require ('lolloArrivalsDeparturesPredictor.logger')
 local arrayUtils = require('lolloArrivalsDeparturesPredictor.arrayUtils')
 local constants = require('lolloArrivalsDeparturesPredictor.constants')
+local constructionProps = require('lolloArrivalsDeparturesPredictor.constructionProps')
 local edgeUtils = require('lolloArrivalsDeparturesPredictor.edgeUtils')
+local stateHelpers = require('lolloArrivalsDeparturesPredictor.stateHelpers')
 local stationHelpers = require('lolloArrivalsDeparturesPredictor.stationHelpers')
 local transfUtilsUG = require('transf')
 
 local _texts = {
-    arrivalsAllCaps = _("ArrivalsAllCaps"),
-    companyNamePrefix1 = _("CompanyNamePrefix1"),
-    departuresAllCaps = _("DeparturesAllCaps"),
+    arrivalsAllCaps = _('ArrivalsAllCaps'),
+    companyNamePrefix1 = _('CompanyNamePrefix1'),
+    departuresAllCaps = _('DeparturesAllCaps'),
     destination = _('Destination'),
     due = _('Due'),
     from = _('From'),
@@ -45,7 +44,7 @@ local utils = {
         -- context.gatherFields = true -- default is true
         -- context.player = api.engine.util.getPlayer() -- default is -1
         api.cmd.sendCommand(
-            api.cmd.make.buildProposal(proposal, context, true), -- the 3rd param is "ignore errors"; wrong proposals will be discarded anyway
+            api.cmd.make.buildProposal(proposal, context, true), -- the 3rd param is 'ignore errors'; wrong proposals will be discarded anyway
             function(result, success)
                 logger.print('bulldozeConstruction success = ', success)
                 -- logger.print('bulldozeConstruction result = ') logger.debugPrint(result)
@@ -53,14 +52,14 @@ local utils = {
         )
     end,
     formatClockString = function(clock_time)
-        return string.format("%02d:%02d:%02d", (clock_time / 60 / 60) % 24, (clock_time / 60) % 60, clock_time % 60)
+        return string.format('%02d:%02d:%02d', (clock_time / 60 / 60) % 24, (clock_time / 60) % 60, clock_time % 60)
     end,
     formatClockStringHHMM = function(clock_time)
-        return string.format("%02d:%02d", (clock_time / 60 / 60) % 24, (clock_time / 60) % 60)
+        return string.format('%02d:%02d', (clock_time / 60 / 60) % 24, (clock_time / 60) % 60)
     end,
     getIsCargo = function(config, signCon, signState, getParam)
         -- returns true for cargo and false for passenger stations
-        local result = signCon.params[getParam("cargo_override")] or 0
+        local result = signCon.params[getParam('cargo_override')] or 0
         if result == 0 then
             if signState and signState.nearestTerminal and signState.nearestTerminal.cargo then
                 return true
@@ -74,7 +73,7 @@ local utils = {
         -- returns a terminalId if config.singleTerminal == true, otherwise nil
         if not(config) or not(config.singleTerminal) then return nil end
 
-        local result = signCon.params[getParam("terminal_override")] or 0
+        local result = signCon.params[getParam('terminal_override')] or 0
         if result == 0 then
             if signState and signState.nearestTerminal and signState.nearestTerminal.terminalId then
                 result = signState.nearestTerminal.terminalId
@@ -99,12 +98,12 @@ utils.getFormattedPredictions = function(predictions, time)
     if predictions then
         for _, rawEntry in ipairs(predictions) do
             local fmtEntry = {
-                originString = "-",
-                destinationString = "-",
+                originString = '-',
+                destinationString = '-',
                 etaMinutesString = _texts.due,
                 etdMinutesString = _texts.due,
-                arrivalTimeString = "--:--",
-                departureTimeString = "--:--",
+                arrivalTimeString = '--:--',
+                departureTimeString = '--:--',
                 -- arrivalTerminal = (rawEntry.terminalTag or 0) + 1, -- the terminal tag has base 0
                 arrivalTerminal = (rawEntry.terminalId or '-'), -- the terminal id has base 1
             }
@@ -142,11 +141,11 @@ utils.getFormattedPredictions = function(predictions, time)
         results[#results+1] = {
             originString = _texts.sorryNoService,
             destinationString = _texts.sorryNoService,
-            etaMinutesString = "-",
-            etdMinutesString = "-",
-            arrivalTimeString = "--:--",
-            departureTimeString = "--:--",
-            arrivalTerminal = "-"
+            etaMinutesString = '-',
+            etdMinutesString = '-',
+            arrivalTimeString = '--:--',
+            departureTimeString = '--:--',
+            arrivalTerminal = '-'
         }
     end
 
@@ -418,6 +417,7 @@ local function getLastDepartureTime(vehicle, time)
 
     return result
 end
+
 local function getNextPredictions(stationId, station, nEntries, time, onlyTerminalId, predictionsBufferHelpers, averageTimeToLeaveDestinationsFromPreviousBuffer)
     -- logger.print('getNextPredictions starting')
     local predictions = {}
@@ -660,13 +660,13 @@ local function update()
                     -- an entity with the id of our sign is still around
                     local signCon = api.engine.getComponent(signConId, api.type.ComponentType.CONSTRUCTION)
                     -- logger.print('signCon =') logger.debugPrint(signCon)
-                    if not(signCon) or not(constructionHooks.getRegisteredConstructions()[signCon.fileName]) then
+                    if not(signCon) or not(constructionProps.getRegisteredConstructions()[signCon.fileName]) then
                         -- sign is no more around: clean the state
                         logger.warn('signConId' .. (signConId or 'NIL') .. ' is no more around TWO')
                         stateHelpers.removePlacedSign(signConId)
                     else
                         local formattedPredictions = {}
-                        local config = constructionHooks.getRegisteredConstructions()[signCon.fileName]
+                        local config = constructionProps.getRegisteredConstructions()[signCon.fileName]
                         -- LOLLO TODO config.maxEntries is tied to the construction type, make sure the same-type signs have the same maxEntries
                         if (config.maxEntries or 0) > 0 then
                             if not(edgeUtils.isValidAndExistingId(signState.stationConId)) then
@@ -729,7 +729,7 @@ local function update()
             end
 
             local executionTime = math.ceil((os.clock() - startTick) * 1000)
-            print("Full update took " .. executionTime .. "ms")
+            print('Full update took ' .. executionTime .. 'ms')
         end,
         logger.errorHandler
     )
@@ -754,14 +754,14 @@ local function handleEvent(src, id, name, args)
                 local signCon = api.engine.getComponent(args.signConId, api.type.ComponentType.CONSTRUCTION)
                 if not(signCon) then return end
 
-                -- logger.print('constructionHooks.getRegisteredConstructions() =') logger.debugPrint(constructionHooks.getRegisteredConstructions())
+                -- logger.print('constructionProps.getRegisteredConstructions() =') logger.debugPrint(constructionProps.getRegisteredConstructions())
                 -- logger.print('signCon.fileName =', signCon.fileName)
-                local config = constructionHooks.getRegisteredConstructions()[signCon.fileName]
+                local config = constructionProps.getRegisteredConstructions()[signCon.fileName]
                 if not(config) then return end
 
                 -- rename the construction so it shows something at once
                 local _times = api.engine.getComponent(api.engine.util.getWorld(), api.type.ComponentType.GAME_TIME)
-                if _times and type(_times.gameTime) == "number" then
+                if _times and type(_times.gameTime) == 'number' then
                     local newName = utils.getNewSignConName(
                         {},
                         config,

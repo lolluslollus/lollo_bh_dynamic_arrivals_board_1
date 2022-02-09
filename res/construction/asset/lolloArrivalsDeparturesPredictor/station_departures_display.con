@@ -1,111 +1,70 @@
--- local constants = require('lolloArrivalsDeparturesPredictor.constants')
-local constructionHooks = require('lolloArrivalsDeparturesPredictor.constructionHooks')
-local constructionutil = require("constructionutil")
-local transf = require("transf")
-local utils = require("lolloArrivalsDeparturesPredictor.paramHelpers")
+local constants = require('lolloArrivalsDeparturesPredictor.constants')
+local constructionProps = require('lolloArrivalsDeparturesPredictor.constructionProps')
+local constructionHelpers = require('lolloArrivalsDeparturesPredictor.constructionHelpers')
 
-local _styles = { "station_board", "station_board_hanging", "station_board_floating", "station_wide_board", "station_wide_board_hanging", "station_wide_board_floating" }
+local _styles = { 'station_board', 'station_board_hanging', 'station_board_floating', 'station_wide_board', 'station_wide_board_hanging', 'station_wide_board_floating' }
 
-local _paramPrefix = constructionHooks.getParamPrefixFromCon()
--- print('_paramPrefix =') debugPrint(_paramPrefix)
+local _paramPrefix = constructionProps.getParamPrefixFromCon()
 
-local function getParamName(name)
+local function _getParamName(name)
     -- return constants.paramPrefix .. name
     return _paramPrefix .. name
 end
 
-local function getMdl(style)
-    return "lolloArrivalsDeparturesPredictor/" .. style .. ".mdl"
+local function _getMdl(style)
+    return 'lolloArrivalsDeparturesPredictor/' .. style .. '.mdl'
 end
 
-local function getParams()
-    local params = {}
-
-    params[#params+1] = {
-        key = getParamName("style"),
-        name = _("Style"),
-        uiType = "ICON_BUTTON",
-        values = utils.getIcons(_styles),
-        defaultIndex = 3
+local function _getParams()
+    local params = {
+        {
+            key = _getParamName('style'),
+            name = _('Style'),
+            uiType = 'ICON_BUTTON',
+            values = constructionHelpers.getIcons(_styles),
+            defaultIndex = 3
+        }
     }
-
-    utils.addCargoOverrideParam(params, getParamName)
-    utils.addRotateParams(params, getParamName)
-    utils.addOffsetParams(params, getParamName)
+    constructionHelpers.addCargoOverrideParam(params, _getParamName)
 
     return params
 end
 
 function data()
     return {
-        -- type = "ASSET_TRACK",
-        type = "ASSET_DEFAULT",
+        type = 'ASSET_DEFAULT',
         description = {
-            name = _("DynamicDeparturesSummaryBoardName"),
-            description = _("DynamicDeparturesSummaryBoardDesc"),
-            icon = "ui/construction/asset/lolloArrivalsDeparturesPredictor/station_departures_display@2x.tga"
+            name = _('StationDeparturesDisplayName'),
+            description = _('StationDeparturesDisplayDesc'),
+            icon = 'ui/construction/asset/lolloArrivalsDeparturesPredictor/station_departures_display@2x.tga'
         },
         availability = {},
-        buildMode = "SINGLE",
-        categories = { "badgerrhax" },
+        buildMode = 'SINGLE',
+        categories = { 'badgerrhax' },
         order = 12,
         skipCollision = true,
         autoRemovable = false,
-        params = getParams(),
+        params = _getParams(),
         updateFn = function(params)
-            -- print('LOLLO params =') debugPrint(params)
-            local result = { }
-            result.models = {}
+            local result = {
+                groundFaces = constructionHelpers.getDummyGroundFaces(),
+                models = {},
+                terrainAlignmentLists = constructionHelpers.getDummyTerrainAlignmentLists(),
+            }
 
-            local rotate = utils.getRotateValue(params, getParamName)
-            local offset = utils.getOffsetValue(params, getParamName)
-
-            local style = _styles[params[getParamName("style")]+1]
+            local _style = _styles[params[_getParamName('style')] + 1]
             result.models[#result.models + 1] = {
-                id = getMdl(style),
-                transf = constructionutil.rotateTransf(params, transf.rotZYXTransl(rotate, offset))
+                id = _getMdl(_style),
+                transf = constants.idTransf,
             }
             -- result.models[#result.models + 1] = {
             --     id = 'lolloArrivalsDeparturesPredictor/icon/blue.mdl',
             --     transf = {1, 0, 0, 0,  0, 1, 0, 0,  0, 0, 1, 0,  0, 0, 0, 1}
             -- }
 
---[[ 			local labelValues = {}
-            for i = 1, 29 do
-                labelValues[i] = ""
-            end
-
-            labelValues[1] = "Destination"
-            labelValues[2] = "Plat"
-            labelValues[3] = "Time"
-            labelValues[28] = params[configKey("time_string")]
-
-            local numArrivals = params[configKey("num_arrivals")] or 0
-            if numArrivals > 0 then
-                for i = 1, numArrivals do
-                    local labelIndexStart = 3 * i + 1
-                    labelValues[labelIndexStart] = params[configKey("arrival_" .. i .. "_dest")]
-                    labelValues[labelIndexStart+1] = tostring(params[configKey("arrival_" .. i .. "_terminal")])
-                    labelValues[labelIndexStart+2] = params[configKey("arrival_" .. i .. "_time")]
-                end
-            end
-
-            result.labelText = {
-                [#result.models-1] = labelValues
-            } ]]
-
-            result.terrainAlignmentLists = { { type = "EQUAL", faces = {} }}
-            result.groundFaces = {}
-
-    -- specifically to make the game treat this as a construction
-    -- makes this thing easier to select in game; capacity must be > 0
-    -- it also makes it bulldozable with the bulldozer, instead of the eraser brush,
-    -- so we can catch the bulldoze event, which we otherwise cannot.
-    -- LOLLO TODO see if we can get rid of this bodge
-            result.personCapacity = { type = "RESIDENTIAL", capacity = 1, }
-
-            -- print('LOLLO result =') debugPrint(result)
             return result
+        end,
+        upgradeFn = function(_)
         end
     }
 end

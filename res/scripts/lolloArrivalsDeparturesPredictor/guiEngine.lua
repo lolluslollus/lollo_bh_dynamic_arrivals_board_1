@@ -1,5 +1,4 @@
--- NOTE that the state must be read-only here coz we are in the GUI thread
-local constructionHooks = require ("lolloArrivalsDeparturesPredictor.constructionHooks")
+local constructionProps = require ("lolloArrivalsDeparturesPredictor.constructionProps")
 local constants = require('lolloArrivalsDeparturesPredictor.constants')
 local edgeUtils = require('lolloArrivalsDeparturesPredictor.edgeUtils')
 local guiHelpers = require('lolloArrivalsDeparturesPredictor.guiHelpers')
@@ -9,18 +8,22 @@ local stationHelpers = require('lolloArrivalsDeparturesPredictor.stationHelpers'
 local transfUtilsUG = require('transf')
 
 
-local function _sendScriptEvent(id, name, args)
+-- LOLLO NOTE that the state must be read-only here coz we are in the GUI thread
+
+local function _sendScriptEvent(name, args)
     api.cmd.sendCommand(api.cmd.make.sendScriptEvent(
-        string.sub(debug.getinfo(1, 'S').source, 1), id, name, args)
+        string.sub(debug.getinfo(1, 'S').source, 1), constants.eventId, name, args)
     )
 end
 
 local function joinSignBase(signConId, stationConId)
-    local eventArgs = {
-        signConId = signConId,
-        stationConId = stationConId
-    }
-    _sendScriptEvent(constants.eventId, constants.events.join_sign_to_station, eventArgs)
+    _sendScriptEvent(
+        constants.events.join_sign_to_station,
+        {
+            signConId = signConId,
+            stationConId = stationConId
+        }
+    )
 end
 
 local function tryJoinSign(signConId, tentativeStationConId)
@@ -58,16 +61,14 @@ local function tryJoinSign(signConId, tentativeStationConId)
 end
 
 local function handleEvent(id, name, args)
-    if name == 'select' then -- this never really fires coz these things are hard to select
+    if name == 'select' then
         -- logger.print('LOLLO caught gui event, id = ', id, ' name = ', name, ' args = ') logger.debugPrint(args)
-        -- logger.print('construction.getRegisteredConstructions() =') logger.debugPrint(construction.getRegisteredConstructions())
-        -- if not(api.engine.entityExists(args)) then return end -- probably redundant
+        if not(args) or not(edgeUtils.isValidAndExistingId(args)) then return end -- probably redundant
 
         local con = api.engine.getComponent(args, api.type.ComponentType.CONSTRUCTION)
         if not(con) or not(con.fileName) then return end
 
-        local config = constructionHooks.getRegisteredConstructions()[con.fileName]
-        -- logger.print('conProps =') logger.debugPrint(config)
+        local config = constructionProps.getRegisteredConstructions()[con.fileName]
         if not(config) then return end
 
         xpcall(
@@ -84,10 +85,11 @@ local function handleEvent(id, name, args)
     elseif id == 'constructionBuilder' and name == 'builder.apply' then
         -- logger.print('LOLLO caught gui event, id = ', id, ' name = ', name, ' args = ') -- logger.debugPrint(args)
         -- logger.print('construction.getRegisteredConstructions() =') logger.debugPrint(construction.getRegisteredConstructions())
+
         if args and args.proposal then
             local toAdd = args.proposal.toAdd
             if toAdd and toAdd[1] then
-                local config = constructionHooks.getRegisteredConstructions()[toAdd[1].fileName]
+                local config = constructionProps.getRegisteredConstructions()[toAdd[1].fileName]
                 -- logger.print('conProps =') logger.debugPrint(config)
                 if config and args.result and args.result[1] then
                     xpcall(
@@ -103,7 +105,7 @@ local function handleEvent(id, name, args)
             local _state = stateHelpers.getState()
             if toRemove and toRemove[1] and _state.placed_signs[toRemove[1]] then
                 -- logger.print('remove_display_construction for con id =', toRemove[1])
-                _sendScriptEvent(constants.eventId, constants.events.remove_display_construction, {signConId = toRemove[1]})
+                _sendScriptEvent(constants.events.remove_display_construction, {signConId = toRemove[1]})
             end
         end
     elseif id == 'bulldozer' and name == 'builder.apply' then
@@ -118,12 +120,13 @@ local function handleEvent(id, name, args)
         -- The only drawback is, when hovering they show a long tooltip - with one row only, luckily.
         -- logger.print('LOLLO caught gui event, id = ', id, ' name = ', name, ' args = ') -- logger.debugPrint(args)
         -- logger.print('construction.getRegisteredConstructions() =') logger.debugPrint(construction.getRegisteredConstructions())
+
         if args and args.proposal and args.proposal.toRemove and args.proposal.toRemove[1] then
             local signConId = args.proposal.toRemove[1]
             local _state = stateHelpers.getState()
             if _state.placed_signs[signConId] then
                 -- logger.print('remove_display_construction for con id =', toRemove[1])
-                _sendScriptEvent(constants.eventId, constants.events.remove_display_construction, {signConId = signConId})
+                _sendScriptEvent(constants.events.remove_display_construction, {signConId = signConId})
             end
         end
     -- else
@@ -137,7 +140,7 @@ local function guiInit()
     guiHelpers.initNotausButton(
         _state.is_on,
         function(isOn)
-            _sendScriptEvent(constants.eventId, constants.events.toggle_notaus, isOn)
+            _sendScriptEvent(constants.events.toggle_notaus, isOn)
         end
     )
 end

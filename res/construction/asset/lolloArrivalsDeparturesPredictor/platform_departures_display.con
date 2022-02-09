@@ -1,127 +1,80 @@
--- local constants = require('lolloArrivalsDeparturesPredictor.constants')
-local constructionHooks = require('lolloArrivalsDeparturesPredictor.constructionHooks')
-local constructionutil = require("constructionutil")
-local transf = require('transf')
-local utils = require("lolloArrivalsDeparturesPredictor.paramHelpers")
+local constants = require('lolloArrivalsDeparturesPredictor.constants')
+local constructionProps = require('lolloArrivalsDeparturesPredictor.constructionProps')
+local constructionHelpers = require('lolloArrivalsDeparturesPredictor.constructionHelpers')
 
-local _styles = { "platform_departures_board", "platform_departures_board_floating", }
+local _styles = { 'platform_departures_board', 'platform_departures_board_floating', }
 
-local _paramPrefix = constructionHooks.getParamPrefixFromCon()
--- print('_paramPrefix =') debugPrint(_paramPrefix)
+local _paramPrefix = constructionProps.getParamPrefixFromCon()
 
-local function getParamName(name)
+local function _getParamName(name)
     -- return constants.paramPrefix .. name
     return _paramPrefix .. name
 end
 
-local function getMdl(style)
-    return "lolloArrivalsDeparturesPredictor/" .. style .. ".mdl"
+local function _getMdl(style)
+    return 'lolloArrivalsDeparturesPredictor/' .. style .. '.mdl'
 end
 
-local function getParams()
-    local params = {}
-    params[#params+1] = {
-        key = getParamName("style"),
-        name = _("Style"),
-        uiType = "ICON_BUTTON",
-        values = utils.getIcons(_styles)
+local function _getParams()
+    local params = {
+        {
+            key = _getParamName('style'),
+            name = _('Style'),
+            uiType = 'ICON_BUTTON',
+            values = constructionHelpers.getIcons(_styles)
+        },
+        {
+            key = _getParamName('align2Platform'),
+            name = _('Snapping Align'),
+            values = { _('AlignFree'), _('AlignPlatform') },
+            defaultIndex = 1
+        },
     }
-    params[#params+1] = {
-        key = getParamName("snapTrackPlatformAlign"),
-        name = _("Snapping Align"),
-        values = { _("AlignFree"), _("AlignPlatform") },
-        defaultIndex = 1
-    }
-
-    -- since the terminal placement logic is not perfect, provide a param to override the terminal this sign is linked to
-    utils.addCargoOverrideParam(params, getParamName)
-    utils.addTerminalOverrideParam(params, getParamName)
-    utils.addRotateParams(params, getParamName)
-    utils.addOffsetParams(params, getParamName)
+    constructionHelpers.addCargoOverrideParam(params, _getParamName)
+    constructionHelpers.addTerminalOverrideParam(params, _getParamName)
 
     return params
 end
 
 function data()
     return {
-        type = "ASSET_TRACK",
+        type = 'ASSET_TRACK',
         description = {
-            name = _("DynamicArrivalsSingleTerminalName"),
-            description = _("DynamicArrivalsSingleTerminalDesc"),
-            icon = "ui/construction/asset/lolloArrivalsDeparturesPredictor/platform_departures_display@2x.tga"
+            name = _('PlatformDeparturesDisplayName'),
+            description = _('PlatformDeparturesDisplayDesc'),
+            icon = 'ui/construction/asset/lolloArrivalsDeparturesPredictor/platform_departures_display@2x.tga'
         },
         availability = {},
-        buildMode = "SINGLE",
-        categories = { "badgerrhax" },
+        buildMode = 'SINGLE',
+        categories = { 'badgerrhax' },
         order = 13,
         skipCollision = true,
         autoRemovable = false,
-        params = getParams(),
+        params = _getParams(),
         updateFn = function(params)
-            local result = { }
-            result.models = {}
+            local result = {
+                groundFaces = constructionHelpers.getDummyGroundFaces(),
+                models = {},
+                terrainAlignmentLists = constructionHelpers.getDummyTerrainAlignmentLists(),
+            }
 
-            local align = params[getParamName("snapTrackPlatformAlign")] or 1
-
-            local rotate = utils.getRotateValue(params, getParamName)
-            if align ~= 0 then
-                rotate.x = rotate.x + math.pi / 2
-            end
-
-            local offset = utils.getOffsetValue(params, getParamName)
-            if align ~= 0 then
-                -- offset.y == 0 is the middle of the track, since this is a track asset.
-                -- This is good for the terminal detection.
-                offset.y = offset.y - 3.7 -- to fit thin platforms
-                -- offset.z = offset.z + 1.3 -- to fit stock stations
-                offset.z = offset.z + 1.6 -- to fit freestyle stations
-            end
-
-            local style = _styles[params[getParamName("style")]+1]
+            local _align = params[_getParamName('align2Platform')] or 1
+            local _style = _styles[params[_getParamName('style')] + 1]
+            local _transf = _align == 0
+                and { 1, 0, 0, 0,  0, 1, 0, 0,  0, 0, 1, 0,  0, 0, 0, 1 }
+                or { 1, 0, 0, 0,  0, 1, 0, 0,  0, 0, 1, 0,  0, -3.7, 1.6, 1 }
             result.models[#result.models + 1] = {
-                id = getMdl(style),
-                transf = constructionutil.rotateTransf(params, transf.rotZYXTransl(rotate, offset))
+                id = _getMdl(_style),
+                transf = _transf
             }
             -- result.models[#result.models + 1] = {
             --     id = 'lolloArrivalsDeparturesPredictor/icon/blue.mdl',
             --     transf = {1, 0, 0, 0,  0, 1, 0, 0,  0, 0, 1, 0,  0, 0, 0, 1}
             -- }
 
-            -- local labelValues = {
-            -- 	params[configKey("arrival_1_dest")], -- these are some of the params provided by the arrivals engine when updating this construction
-            -- 	params[configKey("arrival_2_dest")],
-            -- 	params[configKey("time_string")],
-            -- 	params[configKey("arrival_1_time")],
-            -- 	params[configKey("arrival_2_time")],
-            -- }
-
-            -- local joinTables = function(t, t2)
-            --     local results = {}
-            --     for _, v in ipairs(t) do
-            --         results[#results+1] = v
-            --     end
-            --     for _, v in ipairs(t2) do
-            --         results[#results+1] = v
-            --     end
-            --     return results
-            -- end,
-
-            -- result.labelText = {
-            -- 	[#result.models-1] = joinTables(labelValues, labelValues) -- our sign is 2-sided with same values on both
-            -- }
-
-            result.terrainAlignmentLists = { { type = "EQUAL", faces = {} }}
-            result.groundFaces = {}
-
-        -- specifically to make the game treat this as a construction
-        -- makes this thing easier to select in game; capacity must be > 0
-        -- it also makes it bulldozable with the bulldozer, instead of the eraser brush,
-        -- so we can catch the bulldoze event, which we otherwise cannot.
-        -- LOLLO TODO see if we can get rid of this bodge
-            result.personCapacity = { type = "RESIDENTIAL", capacity = 1, }
-
             return result
+        end,
+        upgradeFn = function(_)
         end
     }
-
 end

@@ -3,17 +3,6 @@ function data()
 	local modelHelpers = require('lolloArrivalsDeparturesPredictor.modelHelpers')
 
 	return {
-		-- boundingInfo = {
-		-- 	bbMax = { 0.55691999197006, 0.068626686930656, 4.5999999046326, },
-		-- 	bbMin = { -0.56290584802628, -0.068626686930656, 3.1049461364746, },
-		-- },
-		-- collider = {
-		-- 	params = {
-		-- 		halfExtents = { 0.55991291999817, 0.068626686930656, 0.74752688407898, },
-		-- 	},
-		-- 	transf = { 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, },
-		-- 	type = "BOX",
-		-- },
 		boundingInfo = modelHelpers.getVoidBoundingInfo(),
 		collider = modelHelpers.getVoidCollider(),
 		lods = {
@@ -27,12 +16,11 @@ function data()
 								"lolloArrivalsDeparturesPredictor/glass_dark.mtl",
 							},
 							mesh = "lolloArrivalsDeparturesPredictor/station_display_wide_hanging_lod0.msh",
-							name = "bh_digital_display_tall",
-							transf = { 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, },
+							transf = constants.idTransf,
 						},
 					},
 					name = "RootNode",
-					transf = { 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, },
+					transf = constants.idTransf,
 				},
 				static = false,
 				visibleFrom = 0,

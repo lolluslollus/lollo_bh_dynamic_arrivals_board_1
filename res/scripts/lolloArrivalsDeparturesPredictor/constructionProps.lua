@@ -1,7 +1,7 @@
 local arrayUtils = require('lolloArrivalsDeparturesPredictor.arrayUtils')
 local stringUtils = require('lolloArrivalsDeparturesPredictor.stringUtils')
 
-local targetConstructions = {
+local myConstructions = {
     ["asset/lolloArrivalsDeparturesPredictor/platform_departures_display.con"] = {
         singleTerminal = true,
         clock = true,
@@ -33,10 +33,10 @@ local targetConstructions = {
 -- In fact, it doesn't here, so we do it here: never mind, I don't expect other mods to use this.
 local funcs = {
     getRegisteredConstructions = function()
-        return targetConstructions
+        return myConstructions
     end,
     registerConstruction = function(conPath, params)
-        targetConstructions[conPath] = params
+        myConstructions[conPath] = params
     end,
     getParamPrefixFromCon = function()
         -- -- Only to be called from .con files! -- --
@@ -56,7 +56,7 @@ local funcs = {
         local _currentFilePathRelative = arrayUtils.getLast(_currentFilePathAbsolute:split('/res/construction/'))
         -- print('_currentFilePathRelative =') debugPrint(_currentFilePathRelative)
 
-        return targetConstructions[_currentFilePathRelative].paramPrefix
+        return myConstructions[_currentFilePathRelative].paramPrefix
     end,
 }
 
