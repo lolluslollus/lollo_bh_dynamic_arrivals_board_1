@@ -10,6 +10,10 @@ local _initState = function()
     if persistent_state.placed_signs == nil then
         persistent_state.placed_signs = {}
     end
+
+    if persistent_state.is_on == nil then
+        persistent_state.is_on = false
+    end
 end
 
 local funcs = {

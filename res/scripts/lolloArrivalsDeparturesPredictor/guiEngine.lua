@@ -72,9 +72,9 @@ local function handleEvent(id, name, args)
 
         xpcall(
             function()
-                local state = stateHelpers.getState()
-                -- logger.print('state =') logger.debugPrint(state)
-                local stationConId = (state.placed_signs and state.placed_signs[args]) and state.placed_signs[args].stationConId or nil
+                local _state = stateHelpers.getState()
+                -- logger.print('state =') logger.debugPrint(_state)
+                local stationConId = (_state.placed_signs and _state.placed_signs[args]) and _state.placed_signs[args].stationConId or nil
                 if stationConId then return end
 
                 tryJoinSign(args, stationConId) -- args here is the construction id
@@ -100,8 +100,8 @@ local function handleEvent(id, name, args)
             end
 
             local toRemove = args.proposal.toRemove
-            local state = stateHelpers.getState()
-            if toRemove and toRemove[1] and state.placed_signs[toRemove[1]] then
+            local _state = stateHelpers.getState()
+            if toRemove and toRemove[1] and _state.placed_signs[toRemove[1]] then
                 -- logger.print('remove_display_construction for con id =', toRemove[1])
                 _sendScriptEvent(constants.eventId, constants.events.remove_display_construction, {signConId = toRemove[1]})
             end
@@ -120,8 +120,8 @@ local function handleEvent(id, name, args)
         -- logger.print('construction.getRegisteredConstructions() =') logger.debugPrint(construction.getRegisteredConstructions())
         if args and args.proposal and args.proposal.toRemove and args.proposal.toRemove[1] then
             local signConId = args.proposal.toRemove[1]
-            local state = stateHelpers.getState()
-            if state.placed_signs[signConId] then
+            local _state = stateHelpers.getState()
+            if _state.placed_signs[signConId] then
                 -- logger.print('remove_display_construction for con id =', toRemove[1])
                 _sendScriptEvent(constants.eventId, constants.events.remove_display_construction, {signConId = signConId})
             end
@@ -131,6 +131,18 @@ local function handleEvent(id, name, args)
     end
 end
 
+local function guiInit()
+    local _state = stateHelpers.getState()
+
+    guiHelpers.initNotausButton(
+        _state.is_on,
+        function(isOn)
+            _sendScriptEvent(constants.eventId, constants.events.toggle_notaus, isOn)
+        end
+    )
+end
+
 return {
-    handleEvent = handleEvent
+    guiInit = guiInit,
+    handleEvent = handleEvent,
 }

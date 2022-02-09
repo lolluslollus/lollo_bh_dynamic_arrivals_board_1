@@ -2,12 +2,15 @@ local constants = require('lolloArrivalsDeparturesPredictor.constants')
 local edgeUtils = require('lolloArrivalsDeparturesPredictor.edgeUtils')
 local stringUtils = require('lolloArrivalsDeparturesPredictor.stringUtils')
 
+local _boardsOnOffButtonId = 'boardsOnOffButton'
 local _stationPickerWindowId = 'lollo_arrivals_departures_predictor_picker_window'
 local _warningWindowWithGotoId = 'lollo_arrivals_departures_predictor_warning_window_with_goto'
 local _warningWindowWithMessageId = 'lollo_arrivals_departures_predictor_warning_window_with_message'
 local _warningWindowWithStateId = 'lollo_arrivals_departures_predictor_warning_window_with_state'
 
 local _texts = {
+    boardsOff = _('BoardsOff'),
+    boardsOn = _('BoardsOn'),
     goBack = _('GoBack'),
     goThere = _('GoThere'), -- cannot put this directly inside the loop for some reason
     join = _('Join'),
@@ -243,6 +246,75 @@ guiHelpers.hideAllWarnings = function()
     if window ~= nil then
         window:setVisible(false, false)
     end
+end
+
+local _fuckAround = function()
+    local _mbl = api.gui.util.getById('mainButtonsLayout')
+    _mbl:getItem(1):setHighlighted(true) -- flashes the main 7 buttons at the centre
+    _mbl:getItem(1):getLayout()
+    _mbl:getItem(1):getLayout():getNumItems() -- returns 7
+
+
+    -- this adds a button to the bottom right
+    local _mmbb = api.gui.util.getById("mainMenuBottomBar")
+    _mmbb:setHighlighted(true) -- flashes the bottom bar
+    local buttonLayout = api.gui.layout.BoxLayout.new('HORIZONTAL')
+    buttonLayout:addItem(api.gui.comp.ImageView.new('ui/design/components/checkbox_invalid.tga'))
+    buttonLayout:addItem(api.gui.comp.TextView.new('Lollo'))
+    local button = api.gui.comp.Button.new(buttonLayout, true)
+    button:setId('LolloButton')
+
+    _mmbb:getLayout():addItem(button)
+
+    -- where best to add my button?
+    _mmbb:getLayout():getItem(0):setHighlighted(true) -- far left and tiny
+    _mmbb:getLayout():getItem(1):setHighlighted(true) -- most of the width. The id is 'gameInfo'
+    _mmbb:getLayout():getItem(2):setHighlighted(true) -- tiny, just left of the music player
+    _mmbb:getLayout():getItem(3):setHighlighted(true) -- I see nothing
+    _mmbb:getLayout():getItem(4):setHighlighted(true) -- music player
+    _mmbb:getLayout():getItem(5):setHighlighted(true) -- tiny, just right of the music player
+    _mmbb:getLayout():getItem(6):setHighlighted(true) -- pause, play, fast, very fast and the date
+
+    _mmbb:getLayout():getItem(1):getLayout()
+    -- easier:
+    api.gui.util.getById('gameInfo'):getLayout():getNumItems() -- returns 5
+    api.gui.util.getById('gameInfo'):getLayout():addItem(button) -- adds a button in the right place
+    api.gui.util.getById('LolloButton'):getLayout():getItem(0):getNumItems() -- returns 2, coz I put two things into my button
+    -- adds a third icon to my button
+    api.gui.util.getById('LolloButton'):getLayout():getItem(0):addItem(api.gui.comp.ImageView.new('ui/design/components/checkbox_valid.tga'))
+end
+
+local _modifyOnOffButtonLayout = function(layout, isOn)
+    if isOn then
+        layout:addItem(api.gui.comp.ImageView.new('ui/design/components/checkbox_valid.tga'), api.gui.util.Alignment.HORIZONTAL, api.gui.util.Alignment.VERTICAL)
+        layout:addItem(api.gui.comp.TextView.new(_texts.boardsOn), api.gui.util.Alignment.HORIZONTAL, api.gui.util.Alignment.VERTICAL)
+    else
+        layout:addItem(api.gui.comp.ImageView.new('ui/design/components/checkbox_invalid.tga'), api.gui.util.Alignment.HORIZONTAL, api.gui.util.Alignment.VERTICAL)
+        layout:addItem(api.gui.comp.TextView.new(_texts.boardsOff), api.gui.util.Alignment.HORIZONTAL, api.gui.util.Alignment.VERTICAL)
+    end
+end
+
+guiHelpers.initNotausButton = function(isBoardsOn, funcOfBool)
+    if api.gui.util.getById(_boardsOnOffButtonId) then return end
+
+    local buttonLayout = api.gui.layout.BoxLayout.new('HORIZONTAL')
+    _modifyOnOffButtonLayout(buttonLayout, isBoardsOn)
+    local button = api.gui.comp.ToggleButton.new(buttonLayout)
+    button:setSelected(isBoardsOn, false)
+    button:onToggle(function(isOn) -- isOn is boolean
+        print('toggled; isOn = ', isOn)
+        while buttonLayout:getNumItems() > 0 do
+            local item0 = buttonLayout:getItem(0)
+            buttonLayout:removeItem(item0)
+        end
+        _modifyOnOffButtonLayout(buttonLayout, isOn)
+        button:setSelected(isOn, false)
+        funcOfBool(isOn)
+    end)
+
+    button:setId(_boardsOnOffButtonId)
+
+    api.gui.util.getById('gameInfo'):getLayout():addItem(button) -- adds a button in the right place
 end
 
 return guiHelpers

@@ -9,6 +9,7 @@ local constants = {
         hide_warnings = 'hide_warnings',
         join_sign_to_station = 'join_sign_to_station',
         remove_display_construction = 'remove_display_construction',
+        toggle_notaus = 'toggle_notaus'
     },
 
     nameTags = {

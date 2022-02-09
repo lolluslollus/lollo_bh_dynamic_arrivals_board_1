@@ -589,6 +589,9 @@ end
 
 ---@diagnostic disable-next-line: unused-function
 local function update()
+    local state = stateHelpers.getState()
+    if not(state.is_on) then return end
+
     local _time = api.engine.getComponent(api.engine.util.getWorld(), api.type.ComponentType.GAME_TIME).gameTime
     if not(_time) then logger.err('cannot get time') return end
 
@@ -601,7 +604,6 @@ local function update()
         function()
             local startTick = os.clock()
 
-            local state = stateHelpers.getState()
             local _clock_time = math.floor(_time / 1000)
             if _clock_time == state.world_time then return end
 
@@ -788,6 +790,11 @@ local function handleEvent(src, id, name, args)
                         nearestTerminal = nearestTerminal,
                     }
                 )
+                logger.print('state after =') logger.debugPrint(stateHelpers.getState())
+            elseif name == constants.events.toggle_notaus then
+                logger.print('state before =') logger.debugPrint(stateHelpers.getState())
+                local state = stateHelpers.getState()
+                state.is_on = not(not(args))
                 logger.print('state after =') logger.debugPrint(stateHelpers.getState())
             end
         end,

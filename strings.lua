@@ -60,6 +60,8 @@ display construction and it will manage its display updates when placed in game.
             ["AlignPlatform"] = 'Platform',
             ["ArrivalsAllCaps"] = "ARRIVALS",
             ["Auto"] = "Auto",
+            ["BoardsOff"] = "Dynamic boards OFF",
+            ["BoardsOn"] = "Dynamic boards ON",
             ["Cargo"] = "Cargo",
             ["CompanyNamePrefix1"] = "A service provided by ",
             ["DeparturesAllCaps"] = "DEPARTURES",

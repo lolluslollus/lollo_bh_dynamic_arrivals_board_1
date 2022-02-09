@@ -29,5 +29,9 @@ function data()
         guiHandleEvent = function(id, name, param)
             guiEngine.handleEvent(id, name, param)
         end,
+
+        guiInit = function()
+            guiEngine.guiInit()
+        end,
     }
 end
