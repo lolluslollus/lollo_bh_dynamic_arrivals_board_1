@@ -91,7 +91,7 @@ local utils = {
         return nil
     end,
 }
-utils.getFormattedPredictions = function(predictions, time)
+utils.getFormattedPredictions = function(predictions, time, fallbackTerminalIdIfAny)
     -- logger.print('getFormattedPredictions starting, predictions =') logger.debugPrint(predictions)
     local results = {}
 
@@ -145,7 +145,7 @@ utils.getFormattedPredictions = function(predictions, time)
             etdMinutesString = '-',
             arrivalTimeString = '--:--',
             departureTimeString = '--:--',
-            arrivalTerminal = '-'
+            arrivalTerminal = tostring(fallbackTerminalIdIfAny or '-')
         }
     end
 
