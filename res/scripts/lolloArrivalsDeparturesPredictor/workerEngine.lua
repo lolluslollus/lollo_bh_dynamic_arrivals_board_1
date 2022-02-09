@@ -660,13 +660,13 @@ local function update()
                     -- an entity with the id of our sign is still around
                     local signCon = api.engine.getComponent(signConId, api.type.ComponentType.CONSTRUCTION)
                     -- logger.print('signCon =') logger.debugPrint(signCon)
-                    if not(signCon) or not(constructionConfigs.getConConfigs()[signCon.fileName]) then
+                    if not(signCon) or not(constructionConfigs.get()[signCon.fileName]) then
                         -- sign is no more around: clean the state
                         logger.warn('signConId' .. (signConId or 'NIL') .. ' is no more around TWO')
                         stateHelpers.removePlacedSign(signConId)
                     else
                         local formattedPredictions = {}
-                        local config = constructionConfigs.getConConfigs()[signCon.fileName]
+                        local config = constructionConfigs.get()[signCon.fileName]
                         -- LOLLO TODO config.maxEntries is tied to the construction type, make sure the same-type signs have the same maxEntries
                         if (config.maxEntries or 0) > 0 then
                             if not(edgeUtils.isValidAndExistingId(signState.stationConId)) then
@@ -754,9 +754,9 @@ local function handleEvent(src, id, name, args)
                 local signCon = api.engine.getComponent(args.signConId, api.type.ComponentType.CONSTRUCTION)
                 if not(signCon) then return end
 
-                -- logger.print('constructionConfigs.getConConfigs() =') logger.debugPrint(constructionConfigs.getConConfigs())
+                -- logger.print('constructionConfigs.get() =') logger.debugPrint(constructionConfigs.get())
                 -- logger.print('signCon.fileName =', signCon.fileName)
-                local config = constructionConfigs.getConConfigs()[signCon.fileName]
+                local config = constructionConfigs.get()[signCon.fileName]
                 if not(config) then return end
 
                 -- rename the construction so it shows something at once
