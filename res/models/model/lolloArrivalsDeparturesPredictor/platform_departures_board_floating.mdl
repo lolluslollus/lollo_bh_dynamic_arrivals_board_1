@@ -11,7 +11,8 @@ function data()
 					children = {
 						{
 							materials = {
-								"lolloArrivalsDeparturesPredictor/rough_alu_opaque.mtl",
+								"lolloArrivalsDeparturesPredictor/rough_iron.mtl",
+								-- "lolloArrivalsDeparturesPredictor/rough_alu_opaque.mtl",
 								"lolloArrivalsDeparturesPredictor/glass_dark.mtl",
 							},
 							mesh = "lolloArrivalsDeparturesPredictor/platform_display_floating_lod0.msh",
