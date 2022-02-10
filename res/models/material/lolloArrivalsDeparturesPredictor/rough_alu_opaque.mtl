@@ -10,19 +10,19 @@ function data()
                 fadeOutStartDist = 10000,
             },
             map_albedo = {
-                fileName = "model/lolloArrivalsDeparturesPredictor/metal_scratched_007_albedo_bc1a.dds",
+                fileName = "lolloArrivalsDeparturesPredictor/model/metal_scratched_007_albedo_bc1a.dds",
                 type = "TWOD",
                 wrapS = "REPEAT",
                 wrapT = "REPEAT",
             },
             map_metal_gloss_ao = {
-                fileName = "model/lolloArrivalsDeparturesPredictor/metal_scratched_007_opaque_metal_gloss_ao_bc3.dds",
+                fileName = "lolloArrivalsDeparturesPredictor/model/metal_scratched_007_opaque_metal_gloss_ao_bc3.dds",
                 type = "TWOD",
                 wrapS = "REPEAT",
                 wrapT = "REPEAT",
             },
             map_normal = {
-                fileName = "model/lolloArrivalsDeparturesPredictor/metal_scratched_007_normal_bc5.dds",
+                fileName = "lolloArrivalsDeparturesPredictor/model/metal_scratched_007_normal_bc5.dds",
                 redGreen = true,
                 type = "TWOD",
                 wrapS = "REPEAT",
