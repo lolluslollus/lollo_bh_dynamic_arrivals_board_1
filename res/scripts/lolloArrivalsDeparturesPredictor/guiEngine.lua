@@ -80,7 +80,7 @@ local function handleEvent(id, name, args)
 
                 tryJoinSign(args, stationConId) -- args here is the construction id
             end,
-            logger.errorHandler
+            logger.xpErrorHandler
         )
     elseif id == 'constructionBuilder' and name == 'builder.apply' then
         -- logger.print('LOLLO caught gui event, id = ', id, ' name = ', name, ' args = ') -- logger.debugPrint(args)
@@ -96,7 +96,7 @@ local function handleEvent(id, name, args)
                         function()
                             tryJoinSign(args.result[1])
                         end,
-                        logger.errorHandler
+                        logger.xpErrorHandler
                     )
                 end
             end

@@ -43,7 +43,16 @@ return {
             return func() -- LOLLO TODO test this
         end
     end,
-    errorHandler = function(error)
+    xpHandler = function(error)
+        if not(_isExtendedLogActive) then return end
+        print('lolloArrivalsDeparturesPredictor INFO:') debugPrint(error)
+    end,
+    xpWarningHandler = function(error)
+        if not(_isWarningLogActive) then return end
+        print('lolloArrivalsDeparturesPredictor WARNING:') debugPrint(error)
+    end,
+    xpErrorHandler = function(error)
+        if not(_isErrorLogActive) then return end
         print('lolloArrivalsDeparturesPredictor ERROR:') debugPrint(error)
     end,
 }

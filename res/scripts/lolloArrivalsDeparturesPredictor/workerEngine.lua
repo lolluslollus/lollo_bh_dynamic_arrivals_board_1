@@ -731,7 +731,7 @@ local function update()
             local executionTime = math.ceil((os.clock() - startTick) * 1000)
             print('Full update took ' .. executionTime .. 'ms')
         end,
-        logger.errorHandler
+        logger.xpErrorHandler
     )
 end
 
@@ -798,7 +798,7 @@ local function handleEvent(src, id, name, args)
                 logger.print('state after =') logger.debugPrint(stateHelpers.getState())
             end
         end,
-        logger.errorHandler
+        logger.xpErrorHandler
     )
 end
 
