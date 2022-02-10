@@ -2,17 +2,18 @@ local arrayUtils = require('lolloArrivalsDeparturesPredictor.arrayUtils')
 local stringUtils = require('lolloArrivalsDeparturesPredictor.stringUtils')
 
 local myConstructionConfigs = {
-    ["asset/lolloArrivalsDeparturesPredictor/platform_departures_display.con"] = {
+    ['asset/lolloArrivalsDeparturesPredictor/platform_departures_display.con'] = {
         singleTerminal = true,
         clock = true,
         isArrivals = false,
         maxEntries = 2,
         track = true,
         absoluteArrivalTime = false,
-        -- LOLLO NOTE adding a prefix is good for respecting other constructions, but I could very well use a constant instead of this
+        -- LOLLO NOTE adding a prefix is good for respecting other constructions,
+        -- but I could very well use a constant instead of this
         paramPrefix = 'platform_departures_display_',
     },
-    ["asset/lolloArrivalsDeparturesPredictor/station_departures_display.con"] = {
+    ['asset/lolloArrivalsDeparturesPredictor/station_departures_display.con'] = {
         singleTerminal = false,
         clock = true,
         isArrivals = false,
@@ -20,7 +21,7 @@ local myConstructionConfigs = {
         absoluteArrivalTime = true,
         paramPrefix = 'station_departures_display_',
     },
-    ["asset/lolloArrivalsDeparturesPredictor/station_arrivals_display.con"] = {
+    ['asset/lolloArrivalsDeparturesPredictor/station_arrivals_display.con'] = {
         singleTerminal = false,
         clock = true,
         isArrivals = true,
@@ -29,16 +30,15 @@ local myConstructionConfigs = {
         paramPrefix = 'station_arrivals_display_',
     }
 }
--- LOLLO TODO I am surprised this works across the many different lua modes.
--- In fact, it doesn't here, so we do it here: never mind, I don't expect other mods to use this.
+
 local funcs = {
-    getConConfigs = function()
+    get = function()
         return myConstructionConfigs
     end,
     getParamPrefixFromCon = function()
         -- -- Only to be called from .con files! -- --
         -- This is the proper way of getting a different paramPrefix for every construction,
-        -- keeping the "truth" in one place only.
+        -- keeping the 'truth' in one place only.
 
         -- returns the current file path
         -- local _currentFilePathAbsolute = debug.getinfo(1, 'S').source
