@@ -11,7 +11,7 @@ function data()
             },
             map_albedo = {
                 -- fileName = "models/station/rail/era_c/era_c_trainstation_glass_albedo.dds",
-                fileName = "lolloArrivalsDeparturesPredictor/model/era_c_trainstation_glass_albedo_bc3_no_premul_alpha.dds",
+                fileName = "model/lolloArrivalsDeparturesPredictor/era_c_trainstation_glass_albedo_bc3_no_premul_alpha.dds",
                 type = "TWOD",
                 wrapS = "REPEAT",
                 wrapT = "REPEAT",
