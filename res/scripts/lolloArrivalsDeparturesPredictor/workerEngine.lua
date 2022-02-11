@@ -59,14 +59,17 @@ local utils = {
     end,
     getIsCargo = function(config, signCon, signState, getParam)
         -- returns true for cargo and false for passenger stations
+        logger.print('signCon.params[getParam(\'cargo_override\')] =') logger.debugPrint(signCon.params[getParam('cargo_override')])
         local result = signCon.params[getParam('cargo_override')] or 0
         if result == 0 then
+            logger.print('signState =') logger.debugPrint(signState)
             if signState and signState.nearestTerminal and signState.nearestTerminal.cargo then
                 return true
             else
                 return false
             end
         end
+        logger.print('getIsCargo is about to return', (result == 2))
         return (result == 2)
     end,
     getTerminalId = function(config, signCon, signState, getParam)
@@ -104,7 +107,6 @@ utils.getFormattedPredictions = function(predictions, time, fallbackTerminalIdIf
                 etdMinutesString = _texts.due,
                 arrivalTimeString = '--:--',
                 departureTimeString = '--:--',
-                -- arrivalTerminal = (rawEntry.terminalTag or 0) + 1, -- the terminal tag has base 0
                 arrivalTerminal = (rawEntry.terminalId or '-'), -- the terminal id has base 1
             }
             local destinationStationGroupName = api.engine.getComponent(rawEntry.destinationStationGroupId, api.type.ComponentType.NAME)
@@ -419,7 +421,8 @@ local function getLastDepartureTime(vehicle, time)
 end
 
 local function getNextPredictions(stationId, station, nEntries, time, onlyTerminalId, predictionsBufferHelpers, averageTimeToLeaveDestinationsFromPreviousBuffer)
-    -- logger.print('getNextPredictions starting')
+    logger.print('getNextPredictions starting')
+    logger.print('stationId =') logger.debugPrint(stationId)
     local predictions = {}
 
     if not(station) or not(station.terminals) then return predictions end
@@ -441,15 +444,14 @@ local function getNextPredictions(stationId, station, nEntries, time, onlyTermin
     for terminalId, terminal in pairs(station.terminals) do
         if not(onlyTerminalId) or terminalId == onlyTerminalId then
             logger.print('terminal.tag =', terminal.tag or 'NIL', ', terminalId =', terminalId or 'NIL')
-            local lineIds = api.engine.system.lineSystem.getLineStopsForTerminal(stationId, terminal.tag) -- use the tag coz it's in base 0
+            local lineIds = api.engine.system.lineSystem.getLineStopsForTerminal(stationId, terminalId - 1)
             for _, lineId in pairs(lineIds) do
                 logger.print('lineId =', lineId or 'NIL')
                 local line = api.engine.getComponent(lineId, api.type.ComponentType.LINE)
                 if line then
                     local vehicles = api.engine.system.transportVehicleSystem.getLineVehicles(lineId)
                     if #vehicles > 0 then
-                         -- LOLLO TODO tag or id - 1?
-                        local hereIndex, startIndex, endIndex = getHereStartEndIndexes(line, stationGroupId, stationIndexInStationGroupBase0, terminal.tag)
+                        local hereIndex, startIndex, endIndex = getHereStartEndIndexes(line, stationGroupId, stationIndexInStationGroupBase0, terminalId - 1)
                         local nStops = #line.stops
                         logger.print('hereIndex, startIndex, endIndex, nStops =', hereIndex, startIndex, endIndex, nStops)
                         -- Here, I average the times across all the trains on this line.
@@ -609,8 +611,6 @@ local function update()
 
             state.world_time = _clock_time
 
-            -- local speed = (api.engine.getComponent(api.engine.util.getWorld(), api.type.ComponentType.GAME_SPEED).speedup) or 1
-
             local averageTimeToLeaveDestinationsFromPreviousBuffer = {}
             local predictionsBuffer = {
                 byStation = {},
@@ -687,7 +687,9 @@ local function update()
                                     local rawPredictions = nil
                                     -- the player may have changed the cargo flag or the terminal in the construction params
                                     local isCargo = utils.getIsCargo(config, signCon, signState, _getParamName)
+                                    logger.print('isCargo =') logger.debugPrint(isCargo)
                                     local terminalId = utils.getTerminalId(config, signCon, signState, _getParamName)
+                                    logger.print('terminalId =') logger.debugPrint(terminalId)
 
                                     for _, stationId in pairs(stationIds) do
                                         if edgeUtils.isValidAndExistingId(stationId) then
@@ -708,10 +710,14 @@ local function update()
                                                     logger.warn('this concat should never be required ONE')
                                                     arrayUtils.concatValues(rawPredictions, nextPredictions)
                                                 end
+                                            -- else
+                                            --     logger.print('skipping station', stationId, 'because of cargo')
+                                            --     logger.print('isCargo =') logger.debugPrint(isCargo)
+                                            --     logger.print('not(not(station.cargo)) =') logger.debugPrint(not(not(station.cargo)))
                                             end
                                         end
                                     end
-                                    -- logger.print('single terminal rawPredictions =') logger.debugPrint(rawPredictions)
+                                    -- logger.print('rawPredictions =') logger.debugPrint(rawPredictions)
                                     formattedPredictions = utils.getFormattedPredictions(rawPredictions or {}, _time, terminalId)
                                 end
                             end
@@ -729,7 +735,7 @@ local function update()
             end
 
             local executionTime = math.ceil((os.clock() - startTick) * 1000)
-            print('Full update took ' .. executionTime .. 'ms')
+            logger.print('Full update took ' .. executionTime .. 'ms')
         end,
         logger.xpErrorHandler
     )

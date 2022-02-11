@@ -191,7 +191,6 @@ local utils = {
             if not(station.cargo) or not(isOnlyPassengers) then -- a station construction can have two stations: one for passengers and one for cargo
                 stationTerminalNodesMap[stationId] = {}
                 for terminalId, terminalProps in pairs(station.terminals) do
-                    -- print(terminalId, terminalProps.tag, terminalProps.vehicleNodeId.entity)
                     local vehicleNodeId = terminalProps.vehicleNodeId.entity
                     stationTerminalNodesMap[stationId][terminalId] = {
                         nodeIds = getNodeIds4Terminal(stationCon.frozenNodes, vehicleNodeId),
