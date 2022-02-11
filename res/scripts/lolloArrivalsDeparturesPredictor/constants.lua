@@ -1,6 +1,6 @@
 local constants = {
     refreshPeriodMsec = 5000, -- refresh every 5 seconds
-    searchRadius4NearbyStation2JoinMetres = 250,
+    searchRadius4NearbyStation2JoinMetres = 500,
 
     guesstimatedStationWaitingTimeMsec = 30000,
 

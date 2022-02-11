@@ -98,20 +98,20 @@ local utils = {
         -- so I check the stations instead and index by the construction.
 
         local _stationIds = {}
-        local _edgeIds = edgeUtils.getNearbyObjectIds(transf, 50, api.type.ComponentType.BASE_EDGE_TRACK)
+        local _edgeIds = edgeUtils.getNearbyObjectIds(transf, searchRadius, api.type.ComponentType.BASE_EDGE_TRACK)
         for key, edgeId in pairs(_edgeIds) do
-        local conId = api.engine.system.streetConnectorSystem.getConstructionEntityForEdge(edgeId)
-        if edgeUtils.isValidAndExistingId(conId) then
-            local con = api.engine.getComponent(conId, api.type.ComponentType.CONSTRUCTION)
-            if con then
-            local conStationIds = con.stations
-            for _, stationId in pairs(conStationIds) do
-                arrayUtils.addUnique(_stationIds, stationId)
-            end
+            local conId = api.engine.system.streetConnectorSystem.getConstructionEntityForEdge(edgeId)
+            if edgeUtils.isValidAndExistingId(conId) then
+                local con = api.engine.getComponent(conId, api.type.ComponentType.CONSTRUCTION)
+                if con then
+                    local conStationIds = con.stations
+                    for _, stationId in pairs(conStationIds) do
+                        arrayUtils.addUnique(_stationIds, stationId)
+                    end
+                end
             end
         end
-        end
-        -- logger.print('_stationIds =') logger.debugPrint(_stationIds)
+        logger.print('_stationIds =') logger.debugPrint(_stationIds)
 
         local _station2ConstructionMap = api.engine.system.streetConnectorSystem.getStation2ConstructionMap()
         local _resultsIndexed = {}
@@ -119,12 +119,12 @@ local utils = {
             if edgeUtils.isValidAndExistingId(stationId) then
                 local conId = _station2ConstructionMap[stationId]
                 if edgeUtils.isValidAndExistingId(conId) then
-                    -- logger.print('getNearbyFreestyleStationsList has found conId =', conId)
+                    logger.print('found conId =', conId)
                     local con = api.engine.getComponent(conId, api.type.ComponentType.CONSTRUCTION)
                     -- logger.print('construction.name =') logger.debugPrint(con.name) -- nil
                     local isCargo = api.engine.getComponent(stationId, api.type.ComponentType.STATION).cargo or false
-                    -- logger.print('isCargo =', isCargo)
-                    -- logger.print('isOnlyPassengers =', isOnlyPassengers)
+                    logger.print('isCargo =', isCargo)
+                    logger.print('isOnlyPassengers =', isOnlyPassengers)
                     if not(isCargo) or not(isOnlyPassengers) then
                         local stationGroupId = api.engine.system.stationGroupSystem.getStationGroup(stationId)
                         local name = ''
