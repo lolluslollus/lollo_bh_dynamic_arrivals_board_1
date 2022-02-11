@@ -11,6 +11,7 @@ function data()
                     NOTES:
                     - These things can be performance-intensive, so you can switch them on and off from the bottom bar. If you think they are not working, check your bottom bar, unpause the game and wait a little.
                     - Accuracy improves over time.
+                    - Accuracy goes down when you add or remove vehicles, it picks up again after a bit.
                     - Rearrange these at any time with the construction mover.
 
                     A big thank you goes out to Mr F from UG, this mod would have never worked without his help.
