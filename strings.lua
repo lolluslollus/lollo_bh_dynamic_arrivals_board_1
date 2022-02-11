@@ -11,7 +11,7 @@ function data()
                     NOTES:
                     - These things can be performance-intensive, so you can switch them on and off from the bottom bar (read above). If you think they are not working, check your bottom bar and wait a little.
                     - Accuracy improves over time.
-                    - Adjust the position at any time with the construction mover.
+                    - Rearrange these at any time with the construction mover.
 
                     A big thank you goes to Mr F from UG, this mod would have never worked without his help.
                     Another big thank you goes to badgerrhax for the idea.
