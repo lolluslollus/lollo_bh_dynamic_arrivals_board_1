@@ -1,7 +1,7 @@
 function data()
 	return {
 		info = {
-			minorVersion = 0,
+			minorVersion = 1,
 			severityAdd = "WARNING",
 			severityRemove = "WARNING",
 			name = _("ModName"),
