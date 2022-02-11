@@ -16,7 +16,7 @@ local function _sendScriptEvent(name, args)
     )
 end
 
-local function joinSignBase(signConId, stationConId)
+local function _joinSignBase(signConId, stationConId)
     _sendScriptEvent(
         constants.events.join_sign_to_station,
         {
@@ -26,7 +26,7 @@ local function joinSignBase(signConId, stationConId)
     )
 end
 
-local function tryJoinSign(signConId, tentativeStationConId)
+local function _tryJoinSign(signConId, tentativeStationConId)
     if not(edgeUtils.isValidAndExistingId(signConId)) then return false end
 
     local con = api.engine.getComponent(signConId, api.type.ComponentType.CONSTRUCTION)
@@ -46,14 +46,14 @@ local function tryJoinSign(signConId, tentativeStationConId)
         guiHelpers.showWarningWindowWithMessage(_('CannotFindStationToJoin'))
         return false
     elseif #nearbyStationCons == 1 then
-        joinSignBase(signConId, nearbyStationCons[1].id)
+        _joinSignBase(signConId, nearbyStationCons[1].id)
     else
         guiHelpers.showNearbyStationPicker(
             true, -- pick passenger or cargo stations
             nearbyStationCons,
             tentativeStationConId,
             function(stationConId)
-                joinSignBase(signConId, stationConId)
+                _joinSignBase(signConId, stationConId)
             end
         )
     end
@@ -78,7 +78,7 @@ local function handleEvent(id, name, args)
                 local stationConId = (_state.placed_signs and _state.placed_signs[args]) and _state.placed_signs[args].stationConId or nil
                 if stationConId then return end
 
-                tryJoinSign(args, stationConId) -- args here is the construction id
+                _tryJoinSign(args, stationConId) -- args here is the construction id
             end,
             logger.xpErrorHandler
         )
@@ -94,7 +94,7 @@ local function handleEvent(id, name, args)
                 if config and args.result and args.result[1] then
                     xpcall(
                         function()
-                            tryJoinSign(args.result[1])
+                            _tryJoinSign(args.result[1])
                         end,
                         logger.xpErrorHandler
                     )
