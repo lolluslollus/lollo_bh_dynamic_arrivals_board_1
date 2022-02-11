@@ -14,6 +14,7 @@ function data()
                     - Adjust the position at any time with the construction mover.
 
                     A big thank you goes to Mr F from UG, this mod would have never worked without his help.
+                    Another big thank you goes to badgerrhax for the idea.
 			]],
             ["ModName"] = "Dynamic Departures / Arrivals Displays",
             ["AlignFree"] = 'Free',
