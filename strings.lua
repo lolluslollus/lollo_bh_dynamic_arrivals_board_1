@@ -8,7 +8,9 @@ function data()
 
                     I have been thinking long and hard whether to publish this mod or not, since I copied the idea from badgerrhax. However, this is my own code and my own models, so I do. If you don't like it, tough.
 
-                    These things can be performance-intensive, so you can switch them on and off from the bottom bar (read above). If you think they are not working, check your bottom bar.
+                    NOTES:
+                    - These things can be performance-intensive, so you can switch them on and off from the bottom bar (read above). If you think they are not working, check your bottom bar.
+                    - Accuracy improves over time.
 
                     A big thank you goes to Mr F from UG, this mod would have never worked without his help.
 			]],
