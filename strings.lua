@@ -13,8 +13,8 @@ function data()
                     - Accuracy improves over time.
                     - Rearrange these at any time with the construction mover.
 
-                    A big thank you goes to Mr F from UG, this mod would have never worked without his help.
-                    Another big thank you goes to badgerrhax for the idea.
+                    A big thank you goes out to Mr F from UG, this mod would have never worked without his help.
+                    Another big thank you goes out to badgerrhax for the idea.
 			]],
             ["ModName"] = "Dynamic Departures / Arrivals Displays",
             ["AlignFree"] = 'Free',
