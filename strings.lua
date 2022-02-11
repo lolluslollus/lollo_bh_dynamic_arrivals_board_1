@@ -6,9 +6,9 @@ function data()
                     Displays for incoming and outgoing vehicles.
                     Turn the updates on or off with the bottom bar.
 
-                    I have been thinking long and hard whether to publish this mod or not, since I copied the idea from badgerrhax, However, this is my own code and my own models, and this is certainly not paid work, so I do.
+                    I have been thinking long and hard whether to publish this mod or not, since I copied the idea from badgerrhax, However, this is my own code and my own models, so I do. If you don't like it, tough.
 
-                    These things can be performance-intensive, so you can switch them on and off from the bottom bar (read above).
+                    These things can be performance-intensive, so you can switch them on and off from the bottom bar (read above). If you think they are not working, check your bottom bar.
 			]],
             ["ModName"] = "Dynamic Departures / Arrivals Displays",
             ["AlignFree"] = 'Free',
