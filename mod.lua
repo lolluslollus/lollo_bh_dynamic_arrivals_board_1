@@ -6,7 +6,7 @@ function data()
 			severityRemove = "WARNING",
 			name = _("ModName"),
 			description = _("ModDesc"),
-			tags = { "Track Asset", "Misc", "Script Mod" },
+			tags = { "Misc", "Script Mod", "Track Asset", },
 			visible = true,
 			authors = {
                 {
