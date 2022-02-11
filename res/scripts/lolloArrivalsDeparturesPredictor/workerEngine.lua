@@ -789,7 +789,8 @@ local function handleEvent(src, id, name, args)
                 -- logger.print('freshly calculated nearestTerminals =') logger.debugPrint(nearestTerminals)
                 local nearestTerminal = stationHelpers.getNearestTerminal(
                     transfUtilsUG.new(signCon.transf:cols(0), signCon.transf:cols(1), signCon.transf:cols(2), signCon.transf:cols(3)),
-                    args.stationConId
+                    args.stationConId,
+                    false -- not only passengers
                 )
                 logger.print('freshly calculated nearestTerminal =') logger.debugPrint(nearestTerminal)
                 stateHelpers.setPlacedSign(

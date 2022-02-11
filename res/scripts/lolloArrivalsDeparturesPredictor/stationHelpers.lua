@@ -42,7 +42,7 @@ end
 -- LOLLO TODO with certain configurations, the nearest terminal estimator
 -- may be more accurate if you check the distance between point and edge,
 -- rather than point and point.
-local function getNodeIds4Terminal(frozenNodeIds, startNodeId)
+local function _getNodeIds4Terminal(frozenNodeIds, startNodeId)
     local _frozenNodeIds_Indexed = _getIdsIndexed(frozenNodeIds)
     local _map = api.engine.system.streetSystem.getNode2TrackEdgeMap()
     local visitedNodeIds_Indexed = {}
@@ -121,37 +121,39 @@ local utils = {
                 if edgeUtils.isValidAndExistingId(conId) then
                     logger.print('found conId =', conId)
                     local con = api.engine.getComponent(conId, api.type.ComponentType.CONSTRUCTION)
-                    -- logger.print('construction.name =') logger.debugPrint(con.name) -- nil
-                    local isCargo = api.engine.getComponent(stationId, api.type.ComponentType.STATION).cargo or false
-                    logger.print('isCargo =', isCargo)
-                    logger.print('isOnlyPassengers =', isOnlyPassengers)
-                    if not(isCargo) or not(isOnlyPassengers) then
-                        local stationGroupId = api.engine.system.stationGroupSystem.getStationGroup(stationId)
-                        local name = ''
-                        local stationGroupName = api.engine.getComponent(stationGroupId, api.type.ComponentType.NAME)
-                        if stationGroupName ~= nil then name = stationGroupName.name end
+                    local station = api.engine.getComponent(stationId, api.type.ComponentType.STATION)
+                    if con and station then
+                        local isCargo = station.cargo or false
+                        logger.print('isCargo =', isCargo)
+                        logger.print('isOnlyPassengers =', isOnlyPassengers)
+                        if not(isCargo) or not(isOnlyPassengers) then
+                            local stationGroupId = api.engine.system.stationGroupSystem.getStationGroup(stationId)
+                            local name = ''
+                            local stationGroupName = api.engine.getComponent(stationGroupId, api.type.ComponentType.NAME)
+                            if stationGroupName ~= nil then name = stationGroupName.name end
 
-                        local isTwinCargo = false
-                        local isTwinPassenger = false
+                            local isTwinCargo = false
+                            local isTwinPassenger = false
 
-                        if _resultsIndexed[conId] ~= nil then
-                            -- logger.print('found a twin, it is') logger.debugPrint(resultsIndexed[conId])
-                            if stringUtils.isNullOrEmptyString(name) then
-                                name = _resultsIndexed[conId].name or ''
+                            if _resultsIndexed[conId] ~= nil then
+                                -- logger.print('found a twin, it is') logger.debugPrint(resultsIndexed[conId])
+                                if stringUtils.isNullOrEmptyString(name) then
+                                    name = _resultsIndexed[conId].name or ''
+                                end
+                                if _resultsIndexed[conId].isCargo then isTwinCargo = true end
+                                if _resultsIndexed[conId].isPassenger then isTwinPassenger = true end
                             end
-                            if _resultsIndexed[conId].isCargo then isTwinCargo = true end
-                            if _resultsIndexed[conId].isPassenger then isTwinPassenger = true end
+                            local position = transfUtils.transf2Position(
+                                transfUtilsUG.new(con.transf:cols(0), con.transf:cols(1), con.transf:cols(2), con.transf:cols(3))
+                            )
+                            _resultsIndexed[conId] = {
+                                id = conId,
+                                isCargo = isCargo or isTwinCargo,
+                                isPassenger = not(isCargo) or isTwinPassenger,
+                                name = name,
+                                position = position
+                            }
                         end
-                        local position = transfUtils.transf2Position(
-                            transfUtilsUG.new(con.transf:cols(0), con.transf:cols(1), con.transf:cols(2), con.transf:cols(3))
-                        )
-                        _resultsIndexed[conId] = {
-                            id = conId,
-                            isCargo = isCargo or isTwinCargo,
-                            isPassenger = not(isCargo) or isTwinPassenger,
-                            name = name,
-                            position = position
-                        }
                     end
                 end
             end
@@ -193,7 +195,7 @@ local utils = {
                 for terminalId, terminalProps in pairs(station.terminals) do
                     local vehicleNodeId = terminalProps.vehicleNodeId.entity
                     stationTerminalNodesMap[stationId][terminalId] = {
-                        nodeIds = getNodeIds4Terminal(stationCon.frozenNodes, vehicleNodeId),
+                        nodeIds = _getNodeIds4Terminal(stationCon.frozenNodes, vehicleNodeId),
                         tag = terminalProps.tag,
                     }
                 end
@@ -223,8 +225,8 @@ local utils = {
     end,
 }
 
-utils.getNearestTerminal = function(transf, stationConId)
-    local nearestTerminals = utils.getNearestTerminals(transf, stationConId, false)
+utils.getNearestTerminal = function(transf, stationConId, isOnlyPassengers)
+    local nearestTerminals = utils.getNearestTerminals(transf, stationConId, isOnlyPassengers)
     if not(nearestTerminals) then return nil end
 
     local result = nil
