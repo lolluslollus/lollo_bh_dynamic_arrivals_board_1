@@ -58,6 +58,7 @@ display construction and it will manage its display updates when placed in game.
             ["ModName"] = "Dynamic Departures / Arrivals Displays",
             ["AlignFree"] = 'Free',
             ["AlignPlatform"] = 'Platform',
+            ["displays"] = "displays",
             ["ArrivalsAllCaps"] = "ARRIVALS",
             ["Auto"] = "Auto",
             ["DynamicDisplaysOff"] = "Dynamic Displays OFF",

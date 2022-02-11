@@ -9,14 +9,14 @@ function data()
 			tags = { "Track Asset", "Misc", "Script Mod" },
 			visible = true,
 			authors = {
+                {
+					name = "lollus",
+					role = "CREATOR"
+				},
 				{
 					name = "badgerrhax",
 					role = "CREATOR"
 				},
-                {
-					name = "lollus",
-					role = "CREATOR"
-				}
 			}
 		},
 	}

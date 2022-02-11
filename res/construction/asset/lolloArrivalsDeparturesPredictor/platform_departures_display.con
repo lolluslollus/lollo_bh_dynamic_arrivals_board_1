@@ -46,7 +46,7 @@ function data()
         },
         availability = {},
         buildMode = 'SINGLE',
-        categories = { 'badgerrhax' },
+        categories = { 'displays' },
         order = 13,
         skipCollision = true,
         autoRemovable = false,
