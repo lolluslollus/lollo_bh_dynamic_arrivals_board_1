@@ -85,7 +85,7 @@ local utils = {
         if not(config) or not(config.singleTerminal) then return nil end
 
         local result = signCon.params[getParamName('terminal_override')] or 0
-        if result == 0 then -- 0 is "automatic terminal detection"
+        if result == 0 then -- 0 is automatic terminal detection
             if signState and signState.nearestTerminal and signState.nearestTerminal.terminalId then
                 result = signState.nearestTerminal.terminalId
             else
@@ -96,8 +96,8 @@ local utils = {
         return result
     end,
     getStationIndexInStationGroupBase0 = function(stationId, stationGroupId)
-        -- LOLLO TODO try using a map instead of clling this api at every iteration
         local stationGroup = api.engine.getComponent(stationGroupId, api.type.ComponentType.STATION_GROUP)
+        logger.print('stationGroup.stations =') logger.debugPrint(stationGroup.stations)
         local indexBase0 = 0
         for _, staId in pairs(stationGroup.stations) do
             -- LOLLO TODO if pairs() screws the sequence, this could yield
@@ -322,18 +322,15 @@ local function getWaitingTimeMsec(line, stopIndex)
     -- end
 end
 
-local function getAverageTimeToLeaveDestinationFromPrevious(vehicleIds, nStops, lineId, lineWaitingTime, buffer)
+local function getMyLineData(vehicleIds, nStops, lineId, lineWaitingTime, buffer)
+    -- Here, I average the times across all the trains on this line.
+    -- If the trains are wildly different, which is stupid, this could be less accurate;
+    -- otherwise, it will be pretty accurate.
     -- buffer
     if buffer[lineId] then logger.print('using ATT buffer for lineID =', lineId) return buffer[lineId] end
     logger.print('NOT using ATT buffer for lineID =', lineId)
 
     if nStops < 1 or #vehicleIds < 1 then return {} end
-
-    -- vehicle states:
-    -- api.type.enum.TransportVehicleState.AT_TERMINAL -- 2
-    -- api.type.enum.TransportVehicleState.EN_ROUTE -- 1
-    -- api.type.enum.TransportVehicleState.GOING_TO_DEPOT -- 3
-    -- api.type.enum.TransportVehicleState.IN_DEPOT -- 0
 
     -- the new API hasn't got this yet, only a dumb fixed waitingTime == 180 seconds
     local lineEntity = game.interface.getEntity(lineId)
@@ -349,8 +346,19 @@ local function getAverageTimeToLeaveDestinationFromPrevious(vehicleIds, nStops, 
     -- logger.print('nStops =', nStops)
     logger.print('fallbackLegDuration =', fallbackLegDuration)
 
+    local _vehicleStates = {
+        atTerminal = api.type.enum.TransportVehicleState.AT_TERMINAL, -- 2
+        enRoute = api.type.enum.TransportVehicleState.EN_ROUTE, -- 1
+    -- api.type.enum.TransportVehicleState.GOING_TO_DEPOT -- 3
+    -- api.type.enum.TransportVehicleState.IN_DEPOT -- 0
+    }
+
     local averages = {}
     local vehicles = {}
+
+    for _, vehicleId in pairs(vehicleIds) do
+        vehicles[vehicleId] = api.engine.getComponent(vehicleId, api.type.ComponentType.TRANSPORT_VEHICLE)
+    end
 
     for index = 1, nStops, 1 do
         local prevIndex = index - 1
@@ -358,13 +366,12 @@ local function getAverageTimeToLeaveDestinationFromPrevious(vehicleIds, nStops, 
 
         local averageLSD, nVehicles4AverageLSD, averageST, nVehicles4AverageST = 0, #vehicleIds, 0, #vehicleIds
         for _, vehicleId in pairs(vehicleIds) do
-            local vehicle = api.engine.getComponent(vehicleId, api.type.ComponentType.TRANSPORT_VEHICLE)
-            vehicles[vehicleId] = vehicle
+            local vehicle = vehicles[vehicleId]
             local lineStopDepartures = vehicle.lineStopDepartures
             if lineStopDepartures[index] == 0
             or lineStopDepartures[prevIndex] == 0
             or lineStopDepartures[index] <= lineStopDepartures[prevIndex]
-            or (vehicle.state ~= api.type.enum.TransportVehicleState.AT_TERMINAL and vehicle.state ~= api.type.enum.TransportVehicleState.EN_ROUTE)
+            or (vehicle.state ~= _vehicleStates.atTerminal and vehicle.state ~= _vehicleStates.enRoute)
             then
                 nVehicles4AverageLSD = nVehicles4AverageLSD - 1
             else
@@ -380,7 +387,7 @@ local function getAverageTimeToLeaveDestinationFromPrevious(vehicleIds, nStops, 
             end
             local sectionTimes = vehicle.sectionTimes
             if sectionTimes[prevIndex] == 0
-            or (vehicle.state ~= api.type.enum.TransportVehicleState.AT_TERMINAL and vehicle.state ~= api.type.enum.TransportVehicleState.EN_ROUTE)
+            or (vehicle.state ~= _vehicleStates.atTerminal and vehicle.state ~= _vehicleStates.enRoute)
             then
                 nVehicles4AverageST = nVehicles4AverageST - 1
             else
@@ -452,7 +459,7 @@ local function getLastDepartureTime(vehicle, time)
     return result
 end
 
-local function getNextPredictions(stationId, station, nEntries, time, onlyTerminalId, predictionsBufferHelpers, averageTimeToLeaveDestinationsFromPreviousBuffer, problemLineIds)
+local function getNextPredictions(stationId, station, nEntries, time, onlyTerminalId, predictionsBufferHelpers, lineBuffer, problemLineIds)
     logger.print('getNextPredictions starting')
     logger.print('stationId =') logger.debugPrint(stationId)
     local predictions = {}
@@ -471,25 +478,25 @@ local function getNextPredictions(stationId, station, nEntries, time, onlyTermin
         logger.print('time = ', time, 'NOT using buffer for stationId =', stationId, 'and onlyTerminalId =', onlyTerminalId or 'NIL')
     end
 
-    -- logger.print('stationGroupId =', stationGroupId)
-    -- logger.print('stationId =', stationId)
+    logger.print('stationGroupId =', stationGroupId)
+    logger.print('stationId =', stationId)
+    logger.print('station.terminals =') logger.debugPrint(station.terminals)
     local terminalIndexBase0 = 0
-    for terminalId, terminal in pairs(station.terminals) do
+    for terminalId, _ in pairs(station.terminals) do
         -- LOLLO TODO if pairs() screws the sequence, this could yield
         -- a wrong terminalIndexBase0.
         -- If I use ipairs instead, it could exit at the first hole in the sequence.
         -- check this.
 
         if not(onlyTerminalId) or (terminalId == onlyTerminalId) then
-            logger.print('terminal.tag =', terminal.tag or 'NIL', ', terminalId =', terminalId or 'NIL')
-            -- LOLLO TODO try using a map instead of calling this at every iteration
+            logger.print('terminalId =', terminalId or 'NIL')
             local lineIds = api.engine.system.lineSystem.getLineStopsForTerminal(stationId, terminalIndexBase0)
             for _, lineId in pairs(lineIds) do
                 logger.print('lineId =', lineId or 'NIL')
                 local line = api.engine.getComponent(lineId, api.type.ComponentType.LINE)
                 if line then
-                    -- LOLLO TODO try using a map instead of calling this at every iteration
                     local vehicleIds = api.engine.system.transportVehicleSystem.getLineVehicles(lineId)
+                    -- logger.print('There are', #vehicleIds, 'vehicles')
                     if #vehicleIds > 0 then
                         local nStops = #line.stops
                         local hereIndex, startIndex, endIndex = getHereStartEndIndexes(line, stationGroupId, stationIndexInStationGroupBase0, terminalIndexBase0)
@@ -504,104 +511,103 @@ local function getNextPredictions(stationId, station, nEntries, time, onlyTermin
                                 isProblem = true,
                             }
                         else
-                            -- Here, I average the times across all the trains on this line.
-                            -- If the trains are wildly different, which is stupid, this could be less accurate;
-                            -- otherwise, it will be pretty accurate.
-                            local averageTimeToDepartDestinationFromPreviousDeparture = getAverageTimeToLeaveDestinationFromPrevious(vehicleIds, nStops, lineId, line.waitingTime, averageTimeToLeaveDestinationsFromPreviousBuffer)
-                            logger.print('averageTimeToDepartDestinationFromPreviousDeparture.averages =') logger.debugPrint(averageTimeToDepartDestinationFromPreviousDeparture.averages)
-                            -- logger.print('#averageTimeToDepartDestinationFromPreviousDeparture =', #averageTimeToDepartDestinationFromPreviousDeparture or 'NIL') -- ok
-                            -- logger.print('There are', #vehicleIds, 'vehicles')
+                            local myLineData = getMyLineData(vehicleIds, nStops, lineId, line.waitingTime, lineBuffer)
+                            logger.print('myLineData.averages =') logger.debugPrint(myLineData.averages)
 
                             for _, vehicleId in pairs(vehicleIds) do
                                 logger.print('vehicleId =', vehicleId or 'NIL')
-                                local vehicle = averageTimeToDepartDestinationFromPreviousDeparture.vehicles[vehicleId]
-                                --[[
-                                    vehicle has:
-                                    stopIndex = 1, -- last stop index or next stop index in base 0
-                                    lineStopDepartures = { -- last recorded departure times, they can be 0 if not yet recorded
-                                    [1] = 4591600,
-                                    [2] = 4498000,
-                                    },
-                                    lastLineStopDeparture = 0, -- seems inaccurate
-                                    sectionTimes = { -- take a while to calculate when starting a new line
-                                    [1] = 0, -- time it took to complete a segment, starting from stop 1
-                                    [2] = 86.600006103516, -- time it took to complete a segment, starting from stop 2
-                                    },
-                                    timeUntilLoad = -5.5633368492126, -- seems useless
-                                    timeUntilCloseDoors = -0.19238702952862, -- seems useless
-                                    timeUntilDeparture = -0.026386171579361, -- seems useless
-                                    doorsTime = 4590600000, -- last departure time, seems OK
-                                    and it is quicker than checking the max across lineStopDepartures
-                                    we add 1000 so we match it to the highest lineStopDeparture, but it varies with some unknown factor.
-                                    Sometimes, two vehicles A and B on the same line may have A the highest lineStopDeparture and B the highest doorsTime.
+                                local vehicle = myLineData.vehicles[vehicleId]
+                                if not(vehicle) then
+                                    logger.warn('vehicle with id ' .. (vehicleId or 'NIL') .. ' not found but it should be there')
+                                else
+                                    --[[
+                                        vehicle has:
+                                        stopIndex = 1, -- last stop index or next stop index in base 0
+                                        lineStopDepartures = { -- last recorded departure times, they can be 0 if not yet recorded
+                                        [1] = 4591600,
+                                        [2] = 4498000,
+                                        },
+                                        lastLineStopDeparture = 0, -- seems inaccurate
+                                        sectionTimes = { -- take a while to calculate when starting a new line
+                                        [1] = 0, -- time it took to complete a segment, starting from stop 1
+                                        [2] = 86.600006103516, -- time it took to complete a segment, starting from stop 2
+                                        },
+                                        timeUntilLoad = -5.5633368492126, -- seems useless
+                                        timeUntilCloseDoors = -0.19238702952862, -- seems useless
+                                        timeUntilDeparture = -0.026386171579361, -- seems useless
+                                        doorsTime = 4590600000, -- last departure time, seems OK
+                                        and it is quicker than checking the max across lineStopDepartures
+                                        we add 1000 so we match it to the highest lineStopDeparture, but it varies with some unknown factor.
+                                        Sometimes, two vehicles A and B on the same line may have A the highest lineStopDeparture and B the highest doorsTime.
 
-                                    Here is another example with two vehicles on the same line:
-                                    line = 86608,
-                                    stopIndex = 5,
-                                    lineStopDepartures = {
-                                    [1] = 19082400,
-                                    [2] = 19228400,
-                                    [3] = 19590000,
-                                    [4] = 19710800,
-                                    [5] = 19844000,
-                                    [6] = 18969400,
-                                    },
-                                    lastLineStopDeparture = 0,
-                                    sectionTimes = {
-                                    [1] = 127.00000762939, -- 146 counting the time spent standing
-                                    [2] = 354.00003051758, -- 362 counting the time spent standing
-                                    [3] = 111.00000762939, -- 120 counting the time spent standing
-                                    [4] = 123.40000915527, -- 133 counting the time spent standing
-                                    [5] = 0,
-                                    [6] = 93.200004577637,
-                                    },
-                                    line = 86608,
-                                    stopIndex = 2,
-                                    lineStopDepartures = {
-                                        [1] = 19769400,
-                                        [2] = 19904000,
-                                        [3] = 19068800,
-                                        [4] = 19199800,
-                                        [5] = 19330400,
-                                        [6] = 19669800,
-                                    },
-                                    lastLineStopDeparture = 0,
-                                    sectionTimes = {
-                                        [1] = 126.60000610352, -- 135 counting the time spent standing
-                                        [2] = 0,
-                                        [3] = 111.00000762939,
-                                        [4] = 123.40000915527,
-                                        [5] = 332.20001220703,
+                                        Here is another example with two vehicles on the same line:
+                                        line = 86608,
+                                        stopIndex = 5,
+                                        lineStopDepartures = {
+                                        [1] = 19082400,
+                                        [2] = 19228400,
+                                        [3] = 19590000,
+                                        [4] = 19710800,
+                                        [5] = 19844000,
+                                        [6] = 18969400,
+                                        },
+                                        lastLineStopDeparture = 0,
+                                        sectionTimes = {
+                                        [1] = 127.00000762939, -- 146 counting the time spent standing
+                                        [2] = 354.00003051758, -- 362 counting the time spent standing
+                                        [3] = 111.00000762939, -- 120 counting the time spent standing
+                                        [4] = 123.40000915527, -- 133 counting the time spent standing
+                                        [5] = 0,
                                         [6] = 93.200004577637,
-                                    },
-                                    sectionTimes tend to be similar but they don't account for the time spent standing
-                                ]]
-                                -- logger.print('vehicle.stopIndex =', vehicle.stopIndex)
-                                local nextStopIndex = vehicle.stopIndex + 1
-                                -- local nStopsAway = hereIndex - nextStopIndex
-                                -- if nStopsAway < 0 then nStopsAway = nStopsAway + nStops end
-                                -- logger.print('nStopsAway =', nStopsAway or 'NIL')
+                                        },
+                                        line = 86608,
+                                        stopIndex = 2,
+                                        lineStopDepartures = {
+                                            [1] = 19769400,
+                                            [2] = 19904000,
+                                            [3] = 19068800,
+                                            [4] = 19199800,
+                                            [5] = 19330400,
+                                            [6] = 19669800,
+                                        },
+                                        lastLineStopDeparture = 0,
+                                        sectionTimes = {
+                                            [1] = 126.60000610352, -- 135 counting the time spent standing
+                                            [2] = 0,
+                                            [3] = 111.00000762939,
+                                            [4] = 123.40000915527,
+                                            [5] = 332.20001220703,
+                                            [6] = 93.200004577637,
+                                        },
+                                        sectionTimes tend to be similar but they don't account for the time spent standing
+                                    ]]
+                                    -- logger.print('vehicle.stopIndex =', vehicle.stopIndex)
+                                    local nextStopIndex = vehicle.stopIndex + 1
+                                    -- local nStopsAway = hereIndex - nextStopIndex
+                                    -- if nStopsAway < 0 then nStopsAway = nStopsAway + nStops end
+                                    -- logger.print('nStopsAway =', nStopsAway or 'NIL')
 
-                                local lastDepartureTime = getLastDepartureTime(vehicle, time)
-                                logger.print('lastDepartureTime =', lastDepartureTime)
-                                -- local remainingTime = averageTimeToDepartDestinationFromPreviousDeparture.averages[hereIndex].lsd
-                                local remainingTime = 0
-                                while nextStopIndex ~= hereIndex do
-                                    remainingTime = remainingTime + averageTimeToDepartDestinationFromPreviousDeparture.averages[nextStopIndex].lsd
-                                        -- + getWaitingTimeMsec(line, nextStopIndex) -- not needed since I check the departures
-                                    nextStopIndex = nextStopIndex + 1
-                                    if nextStopIndex > nStops then nextStopIndex = nextStopIndex - nStops end
+                                    local lastDepartureTime = getLastDepartureTime(vehicle, time)
+                                    logger.print('lastDepartureTime =', lastDepartureTime)
+                                    -- local remainingTime = myLineData.averages[hereIndex].lsd
+                                    local remainingTime = 0
+                                    while nextStopIndex ~= hereIndex do
+                                        remainingTime = remainingTime + myLineData.averages[nextStopIndex].lsd
+                                            -- + getWaitingTimeMsec(line, nextStopIndex) -- not needed since I check the departures
+                                        nextStopIndex = nextStopIndex + 1
+                                        if nextStopIndex > nStops then nextStopIndex = nextStopIndex - nStops end
+                                    end
+
+                                    predictions[#predictions+1] = {
+                                        terminalId = terminalId,
+                                        originStationGroupId = line.stops[startIndex].stationGroup,
+                                        destinationStationGroupId = line.stops[endIndex].stationGroup,
+                                        -- arrivalTime = lastDepartureTime + remainingTime - getWaitingTimeMsec(line, hereIndex),
+                                        arrivalTime = lastDepartureTime + remainingTime + myLineData.averages[hereIndex].st,
+                                        departureTime = lastDepartureTime + remainingTime + myLineData.averages[hereIndex].lsd,
+                                        -- nStopsAway = nStopsAway
+                                    }
                                 end
-
-                                predictions[#predictions+1] = {
-                                    terminalId = terminalId,
-                                    originStationGroupId = line.stops[startIndex].stationGroup,
-                                    destinationStationGroupId = line.stops[endIndex].stationGroup,
-                                    -- arrivalTime = lastDepartureTime + remainingTime - getWaitingTimeMsec(line, hereIndex),
-                                    arrivalTime = lastDepartureTime + remainingTime + averageTimeToDepartDestinationFromPreviousDeparture.averages[hereIndex].st,
-                                    departureTime = lastDepartureTime + remainingTime + averageTimeToDepartDestinationFromPreviousDeparture.averages[hereIndex].lsd,
-                                    -- nStopsAway = nStopsAway
-                                }
                             end
                         end
                     end
@@ -623,7 +629,6 @@ local function getNextPredictions(stationId, station, nEntries, time, onlyTermin
     return results
 end
 
----@diagnostic disable-next-line: unused-function
 local function update()
     local state = stateHelpers.getState()
     if not(state.is_on) then return end
@@ -645,7 +650,7 @@ local function update()
 
             state.world_time = _clock_time
 
-            local averageTimeToLeaveDestinationsFromPreviousBuffer = {}
+            local lineBuffer = {}
             local predictionsBuffer = {
                 byStation = {},
                 byStationTerminal = {}
@@ -738,7 +743,7 @@ local function update()
                                                     _time,
                                                     terminalId, -- nil if config.singleTerminal == falsy
                                                     predictionsBufferHelpers,
-                                                    averageTimeToLeaveDestinationsFromPreviousBuffer,
+                                                    lineBuffer,
                                                     _problemLineIds
                                                 )
                                                 if rawPredictions == nil then
