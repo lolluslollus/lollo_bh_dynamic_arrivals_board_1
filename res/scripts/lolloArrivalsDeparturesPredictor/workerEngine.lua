@@ -57,10 +57,10 @@ local utils = {
     formatClockStringHHMM = function(clock_time)
         return string.format('%02d:%02d', (clock_time / 60 / 60) % 24, (clock_time / 60) % 60)
     end,
-    getIsCargo = function(config, signCon, signState, getParam)
+    getIsCargo = function(config, signCon, signState, getParamName)
         -- returns true for cargo and false for passenger stations
-        logger.print('signCon.params[getParam(\'cargo_override\')] =') logger.debugPrint(signCon.params[getParam('cargo_override')])
-        local result = signCon.params[getParam('cargo_override')] or 0
+        logger.print('signCon.params[getParamName(\'cargo_override\')] =') logger.debugPrint(signCon.params[getParamName('cargo_override')])
+        local result = signCon.params[getParamName('cargo_override')] or 0
         if result == 0 then
             logger.print('signState =') logger.debugPrint(signState)
             if signState and signState.nearestTerminal and signState.nearestTerminal.cargo then
@@ -72,16 +72,16 @@ local utils = {
         logger.print('getIsCargo is about to return', (result == 2))
         return (result == 2)
     end,
-    getTerminalId = function(config, signCon, signState, getParam)
-        -- returns a terminalId if config.singleTerminal == true, otherwise nil
+    getTerminalId = function(config, signCon, signState, getParamName)
         if not(config) or not(config.singleTerminal) then return nil end
 
-        local result = signCon.params[getParam('terminal_override')] or 0
-        if result == 0 then
+        local result = signCon.params[getParamName('terminal_override')] or 0
+        if result == 0 then -- 0 is "automatic terminal detection"
             if signState and signState.nearestTerminal and signState.nearestTerminal.terminalId then
                 result = signState.nearestTerminal.terminalId
             else
                 result = 1
+                logger.warn('cannot find signState.nearestTerminal.terminalId for signCon', signCon or 'NIL')
             end
         end
         return result
