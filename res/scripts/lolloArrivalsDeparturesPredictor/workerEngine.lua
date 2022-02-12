@@ -600,6 +600,8 @@ local function getNextPredictions(stationId, station, nEntries, time, onlyTermin
                                         departureTime = lastDepartureTime + remainingTime + myLineData.averages[hereIndex].lsd,
                                         -- nStopsAway = nStopsAway
                                     }
+
+                                    -- if #vehicles == 1 then -- LOLLO TODO MAYBE add another loop
                                 end
                             end
                         end
