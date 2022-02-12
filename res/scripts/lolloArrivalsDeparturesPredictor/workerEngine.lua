@@ -419,7 +419,7 @@ local function getLastDepartureTime(vehicle, time)
             result = math.ceil(vehicle.doorsTime / 1000) + 1000
             logger.print('lastDepartureTime == 0, falling back to doorsTime')
             if result > time then
-                logger.warn('doorsTime > time, doorsTime = ' .. result .. ', time = ' .. time)
+                logger.print('doorsTime > time, doorsTime = ' .. result .. ', time = ' .. time)
                 result = time
             end
         else
@@ -478,7 +478,7 @@ local function getNextPredictions(stationId, station, nEntries, time, onlyTermin
                         local nStops = #line.stops
                         local hereIndex, startIndex, endIndex = getHereStartEndIndexes(line, stationGroupId, stationIndexInStationGroupBase0, terminalIndexBase0)
                         logger.print('hereIndex, startIndex, endIndex, nStops =', hereIndex, startIndex, endIndex, nStops)
-                        if nStops < 2 or problemLineIds[lineId] then
+                        if nStops < 2 --[[ or problemLineIds[lineId] ]] then
                             predictions[#predictions+1] = {
                                 terminalId = terminalId,
                                 originStationGroupId = line.stops[startIndex].stationGroup,
@@ -683,7 +683,7 @@ local function update()
                 end,
             }
 
-            local _problemLineIds = utils.getProblemLineIds()
+            local _problemLineIds = {} -- utils.getProblemLineIds() -- this is moderately useful and a bit slow
 
             for signConId, signState in pairs(state.placed_signs) do
                 -- logger.print('signConId =') logger.debugPrint(signConId)
