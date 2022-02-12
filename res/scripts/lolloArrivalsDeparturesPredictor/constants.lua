@@ -12,6 +12,12 @@ local constants = {
         toggle_notaus = 'toggle_notaus'
     },
 
+    guiIds = {
+        dynamicOnOffButtonId = 'lollo_arrivals_departures_predictor_dynamic_on_off_button',
+        stationPickerWindowId = 'lollo_arrivals_departures_predictor_picker_window',
+        warningWindowWithMessageId = 'lollo_arrivals_departures_predictor_warning_window_with_message',
+    },
+
     idTransf = { 1, 0, 0, 0,  0, 1, 0, 0,  0, 0, 1, 0,  0, 0, 0, 1 },
 
     nameTags = {

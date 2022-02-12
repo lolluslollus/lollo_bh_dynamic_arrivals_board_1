@@ -1,9 +1,6 @@
 local constants = require('lolloArrivalsDeparturesPredictor.constants')
 local stringUtils = require('lolloArrivalsDeparturesPredictor.stringUtils')
 
-local _dynamicOnOffButtonId = 'lollo_arrivals_departures_predictor_dynamic_on_off_button'
-local _stationPickerWindowId = 'lollo_arrivals_departures_predictor_picker_window'
-local _warningWindowWithMessageId = 'lollo_arrivals_departures_predictor_warning_window_with_message'
 
 local _texts = {
     dynamicOff = _('DynamicDisplaysOff'),
@@ -43,10 +40,10 @@ local guiHelpers = {
     showNearbyStationPicker = function(stationCons, tentativeStationConId, joinCallback)
         -- print('showNearbyStationPicker starting')
         local layout = api.gui.layout.BoxLayout.new('VERTICAL')
-        local window = api.gui.util.getById(_stationPickerWindowId)
+        local window = api.gui.util.getById(constants.guiIds.stationPickerWindowId)
         if window == nil then
             window = api.gui.comp.Window.new(_texts.stationPickerWindowTitle, layout)
-            window:setId(_stationPickerWindowId)
+            window:setId(constants.guiIds.stationPickerWindowId)
         else
             window:setContent(layout)
             window:setVisible(true, false)
@@ -116,10 +113,10 @@ local guiHelpers = {
     end,
     showWarningWindowWithMessage = function(text)
         local layout = api.gui.layout.BoxLayout.new('VERTICAL')
-        local window = api.gui.util.getById(_warningWindowWithMessageId)
+        local window = api.gui.util.getById(constants.guiIds.warningWindowWithMessageId)
         if window == nil then
             window = api.gui.comp.Window.new(_texts.warningWindowTitle, layout)
-            window:setId(_warningWindowWithMessageId)
+            window:setId(constants.guiIds.warningWindowWithMessageId)
         else
             window:setContent(layout)
             window:setVisible(true, false)
@@ -138,7 +135,7 @@ local guiHelpers = {
         )
     end,
     initNotausButton = function(isDynamicOn, funcOfBool)
-        if api.gui.util.getById(_dynamicOnOffButtonId) then return end
+        if api.gui.util.getById(constants.guiIds.dynamicOnOffButtonId) then return end
 
         local buttonLayout = api.gui.layout.BoxLayout.new('HORIZONTAL')
         utils.modifyOnOffButtonLayout(buttonLayout, isDynamicOn)
@@ -155,7 +152,7 @@ local guiHelpers = {
             funcOfBool(isOn)
         end)
 
-        button:setId(_dynamicOnOffButtonId)
+        button:setId(constants.guiIds.dynamicOnOffButtonId)
 
         api.gui.util.getById('gameInfo'):getLayout():addItem(button) -- adds a button in the right place
     end,
