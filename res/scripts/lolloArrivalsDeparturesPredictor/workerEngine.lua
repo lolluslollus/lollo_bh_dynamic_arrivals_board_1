@@ -60,17 +60,17 @@ local utils = {
     end,
     getIsCargo = function(config, signCon, signState, getParamName)
         -- returns true for cargo and false for passenger stations
-        logger.print('signCon.params[getParamName(\'cargo_override\')] =') logger.debugPrint(signCon.params[getParamName('cargo_override')])
+        -- logger.print('signCon.params[getParamName(\'cargo_override\')] =') logger.debugPrint(signCon.params[getParamName('cargo_override')])
         local result = signCon.params[getParamName('cargo_override')] or 0
         if result == 0 then
-            logger.print('signState =') logger.debugPrint(signState)
+            -- logger.print('signState =') logger.debugPrint(signState)
             if signState and signState.nearestTerminal and signState.nearestTerminal.cargo then
                 return true
             else
                 return false
             end
         end
-        logger.print('getIsCargo is about to return', (result == 2))
+        -- logger.print('getIsCargo is about to return', (result == 2))
         return (result == 2)
     end,
     getProblemLineIds = function()

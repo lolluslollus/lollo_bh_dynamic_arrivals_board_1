@@ -10,6 +10,7 @@ local helpers = {
         params[#params+1] = {
             key = getParamName('terminal_override'),
             name = _('Terminal'),
+            tooltip = _('GuessedTooltip'),
             values = terminals,
             uiType = 'COMBOBOX'
         }
@@ -20,6 +21,7 @@ local helpers = {
         params[#params+1] = {
             key = getParamName('cargo_override'),
             name = _('StationSection'),
+            tooltip = _('GuessedTooltip'),
             values = {_('Auto'), _('Passengers'), _('Cargo')},
             uiType = 'BUTTON'
         }

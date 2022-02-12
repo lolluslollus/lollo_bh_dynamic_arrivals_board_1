@@ -18,8 +18,7 @@ function data()
                     Another big thank you goes out to badgerrhax for the idea.
 			]],
             ["ModName"] = "Dynamic Departures / Arrivals Displays",
-            ["AlignFree"] = 'Free',
-            ["AlignPlatform"] = 'Platform',
+            ["Align2Platform"] = "Align to Platform",
             ["ArrivalsAllCaps"] = "ARRIVALS",
             ["Auto"] = "Auto",
             ["displays"] = "displays",
@@ -41,8 +40,10 @@ function data()
             ["From"] = "From",
             ["GoBack"] = "Go back",
             ["GoThere"] = "Go there",
+            ["GuessedTooltip"] = "Adjust this if required",
             ["Join"] = "Join",
             ["MinutesShort"] = "min",
+            ["No"] = "No",
             ["Origin"] = "Origin",
             ["Passengers"] = "Passengers",
             ["PlatformShort"] = "Plat",
@@ -53,6 +54,7 @@ function data()
             ["Time"] = "Time",
             ["To"] = "To",
             ["WarningWindowTitle"] = "Warning",
+            ["Yes"] = "Yes",
         },
     }
 end
