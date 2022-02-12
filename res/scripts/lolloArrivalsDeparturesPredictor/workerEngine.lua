@@ -19,6 +19,7 @@ local _texts = {
     origin = _('Origin'),
     platform = _('PlatformShort'),
     sorryNoService = _('SorryNoService'),
+    sorryTroubleShort = _('SorryTroubleShort'),
     time = _('Time'),
     to = _('To'),
 }
@@ -71,6 +72,14 @@ local utils = {
         end
         logger.print('getIsCargo is about to return', (result == 2))
         return (result == 2)
+    end,
+    getProblemLineIds = function()
+        local results = {}
+        local problemLineIds = api.engine.system.lineSystem.getProblemLines(api.engine.util.getPlayer())
+        for _, lineId in pairs(problemLineIds) do
+            if lineId then results[lineId] = true end
+        end
+        return results
     end,
     getTerminalId = function(config, signCon, signState, getParamName)
         if not(config) or not(config.singleTerminal) then return nil end
@@ -129,15 +138,22 @@ utils.getFormattedPredictions = function(predictions, time, fallbackTerminalIdIf
                 end
             end
 
-            fmtEntry.arrivalTimeString = utils.formatClockStringHHMM(rawEntry.arrivalTime / 1000)
-            fmtEntry.departureTimeString = utils.formatClockStringHHMM(rawEntry.departureTime / 1000)
-            local expectedMinutesToArrival = math.floor((rawEntry.arrivalTime - time) / 60000)
-            if expectedMinutesToArrival > 0 then
-                fmtEntry.etaMinutesString = expectedMinutesToArrival .. _texts.minutesShort
-            end
-            local expectedMinutesToDeparture = math.floor((rawEntry.departureTime - time) / 60000)
-            if expectedMinutesToDeparture > 0 then
-                fmtEntry.etdMinutesString = expectedMinutesToDeparture .. _texts.minutesShort
+            if rawEntry.isProblem then
+                fmtEntry.arrivalTimeString = _texts.sorryTroubleShort
+                fmtEntry.departureTimeString = _texts.sorryTroubleShort
+                fmtEntry.etaMinutesString = _texts.sorryTroubleShort
+                fmtEntry.etdMinutesString = _texts.sorryTroubleShort
+            else
+                fmtEntry.arrivalTimeString = utils.formatClockStringHHMM(rawEntry.arrivalTime / 1000)
+                fmtEntry.departureTimeString = utils.formatClockStringHHMM(rawEntry.departureTime / 1000)
+                local expectedMinutesToArrival = math.floor((rawEntry.arrivalTime - time) / 60000)
+                if expectedMinutesToArrival > 0 then
+                    fmtEntry.etaMinutesString = expectedMinutesToArrival .. _texts.minutesShort
+                end
+                local expectedMinutesToDeparture = math.floor((rawEntry.departureTime - time) / 60000)
+                if expectedMinutesToDeparture > 0 then
+                    fmtEntry.etdMinutesString = expectedMinutesToDeparture .. _texts.minutesShort
+                end
             end
 
             results[#results+1] = fmtEntry
@@ -427,7 +443,7 @@ local function getLastDepartureTime(vehicle, time)
     return result
 end
 
-local function getNextPredictions(stationId, station, nEntries, time, onlyTerminalId, predictionsBufferHelpers, averageTimeToLeaveDestinationsFromPreviousBuffer)
+local function getNextPredictions(stationId, station, nEntries, time, onlyTerminalId, predictionsBufferHelpers, averageTimeToLeaveDestinationsFromPreviousBuffer, problemLineIds)
     logger.print('getNextPredictions starting')
     logger.print('stationId =') logger.debugPrint(stationId)
     local predictions = {}
@@ -446,10 +462,6 @@ local function getNextPredictions(stationId, station, nEntries, time, onlyTermin
         logger.print('time = ', time, 'NOT using buffer for stationId =', stationId, 'and onlyTerminalId =', onlyTerminalId or 'NIL')
     end
 
-    -- LOLLO TODO skip problem lines and display a disruption message instead.
-    -- Break a track or something and see what happens.
-    -- local problemLines = api.engine.system.lineSystem.getProblemLines(api.engine.util.getPlayer())
-
     -- logger.print('stationGroupId =', stationGroupId)
     -- logger.print('stationId =', stationId)
     local terminalIndexBase0 = 0
@@ -464,9 +476,18 @@ local function getNextPredictions(stationId, station, nEntries, time, onlyTermin
                     local vehicles = api.engine.system.transportVehicleSystem.getLineVehicles(lineId)
                     if #vehicles > 0 then
                         local nStops = #line.stops
-                        if nStops > 1 then
-                            local hereIndex, startIndex, endIndex = getHereStartEndIndexes(line, stationGroupId, stationIndexInStationGroupBase0, terminalIndexBase0)
-                            logger.print('hereIndex, startIndex, endIndex, nStops =', hereIndex, startIndex, endIndex, nStops)
+                        local hereIndex, startIndex, endIndex = getHereStartEndIndexes(line, stationGroupId, stationIndexInStationGroupBase0, terminalIndexBase0)
+                        logger.print('hereIndex, startIndex, endIndex, nStops =', hereIndex, startIndex, endIndex, nStops)
+                        if nStops < 2 or problemLineIds[lineId] then
+                            predictions[#predictions+1] = {
+                                terminalId = terminalId,
+                                originStationGroupId = line.stops[startIndex].stationGroup,
+                                destinationStationGroupId = line.stops[endIndex].stationGroup,
+                                arrivalTime = time + 3600,
+                                departureTime = time + 3600,
+                                isProblem = true,
+                            }
+                        else
                             -- Here, I average the times across all the trains on this line.
                             -- If the trains are wildly different, which is stupid, this could be less accurate;
                             -- otherwise, it will be pretty accurate.
@@ -662,6 +683,8 @@ local function update()
                 end,
             }
 
+            local _problemLineIds = utils.getProblemLineIds()
+
             for signConId, signState in pairs(state.placed_signs) do
                 -- logger.print('signConId =') logger.debugPrint(signConId)
                 -- logger.print('signState =') logger.debugPrint(signState)
@@ -715,7 +738,8 @@ local function update()
                                                     _time,
                                                     terminalId, -- nil if config.singleTerminal == falsy
                                                     predictionsBufferHelpers,
-                                                    averageTimeToLeaveDestinationsFromPreviousBuffer
+                                                    averageTimeToLeaveDestinationsFromPreviousBuffer,
+                                                    _problemLineIds
                                                 )
                                                 if rawPredictions == nil then
                                                     rawPredictions = nextPredictions
