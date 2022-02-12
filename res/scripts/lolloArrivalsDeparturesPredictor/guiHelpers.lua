@@ -23,12 +23,18 @@ local utils = {
         game.gui.setCamera({position[1], position[2], cameraData[3], cameraData[4], cameraData[5]})
     end,
     modifyOnOffButtonLayout = function(layout, isOn)
+        local img = nil
         if isOn then
-            layout:addItem(api.gui.comp.ImageView.new('ui/design/components/checkbox_valid.tga'), api.gui.util.Alignment.HORIZONTAL, api.gui.util.Alignment.VERTICAL)
-            layout:addItem(api.gui.comp.TextView.new(_texts.dynamicOn), api.gui.util.Alignment.HORIZONTAL, api.gui.util.Alignment.VERTICAL)
+            -- img = api.gui.comp.ImageView.new('ui/design/components/checkbox_valid.tga')
+            img = api.gui.comp.ImageView.new('ui/checkbox_valid.tga')
+            img:setTooltip(_texts.dynamicOn)
+            layout:addItem(img, api.gui.util.Alignment.HORIZONTAL, api.gui.util.Alignment.VERTICAL)
+            -- layout:addItem(api.gui.comp.TextView.new(_texts.dynamicOn), api.gui.util.Alignment.HORIZONTAL, api.gui.util.Alignment.VERTICAL)
         else
-            layout:addItem(api.gui.comp.ImageView.new('ui/design/components/checkbox_invalid.tga'), api.gui.util.Alignment.HORIZONTAL, api.gui.util.Alignment.VERTICAL)
-            layout:addItem(api.gui.comp.TextView.new(_texts.dynamicOff), api.gui.util.Alignment.HORIZONTAL, api.gui.util.Alignment.VERTICAL)
+            img = api.gui.comp.ImageView.new('ui/checkbox_invalid.tga')
+            img:setTooltip(_texts.dynamicOff)
+            layout:addItem(img, api.gui.util.Alignment.HORIZONTAL, api.gui.util.Alignment.VERTICAL)
+            -- layout:addItem(api.gui.comp.TextView.new(_texts.dynamicOff), api.gui.util.Alignment.HORIZONTAL, api.gui.util.Alignment.VERTICAL)
         end
     end
 }
