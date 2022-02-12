@@ -324,8 +324,8 @@ local function getMyLineData(vehicleIds, nStops, lineId, lineWaitingTime, buffer
     -- If the trains are wildly different, which is stupid, this could be less accurate;
     -- otherwise, it will be pretty accurate.
     -- buffer
-    if buffer[lineId] then logger.print('using ATT buffer for lineID =', lineId) return buffer[lineId] end
-    logger.print('NOT using ATT buffer for lineID =', lineId)
+    if buffer[lineId] then logger.print('using line buffer for lineID =', lineId) return buffer[lineId] end
+    logger.print('NOT using line buffer for lineID =', lineId)
 
     if nStops < 1 or #vehicleIds < 1 then return {} end
 
@@ -475,9 +475,9 @@ local function getNextPredictions(stationId, station, nEntries, time, onlyTermin
         logger.print('time = ', time, 'NOT using buffer for stationId =', stationId, 'and onlyTerminalId =', onlyTerminalId or 'NIL')
     end
 
-    logger.print('stationGroupId =', stationGroupId)
-    logger.print('stationId =', stationId)
-    logger.print('station.terminals =') logger.debugPrint(station.terminals)
+    -- logger.print('stationGroupId =', stationGroupId)
+    -- logger.print('stationId =', stationId)
+    -- logger.print('station.terminals =') logger.debugPrint(station.terminals)
     local terminalIndexBase0 = 0
     for terminalId, _ in pairs(station.terminals) do
         -- this works coz the table indexes have base 1
@@ -692,6 +692,7 @@ local function update()
                     stateHelpers.removePlacedSign(signConId)
                 else
                     -- an entity with the id of our sign is still around
+                    logger.print('signState.stationConId =', signState.stationConId)
                     local signCon = api.engine.getComponent(signConId, api.type.ComponentType.CONSTRUCTION)
                     -- logger.print('signCon =') logger.debugPrint(signCon)
                     if not(signCon) or not(constructionConfigs.get()[signCon.fileName]) then
@@ -729,6 +730,7 @@ local function update()
                                         -- this works coz the table indexes have base 1
                                         if edgeUtils.isValidAndExistingId(stationId) then
                                             local station = api.engine.getComponent(stationId, api.type.ComponentType.STATION)
+                                            logger.print('station', stationId, 'has station.cargo =', (station.cargo or 'false'))
                                             if isCargo == not(not(station.cargo)) then
                                                 local nextPredictions = getNextPredictions(
                                                     stationId,
@@ -812,14 +814,6 @@ local function handleEvent(src, id, name, args)
                     api.cmd.sendCommand(api.cmd.make.setName(args.signConId, newName))
                 end
 
-                -- we need this for the station panel too,
-                -- to find out if it is closer to the cargo or the passenger station
-                -- local nearestTerminals = stationHelpers.getNearestTerminals(
-                --     transfUtilsUG.new(signCon.transf:cols(0), signCon.transf:cols(1), signCon.transf:cols(2), signCon.transf:cols(3)),
-                --     args.stationConId,
-                --     false -- not only passengers
-                -- )
-                -- logger.print('freshly calculated nearestTerminals =') logger.debugPrint(nearestTerminals)
                 local nearestTerminal = stationHelpers.getNearestTerminal(
                     transfUtilsUG.new(signCon.transf:cols(0), signCon.transf:cols(1), signCon.transf:cols(2), signCon.transf:cols(3)),
                     args.stationConId,

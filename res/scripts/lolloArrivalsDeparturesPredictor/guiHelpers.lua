@@ -40,7 +40,7 @@ local utils = {
 }
 
 local guiHelpers = {
-    showNearbyStationPicker = function(isTheNewObjectCargo, stationCons, tentativeStationConId, joinCallback)
+    showNearbyStationPicker = function(stationCons, tentativeStationConId, joinCallback)
         -- print('showNearbyStationPicker starting')
         local layout = api.gui.layout.BoxLayout.new('VERTICAL')
         local window = api.gui.util.getById(_stationPickerWindowId)

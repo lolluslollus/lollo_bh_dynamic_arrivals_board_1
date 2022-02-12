@@ -40,7 +40,7 @@ local function _tryJoinSign(signConId, tentativeStationConId)
     if signTransf_lua == nil then return false end
 
     -- logger.print('conTransf =') logger.debugPrint(signTransf_lua)
-    local nearbyStationCons = stationHelpers.getNearbyStationCons(signTransf_lua, constants.searchRadius4NearbyStation2JoinMetres, false)
+    local nearbyStationCons = stationHelpers.getNearbyStationCons(signTransf_lua, constants.searchRadius4NearbyStation2JoinMetres)
     -- logger.print('#nearbyStationCons =', #nearbyStationCons)
     if #nearbyStationCons == 0 then
         guiHelpers.showWarningWindowWithMessage(_('CannotFindStationToJoin'))
@@ -49,7 +49,6 @@ local function _tryJoinSign(signConId, tentativeStationConId)
         _joinSignBase(signConId, nearbyStationCons[1].id)
     else
         guiHelpers.showNearbyStationPicker(
-            true, -- pick passenger or cargo stations
             nearbyStationCons,
             tentativeStationConId,
             function(stationConId)
