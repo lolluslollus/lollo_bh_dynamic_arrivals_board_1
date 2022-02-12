@@ -88,7 +88,7 @@ local utils = {
     end,
     getStationIndexInStationGroupBase0 = function(stationId, stationGroupId)
         local stationGroup = api.engine.getComponent(stationGroupId, api.type.ComponentType.STATION_GROUP)
-        for indexBase1, id in ipairs(stationGroup.stations) do
+        for indexBase1, id in pairs(stationGroup.stations) do
             if id == stationId then return indexBase1 - 1 end
         end
         return nil
@@ -475,7 +475,7 @@ local function getNextPredictions(stationId, station, nEntries, time, onlyTermin
                             -- logger.print('#averageTimeToLeaveDestinationFromPrevious =', #averageTimeToLeaveDestinationFromPrevious or 'NIL') -- ok
                             -- logger.print('There are', #vehicles, 'vehicles')
 
-                            for _, vehicleId in ipairs(vehicles) do
+                            for _, vehicleId in pairs(vehicles) do
                                 logger.print('vehicleId =', vehicleId or 'NIL')
                                 local vehicle = api.engine.getComponent(vehicleId, api.type.ComponentType.TRANSPORT_VEHICLE)
                                 --[[
