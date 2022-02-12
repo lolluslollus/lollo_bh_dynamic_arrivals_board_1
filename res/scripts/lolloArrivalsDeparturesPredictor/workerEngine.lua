@@ -350,6 +350,7 @@ local function getAverageTimeToLeaveDestinationFromPrevious(vehicleIds, nStops, 
     logger.print('fallbackLegDuration =', fallbackLegDuration)
 
     local averages = {}
+    local vehicles = {}
 
     for index = 1, nStops, 1 do
         local prevIndex = index - 1
@@ -358,6 +359,7 @@ local function getAverageTimeToLeaveDestinationFromPrevious(vehicleIds, nStops, 
         local averageLSD, nVehicles4AverageLSD, averageST, nVehicles4AverageST = 0, #vehicleIds, 0, #vehicleIds
         for _, vehicleId in pairs(vehicleIds) do
             local vehicle = api.engine.getComponent(vehicleId, api.type.ComponentType.TRANSPORT_VEHICLE)
+            vehicles[vehicleId] = vehicle
             local lineStopDepartures = vehicle.lineStopDepartures
             if lineStopDepartures[index] == 0
             or lineStopDepartures[prevIndex] == 0
@@ -411,8 +413,8 @@ local function getAverageTimeToLeaveDestinationFromPrevious(vehicleIds, nStops, 
         averages[index] = {lsd = math.ceil(averageLSD), st = math.ceil(averageST)}
     end
 
-    buffer[lineId] = averages
-    return averages
+    buffer[lineId] = {averages = averages, vehicles = vehicles}
+    return buffer[lineId]
 end
 
 local function getLastDepartureTime(vehicle, time)
@@ -505,15 +507,14 @@ local function getNextPredictions(stationId, station, nEntries, time, onlyTermin
                             -- Here, I average the times across all the trains on this line.
                             -- If the trains are wildly different, which is stupid, this could be less accurate;
                             -- otherwise, it will be pretty accurate.
-                            local averageTimeToLeaveDestinationFromPrevious = getAverageTimeToLeaveDestinationFromPrevious(vehicleIds, nStops, lineId, line.waitingTime, averageTimeToLeaveDestinationsFromPreviousBuffer)
-                            logger.print('averageTimeToLeaveDestinationFromPrevious =') logger.debugPrint(averageTimeToLeaveDestinationFromPrevious)
-                            -- logger.print('#averageTimeToLeaveDestinationFromPrevious =', #averageTimeToLeaveDestinationFromPrevious or 'NIL') -- ok
+                            local averageTimeToDepartDestinationFromPreviousDeparture = getAverageTimeToLeaveDestinationFromPrevious(vehicleIds, nStops, lineId, line.waitingTime, averageTimeToLeaveDestinationsFromPreviousBuffer)
+                            logger.print('averageTimeToDepartDestinationFromPreviousDeparture.averages =') logger.debugPrint(averageTimeToDepartDestinationFromPreviousDeparture.averages)
+                            -- logger.print('#averageTimeToDepartDestinationFromPreviousDeparture =', #averageTimeToDepartDestinationFromPreviousDeparture or 'NIL') -- ok
                             -- logger.print('There are', #vehicleIds, 'vehicles')
 
                             for _, vehicleId in pairs(vehicleIds) do
                                 logger.print('vehicleId =', vehicleId or 'NIL')
-                                -- LOLLO TODO do not call this again, get it from getAverage...() instead
-                                local vehicle = api.engine.getComponent(vehicleId, api.type.ComponentType.TRANSPORT_VEHICLE)
+                                local vehicle = averageTimeToDepartDestinationFromPreviousDeparture.vehicles[vehicleId]
                                 --[[
                                     vehicle has:
                                     stopIndex = 1, -- last stop index or next stop index in base 0
@@ -583,10 +584,10 @@ local function getNextPredictions(stationId, station, nEntries, time, onlyTermin
 
                                 local lastDepartureTime = getLastDepartureTime(vehicle, time)
                                 logger.print('lastDepartureTime =', lastDepartureTime)
-                                -- local remainingTime = averageTimeToLeaveDestinationFromPrevious[hereIndex].lsd
+                                -- local remainingTime = averageTimeToDepartDestinationFromPreviousDeparture.averages[hereIndex].lsd
                                 local remainingTime = 0
                                 while nextStopIndex ~= hereIndex do
-                                    remainingTime = remainingTime + averageTimeToLeaveDestinationFromPrevious[nextStopIndex].lsd
+                                    remainingTime = remainingTime + averageTimeToDepartDestinationFromPreviousDeparture.averages[nextStopIndex].lsd
                                         -- + getWaitingTimeMsec(line, nextStopIndex) -- not needed since I check the departures
                                     nextStopIndex = nextStopIndex + 1
                                     if nextStopIndex > nStops then nextStopIndex = nextStopIndex - nStops end
@@ -597,26 +598,10 @@ local function getNextPredictions(stationId, station, nEntries, time, onlyTermin
                                     originStationGroupId = line.stops[startIndex].stationGroup,
                                     destinationStationGroupId = line.stops[endIndex].stationGroup,
                                     -- arrivalTime = lastDepartureTime + remainingTime - getWaitingTimeMsec(line, hereIndex),
-                                    arrivalTime = lastDepartureTime + remainingTime + averageTimeToLeaveDestinationFromPrevious[hereIndex].st,
-                                    departureTime = lastDepartureTime + remainingTime + averageTimeToLeaveDestinationFromPrevious[hereIndex].lsd,
+                                    arrivalTime = lastDepartureTime + remainingTime + averageTimeToDepartDestinationFromPreviousDeparture.averages[hereIndex].st,
+                                    departureTime = lastDepartureTime + remainingTime + averageTimeToDepartDestinationFromPreviousDeparture.averages[hereIndex].lsd,
                                     -- nStopsAway = nStopsAway
                                 }
-
-                                -- not a good calculation. You should, instead,
-                                -- add the highest departure time and subtract the lowest
-                                -- to the values you just calculated,
-                                -- but only if none is zero.
-                                -- if #vehicleIds == 1 and averageTimeToLeaveDestinationFromPrevious > 0 then
-                                --     -- if there's only one vehicle, make a second predictions eta + an entire line duration
-                                --     predictions[#predictions+1] = {
-                                --         terminalId = terminalId,
-                                --         originStationGroupId = lineData.stops[startIndex].stationGroup,
-                                --         destinationStationGroupId = lineData.stops[lineTerminusIndex].stationGroup,
-                                --         arrivalTime = lastDepartureTime + remainingTime + remainingTime - getWaitingTimeMsec(line, hereIndex),
-                                --         departureTime = lastDepartureTime + remainingTime,
-                                --         nStopsAway = nStopsAway
-                                --     }
-                                -- end
                             end
                         end
                     end
