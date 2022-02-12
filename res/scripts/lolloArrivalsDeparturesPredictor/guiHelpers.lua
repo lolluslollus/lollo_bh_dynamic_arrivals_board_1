@@ -26,12 +26,12 @@ local utils = {
         local img = nil
         if isOn then
             -- img = api.gui.comp.ImageView.new('ui/design/components/checkbox_valid.tga')
-            img = api.gui.comp.ImageView.new('ui/checkbox_valid.tga')
+            img = api.gui.comp.ImageView.new('ui/lolloArrivalsDeparturesPredictor/checkbox_valid.tga')
             img:setTooltip(_texts.dynamicOn)
             layout:addItem(img, api.gui.util.Alignment.HORIZONTAL, api.gui.util.Alignment.VERTICAL)
             -- layout:addItem(api.gui.comp.TextView.new(_texts.dynamicOn), api.gui.util.Alignment.HORIZONTAL, api.gui.util.Alignment.VERTICAL)
         else
-            img = api.gui.comp.ImageView.new('ui/checkbox_invalid.tga')
+            img = api.gui.comp.ImageView.new('ui/lolloArrivalsDeparturesPredictor/checkbox_invalid.tga')
             img:setTooltip(_texts.dynamicOff)
             layout:addItem(img, api.gui.util.Alignment.HORIZONTAL, api.gui.util.Alignment.VERTICAL)
             -- layout:addItem(api.gui.comp.TextView.new(_texts.dynamicOff), api.gui.util.Alignment.HORIZONTAL, api.gui.util.Alignment.VERTICAL)
