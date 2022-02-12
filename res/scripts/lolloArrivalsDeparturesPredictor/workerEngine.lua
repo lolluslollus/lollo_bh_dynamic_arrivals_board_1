@@ -351,6 +351,7 @@ local function getMyLineData(vehicleIds, nStops, lineId, lineWaitingTime, buffer
     }
 
     local averages = {}
+    local period = 0
     local vehicles = {}
 
     for _, vehicleId in pairs(vehicleIds) do
@@ -415,9 +416,10 @@ local function getMyLineData(vehicleIds, nStops, lineId, lineWaitingTime, buffer
         end
 
         averages[index] = {lsd = math.ceil(averageLSD), st = math.ceil(averageST)}
+        period = period + averages[index].lsd
     end
 
-    buffer[lineId] = {averages = averages, vehicles = vehicles}
+    buffer[lineId] = {averages = averages, period = period, vehicles = vehicles}
     return buffer[lineId]
 end
 
@@ -601,7 +603,17 @@ local function getNextPredictions(stationId, station, nEntries, time, onlyTermin
                                         -- nStopsAway = nStopsAway
                                     }
 
-                                    -- if #vehicles == 1 then -- LOLLO TODO MAYBE add another loop
+                                    logger.print('myLineData.period =', myLineData.period)
+                                    if #vehicleIds == 1 then -- fill up the display a bit
+                                        predictions[#predictions+1] = {
+                                            terminalId = terminalId,
+                                            originStationGroupId = line.stops[startIndex].stationGroup,
+                                            destinationStationGroupId = line.stops[endIndex].stationGroup,
+                                            arrivalTime = predictions[#predictions].arrivalTime + myLineData.period,
+                                            departureTime = predictions[#predictions].departureTime + myLineData.period,
+                                            -- nStopsAway = nStopsAway
+                                        }
+                                    end
                                 end
                             end
                         end
