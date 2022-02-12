@@ -446,7 +446,8 @@ local function getNextPredictions(stationId, station, nEntries, time, onlyTermin
         logger.print('time = ', time, 'NOT using buffer for stationId =', stationId, 'and onlyTerminalId =', onlyTerminalId or 'NIL')
     end
 
-    -- LOLLO TODO MAYBE skip problem lines. Make some and see if it helps. Break a track or something.
+    -- LOLLO TODO skip problem lines and display a disruption message instead.
+    -- Break a track or something and see what happens.
     -- local problemLines = api.engine.system.lineSystem.getProblemLines(api.engine.util.getPlayer())
 
     -- logger.print('stationGroupId =', stationGroupId)
