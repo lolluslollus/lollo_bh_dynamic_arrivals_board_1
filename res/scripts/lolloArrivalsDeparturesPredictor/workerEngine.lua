@@ -100,10 +100,7 @@ local utils = {
         logger.print('stationGroup.stations =') logger.debugPrint(stationGroup.stations)
         local indexBase0 = 0
         for _, staId in pairs(stationGroup.stations) do
-            -- LOLLO TODO if pairs() screws the sequence, this could yield
-            -- a wrong result.
-            -- If I use ipairs instead, it could exit at the first hole in the sequence.
-            -- check this.
+            -- this works coz the table indexes have base 1
             if staId == stationId then return indexBase0 end
             indexBase0 = indexBase0 + 1
         end
@@ -483,11 +480,7 @@ local function getNextPredictions(stationId, station, nEntries, time, onlyTermin
     logger.print('station.terminals =') logger.debugPrint(station.terminals)
     local terminalIndexBase0 = 0
     for terminalId, _ in pairs(station.terminals) do
-        -- LOLLO TODO if pairs() screws the sequence, this could yield
-        -- a wrong terminalIndexBase0.
-        -- If I use ipairs instead, it could exit at the first hole in the sequence.
-        -- check this.
-
+        -- this works coz the table indexes have base 1
         if not(onlyTerminalId) or (terminalId == onlyTerminalId) then
             logger.print('terminalId =', terminalId or 'NIL')
             local lineIds = api.engine.system.lineSystem.getLineStopsForTerminal(stationId, terminalIndexBase0)
