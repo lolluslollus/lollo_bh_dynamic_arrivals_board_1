@@ -96,9 +96,16 @@ local utils = {
         return result
     end,
     getStationIndexInStationGroupBase0 = function(stationId, stationGroupId)
+        -- LOLLO TODO try using a map instead of clling this api at every iteration
         local stationGroup = api.engine.getComponent(stationGroupId, api.type.ComponentType.STATION_GROUP)
-        for indexBase1, id in pairs(stationGroup.stations) do
-            if id == stationId then return indexBase1 - 1 end
+        local indexBase0 = 0
+        for _, staId in pairs(stationGroup.stations) do
+            -- LOLLO TODO if pairs() screws the sequence, this could yield
+            -- a wrong result.
+            -- If I use ipairs instead, it could exit at the first hole in the sequence.
+            -- check this.
+            if staId == stationId then return indexBase0 end
+            indexBase0 = indexBase0 + 1
         end
         return nil
     end,
@@ -315,12 +322,12 @@ local function getWaitingTimeMsec(line, stopIndex)
     -- end
 end
 
-local function getAverageTimeToLeaveDestinationFromPrevious(vehicles, nStops, lineId, lineWaitingTime, buffer)
+local function getAverageTimeToLeaveDestinationFromPrevious(vehicleIds, nStops, lineId, lineWaitingTime, buffer)
     -- buffer
     if buffer[lineId] then logger.print('using ATT buffer for lineID =', lineId) return buffer[lineId] end
     logger.print('NOT using ATT buffer for lineID =', lineId)
 
-    if nStops < 1 or #vehicles < 1 then return {} end
+    if nStops < 1 or #vehicleIds < 1 then return {} end
 
     -- vehicle states:
     -- api.type.enum.TransportVehicleState.AT_TERMINAL -- 2
@@ -334,11 +341,11 @@ local function getAverageTimeToLeaveDestinationFromPrevious(vehicles, nStops, li
         -- logger.print('lineWaitingTime =', lineWaitingTime)
     local fallbackLegDuration = (
         (lineEntity.frequency > 0) -- this is a proper frequency and not a period
-            and (#vehicles / lineEntity.frequency) -- the same vehicle calls at any station every this seconds
+            and (#vehicleIds / lineEntity.frequency) -- the same vehicle calls at any station every this seconds
             or lineWaitingTime -- should never happen
         ) / nStops * 1000
     -- logger.print('1 / lineEntity.frequency =', 1 / lineEntity.frequency)
-    -- logger.print('#vehicles =', #vehicles)
+    -- logger.print('#vehicleIds =', #vehicleIds)
     -- logger.print('nStops =', nStops)
     logger.print('fallbackLegDuration =', fallbackLegDuration)
 
@@ -348,8 +355,8 @@ local function getAverageTimeToLeaveDestinationFromPrevious(vehicles, nStops, li
         local prevIndex = index - 1
         if prevIndex < 1 then prevIndex = prevIndex + nStops end
 
-        local averageLSD, nVehicles4AverageLSD, averageST, nVehicles4AverageST = 0, #vehicles, 0, #vehicles
-        for _, vehicleId in pairs(vehicles) do
+        local averageLSD, nVehicles4AverageLSD, averageST, nVehicles4AverageST = 0, #vehicleIds, 0, #vehicleIds
+        for _, vehicleId in pairs(vehicleIds) do
             local vehicle = api.engine.getComponent(vehicleId, api.type.ComponentType.TRANSPORT_VEHICLE)
             local lineStopDepartures = vehicle.lineStopDepartures
             if lineStopDepartures[index] == 0
@@ -466,15 +473,22 @@ local function getNextPredictions(stationId, station, nEntries, time, onlyTermin
     -- logger.print('stationId =', stationId)
     local terminalIndexBase0 = 0
     for terminalId, terminal in pairs(station.terminals) do
+        -- LOLLO TODO if pairs() screws the sequence, this could yield
+        -- a wrong terminalIndexBase0.
+        -- If I use ipairs instead, it could exit at the first hole in the sequence.
+        -- check this.
+
         if not(onlyTerminalId) or (terminalId == onlyTerminalId) then
             logger.print('terminal.tag =', terminal.tag or 'NIL', ', terminalId =', terminalId or 'NIL')
+            -- LOLLO TODO try using a map instead of calling this at every iteration
             local lineIds = api.engine.system.lineSystem.getLineStopsForTerminal(stationId, terminalIndexBase0)
             for _, lineId in pairs(lineIds) do
                 logger.print('lineId =', lineId or 'NIL')
                 local line = api.engine.getComponent(lineId, api.type.ComponentType.LINE)
                 if line then
-                    local vehicles = api.engine.system.transportVehicleSystem.getLineVehicles(lineId)
-                    if #vehicles > 0 then
+                    -- LOLLO TODO try using a map instead of calling this at every iteration
+                    local vehicleIds = api.engine.system.transportVehicleSystem.getLineVehicles(lineId)
+                    if #vehicleIds > 0 then
                         local nStops = #line.stops
                         local hereIndex, startIndex, endIndex = getHereStartEndIndexes(line, stationGroupId, stationIndexInStationGroupBase0, terminalIndexBase0)
                         logger.print('hereIndex, startIndex, endIndex, nStops =', hereIndex, startIndex, endIndex, nStops)
@@ -491,13 +505,14 @@ local function getNextPredictions(stationId, station, nEntries, time, onlyTermin
                             -- Here, I average the times across all the trains on this line.
                             -- If the trains are wildly different, which is stupid, this could be less accurate;
                             -- otherwise, it will be pretty accurate.
-                            local averageTimeToLeaveDestinationFromPrevious = getAverageTimeToLeaveDestinationFromPrevious(vehicles, nStops, lineId, line.waitingTime, averageTimeToLeaveDestinationsFromPreviousBuffer)
+                            local averageTimeToLeaveDestinationFromPrevious = getAverageTimeToLeaveDestinationFromPrevious(vehicleIds, nStops, lineId, line.waitingTime, averageTimeToLeaveDestinationsFromPreviousBuffer)
                             logger.print('averageTimeToLeaveDestinationFromPrevious =') logger.debugPrint(averageTimeToLeaveDestinationFromPrevious)
                             -- logger.print('#averageTimeToLeaveDestinationFromPrevious =', #averageTimeToLeaveDestinationFromPrevious or 'NIL') -- ok
-                            -- logger.print('There are', #vehicles, 'vehicles')
+                            -- logger.print('There are', #vehicleIds, 'vehicles')
 
-                            for _, vehicleId in pairs(vehicles) do
+                            for _, vehicleId in pairs(vehicleIds) do
                                 logger.print('vehicleId =', vehicleId or 'NIL')
+                                -- LOLLO TODO do not call this again, get it from getAverage...() instead
                                 local vehicle = api.engine.getComponent(vehicleId, api.type.ComponentType.TRANSPORT_VEHICLE)
                                 --[[
                                     vehicle has:
@@ -591,7 +606,7 @@ local function getNextPredictions(stationId, station, nEntries, time, onlyTermin
                                 -- add the highest departure time and subtract the lowest
                                 -- to the values you just calculated,
                                 -- but only if none is zero.
-                                -- if #vehicles == 1 and averageTimeToLeaveDestinationFromPrevious > 0 then
+                                -- if #vehicleIds == 1 and averageTimeToLeaveDestinationFromPrevious > 0 then
                                 --     -- if there's only one vehicle, make a second predictions eta + an entire line duration
                                 --     predictions[#predictions+1] = {
                                 --         terminalId = terminalId,
