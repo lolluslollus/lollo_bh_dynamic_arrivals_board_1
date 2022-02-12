@@ -726,6 +726,7 @@ local function update()
                                     logger.print('terminalId =') logger.debugPrint(terminalId)
 
                                     for _, stationId in pairs(stationIds) do
+                                        -- this works coz the table indexes have base 1
                                         if edgeUtils.isValidAndExistingId(stationId) then
                                             local station = api.engine.getComponent(stationId, api.type.ComponentType.STATION)
                                             if isCargo == not(not(station.cargo)) then
