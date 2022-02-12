@@ -86,11 +86,11 @@ local function handleEvent(id, name, args)
         -- logger.print('construction.get() =') logger.debugPrint(construction.get())
 
         if args and args.proposal then
-            local toAdd = args.proposal.toAdd
-            if toAdd and toAdd[1] then
-                local config = constructionConfigs.get()[toAdd[1].fileName]
-                -- logger.print('conProps =') logger.debugPrint(config)
-                if config and args.result and args.result[1] then
+            local _toAdd = args.proposal.toAdd
+            if _toAdd and _toAdd[1] then
+                local _config = constructionConfigs.get()[_toAdd[1].fileName]
+                -- logger.print('conProps =') logger.debugPrint(_config)
+                if _config and args.result and args.result[1] then
                     xpcall(
                         function()
                             _tryJoinSign(args.result[1])
@@ -100,11 +100,13 @@ local function handleEvent(id, name, args)
                 end
             end
 
-            local toRemove = args.proposal.toRemove
-            local _state = stateHelpers.getState()
-            if toRemove and toRemove[1] and _state.placed_signs[toRemove[1]] then
-                -- logger.print('remove_display_construction for con id =', toRemove[1])
-                _sendScriptEvent(constants.events.remove_display_construction, {signConId = toRemove[1]})
+            local _toRemove = args.proposal.toRemove
+            if _toRemove and _toRemove[1] then
+                local _state = stateHelpers.getState()
+                if _state and _state.placed_signs and _state.placed_signs[_toRemove[1]] then
+                    -- logger.print('remove_display_construction for con id =', _toRemove[1])
+                    _sendScriptEvent(constants.events.remove_display_construction, {signConId = _toRemove[1]})
+                end
             end
         end
     elseif id == 'bulldozer' and name == 'builder.apply' then
@@ -121,11 +123,11 @@ local function handleEvent(id, name, args)
         -- logger.print('construction.get() =') logger.debugPrint(construction.get())
 
         if args and args.proposal and args.proposal.toRemove and args.proposal.toRemove[1] then
-            local signConId = args.proposal.toRemove[1]
+            local _signConId = args.proposal.toRemove[1]
             local _state = stateHelpers.getState()
-            if _state.placed_signs[signConId] then
+            if _state and _state.placed_signs and _state.placed_signs[_signConId] then
                 -- logger.print('remove_display_construction for con id =', toRemove[1])
-                _sendScriptEvent(constants.events.remove_display_construction, {signConId = signConId})
+                _sendScriptEvent(constants.events.remove_display_construction, {signConId = _signConId})
             end
         end
     -- else
@@ -135,6 +137,10 @@ end
 
 local function guiInit()
     local _state = stateHelpers.getState()
+    if not(_state) then
+        logger.err('cannot read state at guiInit')
+        return
+    end
 
     guiHelpers.initNotausButton(
         _state.is_on,
