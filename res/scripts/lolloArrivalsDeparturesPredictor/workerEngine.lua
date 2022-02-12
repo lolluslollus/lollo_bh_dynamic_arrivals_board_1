@@ -451,10 +451,11 @@ local function getNextPredictions(stationId, station, nEntries, time, onlyTermin
 
     -- logger.print('stationGroupId =', stationGroupId)
     -- logger.print('stationId =', stationId)
+    local terminalIndexBase0 = 0
     for terminalId, terminal in pairs(station.terminals) do
         if not(onlyTerminalId) or (terminalId == onlyTerminalId) then
             logger.print('terminal.tag =', terminal.tag or 'NIL', ', terminalId =', terminalId or 'NIL')
-            local lineIds = api.engine.system.lineSystem.getLineStopsForTerminal(stationId, terminalId - 1)
+            local lineIds = api.engine.system.lineSystem.getLineStopsForTerminal(stationId, terminalIndexBase0)
             for _, lineId in pairs(lineIds) do
                 logger.print('lineId =', lineId or 'NIL')
                 local line = api.engine.getComponent(lineId, api.type.ComponentType.LINE)
@@ -463,7 +464,7 @@ local function getNextPredictions(stationId, station, nEntries, time, onlyTermin
                     if #vehicles > 0 then
                         local nStops = #line.stops
                         if nStops > 1 then
-                            local hereIndex, startIndex, endIndex = getHereStartEndIndexes(line, stationGroupId, stationIndexInStationGroupBase0, terminalId - 1)
+                            local hereIndex, startIndex, endIndex = getHereStartEndIndexes(line, stationGroupId, stationIndexInStationGroupBase0, terminalIndexBase0)
                             logger.print('hereIndex, startIndex, endIndex, nStops =', hereIndex, startIndex, endIndex, nStops)
                             -- Here, I average the times across all the trains on this line.
                             -- If the trains are wildly different, which is stupid, this could be less accurate;
@@ -585,6 +586,7 @@ local function getNextPredictions(stationId, station, nEntries, time, onlyTermin
                 end
             end
         end
+        terminalIndexBase0 = terminalIndexBase0 + 1
     end
 
     -- logger.print('predictions before sorting =') logger.debugPrint(predictions)
