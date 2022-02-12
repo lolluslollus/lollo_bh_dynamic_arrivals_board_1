@@ -94,28 +94,28 @@ local utils = {
         -- LOLLO NOTE in the game and in this mod, there is one train station for each station group
         -- and viceversa. Station groups hold some information that stations don't, tho.
         -- Multiple station groups can share a construction.
+        -- Road stations instead can have more stations in a station group.
         -- What I really want here is a list with one item each construction, but that could be an expensive loop,
         -- so I check the stations instead and index by the construction.
 
-        local _stationIds = {}
+        local stationIdsIndexed = {}
         local _edgeIds = edgeUtils.getNearbyObjectIds(transf, searchRadius, api.type.ComponentType.BASE_EDGE_TRACK)
         for key, edgeId in pairs(_edgeIds) do
             local conId = api.engine.system.streetConnectorSystem.getConstructionEntityForEdge(edgeId)
             if edgeUtils.isValidAndExistingId(conId) then
                 local con = api.engine.getComponent(conId, api.type.ComponentType.CONSTRUCTION)
-                if con then
-                    local conStationIds = con.stations
-                    for _, stationId in pairs(conStationIds) do
-                        arrayUtils.addUnique(_stationIds, stationId)
+                if con and con.stations then
+                    for _, stationId in pairs(con.stations) do
+                        stationIdsIndexed[stationId] = true
                     end
                 end
             end
         end
-        logger.print('_stationIds =') logger.debugPrint(_stationIds)
+        logger.print('stationIdsIndexed =') logger.debugPrint(stationIdsIndexed)
 
         local _station2ConstructionMap = api.engine.system.streetConnectorSystem.getStation2ConstructionMap()
         local _resultsIndexed = {}
-        for _, stationId in pairs(_stationIds) do
+        for stationId, _ in pairs(stationIdsIndexed) do
             if edgeUtils.isValidAndExistingId(stationId) then
                 local conId = _station2ConstructionMap[stationId]
                 if edgeUtils.isValidAndExistingId(conId) then
@@ -167,7 +167,105 @@ local utils = {
         -- logger.print('nearby freestyle stations = ') logger.debugPrint(results)
         return results
     end,
-    getNearestTerminals = function(transf, stationConId, isOnlyPassengers)
+    getNearbyStationGroups = function(transf, searchRadius, isOnlyPassengers)
+        if type(transf) ~= 'table' then return {} end
+        if tonumber(searchRadius) == nil then searchRadius = constants.searchRadius4NearbyStation2JoinMetres end
+
+        -- LOLLO NOTE in the game and in this mod, there is one train station for each station group
+        -- and viceversa. Station groups hold some information that stations don't, tho.
+        -- Multiple station groups can share a construction.
+        -- What I really want here is a list with one item each construction, but that could be an expensive loop,
+        -- so I check the stations instead and index by the construction.
+
+        local _stationGroupIds = edgeUtils.getNearbyObjectIds(transf, searchRadius, api.type.ComponentType.STATION_GROUP)
+
+        local _resultsIndexed = {}
+        for _, stationGroupId in pairs(_stationGroupIds) do
+            logger.print('stationGroupId =', stationGroupId or 'NIL')
+            if edgeUtils.isValidAndExistingId(stationGroupId) then
+                local stationGroup = api.engine.getComponent(stationGroupId, api.type.ComponentType.STATION_GROUP)
+                if stationGroup and stationGroup.stations then
+                    local stationGroupNames = api.engine.getComponent(stationGroupId, api.type.ComponentType.NAME)
+                    local stationGroupName = (stationGroupNames and stationGroupNames.name) and stationGroupNames.name or ''
+                    local isStationGroupWithCargo = false
+                    local isStationGroupWithPassengers = false
+                    local position = { x = 0, y = 0, z = 0}
+                    local nSamples4Average = 0
+                    for _, stationId in pairs(stationGroup.stations) do
+                        logger.print('stationId =', stationId or 'NIL')
+                        if edgeUtils.isValidAndExistingId(stationId) then
+                            local station = api.engine.getComponent(stationId, api.type.ComponentType.STATION)
+                            if station then
+                                local isStationCargo = station.cargo or false
+                                isStationGroupWithCargo = isStationGroupWithCargo or isStationCargo
+                                isStationGroupWithPassengers = isStationGroupWithPassengers or not(isStationCargo)
+                                logger.print('isCargo =', isStationCargo)
+                                -- logger.print('isOnlyPassengers =', isOnlyPassengers)
+                                if not(isStationCargo) or not(isOnlyPassengers) then
+                                    -- local isStreet = false
+                                    print('#station.terminals =', #station.terminals)
+                                    for _, terminal in pairs(station.terminals) do
+                                        if terminal and terminal.vehicleNodeId and terminal.vehicleNodeId.entity
+                                        and edgeUtils.isValidAndExistingId(terminal.vehicleNodeId.entity) then
+                                            local baseEdgeOrNodeId = terminal.vehicleNodeId.entity -- it's called node but it is an edge with street stations and a node with train stations
+                                            logger.print('baseEdgeId =', baseEdgeOrNodeId)
+                                            local baseNode = api.engine.getComponent(baseEdgeOrNodeId, api.type.ComponentType.BASE_NODE)
+                                            if baseNode then
+                                                -- isStreet = false
+                                                position.x = position.x + baseNode.position.x
+                                                position.y = position.y + baseNode.position.y
+                                                position.z = position.z + baseNode.position.z
+                                                logger.print('position =') logger.debugPrint(position)
+                                                nSamples4Average = nSamples4Average + 1
+                                            else
+                                                local baseEdge = api.engine.getComponent(baseEdgeOrNodeId, api.type.ComponentType.BASE_EDGE)
+                                                if baseEdge then
+                                                    -- isStreet = true
+                                                    local baseNode0 = api.engine.getComponent(baseEdge.node0, api.type.ComponentType.BASE_NODE)
+                                                    local baseNode1 = api.engine.getComponent(baseEdge.node1, api.type.ComponentType.BASE_NODE)
+                                                    local midPosition = edgeUtils.getPositionsMiddle(baseNode0.position, baseNode1.position)
+                                                    position.x = position.x + midPosition.x
+                                                    position.y = position.y + midPosition.y
+                                                    position.z = position.z + midPosition.z
+                                                    logger.print('position =') logger.debugPrint(position)
+                                                    nSamples4Average = nSamples4Average + 1
+                                                else
+                                                    logger.warn('no base node and no base edge!')
+                                                end
+                                            end
+                                        end
+                                    end
+                                end
+                            end
+                        end
+                    end
+                    if nSamples4Average > 0 then
+                        _resultsIndexed[stationGroupId] = {
+                            id = stationGroupId,
+                            isCargo = isStationGroupWithCargo,
+                            isPassenger = isStationGroupWithPassengers,
+                            -- isStreet = isStreet,
+                            name = stationGroupName,
+                            position = {
+                                position.x / nSamples4Average,
+                                position.y / nSamples4Average,
+                                position.z / nSamples4Average,
+                            }
+                        }
+                    end
+                end
+            end
+        end
+        logger.print('resultsIndexed =') logger.debugPrint(_resultsIndexed)
+        local results = {}
+        for _, value in pairs(_resultsIndexed) do
+            results[#results+1] = value
+        end
+        -- logger.print('# nearby freestyle stations = ', #results)
+        -- logger.print('nearby freestyle stations = ') logger.debugPrint(results)
+        return results
+    end,
+    getNearestTerminalsWithStationCon = function(transf, stationConId, isOnlyPassengers)
         if type(transf) ~= 'table' or not(edgeUtils.isValidAndExistingId(stationConId)) then return nil end
 
         local pos = {transf[13], transf[14], transf[15]}
@@ -225,8 +323,8 @@ local utils = {
     end,
 }
 
-utils.getNearestTerminal = function(transf, stationConId, isOnlyPassengers)
-    local nearestTerminals = utils.getNearestTerminals(transf, stationConId, isOnlyPassengers)
+utils.getNearestTerminalWithStationCon = function(transf, stationConId, isOnlyPassengers)
+    local nearestTerminals = utils.getNearestTerminalsWithStationCon(transf, stationConId, isOnlyPassengers)
     if not(nearestTerminals) then return nil end
 
     local result = nil

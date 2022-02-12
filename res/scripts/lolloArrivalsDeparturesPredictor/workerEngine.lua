@@ -118,8 +118,8 @@ utils.getFormattedPredictions = function(predictions, time, fallbackTerminalIdIf
                 destinationString = '-',
                 etaMinutesString = _texts.due,
                 etdMinutesString = _texts.due,
-                arrivalTimeString = '--:--',
-                departureTimeString = '--:--',
+                arrivalTimeString = _texts.due,
+                departureTimeString = _texts.due,
                 arrivalTerminal = (rawEntry.terminalId or '-'), -- the terminal id has base 1
             }
             if edgeUtils.isValidAndExistingId(rawEntry.destinationStationGroupId) then
@@ -148,14 +148,14 @@ utils.getFormattedPredictions = function(predictions, time, fallbackTerminalIdIf
                 fmtEntry.etaMinutesString = _texts.sorryTroubleShort
                 fmtEntry.etdMinutesString = _texts.sorryTroubleShort
             else
-                fmtEntry.arrivalTimeString = utils.formatClockStringHHMM(rawEntry.arrivalTime / 1000)
-                fmtEntry.departureTimeString = utils.formatClockStringHHMM(rawEntry.departureTime / 1000)
                 local expectedMinutesToArrival = math.floor((rawEntry.arrivalTime - time) / 60000)
                 if expectedMinutesToArrival > 0 then
+                    fmtEntry.arrivalTimeString = utils.formatClockStringHHMM(rawEntry.arrivalTime / 1000)
                     fmtEntry.etaMinutesString = expectedMinutesToArrival .. _texts.minutesShort
                 end
                 local expectedMinutesToDeparture = math.floor((rawEntry.departureTime - time) / 60000)
                 if expectedMinutesToDeparture > 0 then
+                    fmtEntry.departureTimeString = utils.formatClockStringHHMM(rawEntry.departureTime / 1000)
                     fmtEntry.etdMinutesString = expectedMinutesToDeparture .. _texts.minutesShort
                 end
             end
@@ -828,7 +828,7 @@ local function handleEvent(src, id, name, args)
                     api.cmd.sendCommand(api.cmd.make.setName(args.signConId, newName))
                 end
 
-                local nearestTerminal = stationHelpers.getNearestTerminal(
+                local nearestTerminal = stationHelpers.getNearestTerminalWithStationCon(
                     transfUtilsUG.new(signCon.transf:cols(0), signCon.transf:cols(1), signCon.transf:cols(2), signCon.transf:cols(3)),
                     args.stationConId,
                     false -- not only passengers
