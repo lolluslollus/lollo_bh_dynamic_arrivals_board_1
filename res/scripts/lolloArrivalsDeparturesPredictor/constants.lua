@@ -27,7 +27,9 @@ local constants = {
         track = 'track',
     },
 
-    paramPrefix = 'display_'
+    paramPrefix = 'display_',
+
+    currentVersion = 2
 }
 
 return constants

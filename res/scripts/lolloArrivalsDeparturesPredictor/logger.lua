@@ -1,4 +1,4 @@
-local _isExtendedLogActive = false
+local _isExtendedLogActive = true
 local _isWarningLogActive = true
 local _isErrorLogActive = true
 local _isTimersActive = true
@@ -37,10 +37,10 @@ return {
             results = func()
             local elapsedSec = os.clock() - startSec
             print('######## ' .. tostring(label or '') .. ' took' .. math.ceil(elapsedSec * 1000) .. 'mSec')
-            -- return table.unpack(results) -- LOLLO TODO test if we really need this
+            -- return table.unpack(results) -- test if we really need this
             return results
         else
-            return func() -- LOLLO TODO test this
+            return func() -- test this
         end
     end,
     xpHandler = function(error)

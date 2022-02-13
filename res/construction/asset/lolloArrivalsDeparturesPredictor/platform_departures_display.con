@@ -30,7 +30,6 @@ local function _getParams()
             defaultIndex = 1
         },
     }
-    constructionHelpers.addCargoOverrideParam(params, _getParamName)
     constructionHelpers.addTerminalOverrideParam(params, _getParamName)
 
     return params

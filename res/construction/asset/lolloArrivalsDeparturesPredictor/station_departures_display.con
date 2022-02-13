@@ -25,7 +25,6 @@ local function _getParams()
             defaultIndex = 3
         }
     }
-    constructionHelpers.addCargoOverrideParam(params, _getParamName)
 
     return params
 end

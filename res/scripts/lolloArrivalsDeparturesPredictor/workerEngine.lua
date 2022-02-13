@@ -58,21 +58,6 @@ local utils = {
     formatClockStringHHMM = function(clock_time)
         return string.format('%02d:%02d', (clock_time / 60 / 60) % 24, (clock_time / 60) % 60)
     end,
-    getIsCargo = function(config, signCon, signState, getParamName)
-        -- returns true for cargo and false for passenger stations
-        -- logger.print('signCon.params[getParamName(\'cargo_override\')] =') logger.debugPrint(signCon.params[getParamName('cargo_override')])
-        local result = signCon.params[getParamName('cargo_override')] or 0
-        if result == 0 then
-            -- logger.print('signState =') logger.debugPrint(signState)
-            if signState and signState.nearestTerminal and signState.nearestTerminal.cargo then
-                return true
-            else
-                return false
-            end
-        end
-        -- logger.print('getIsCargo is about to return', (result == 2))
-        return (result == 2)
-    end,
     getProblemLineIds = function()
         local results = {}
         local problemLineIds = api.engine.system.lineSystem.getProblemLines(api.engine.util.getPlayer())
@@ -81,23 +66,70 @@ local utils = {
         end
         return results
     end,
-    getTerminalId = function(config, signCon, signState, getParamName)
-        if not(config) or not(config.singleTerminal) then return nil end
+    -- getTerminalId = function(config, signCon, signState, getParamName)
+    --     if not(config) or not(config.singleTerminal) then return nil end
 
-        local result = signCon.params[getParamName('terminal_override')] or 0
-        if result == 0 then -- 0 is automatic terminal detection
-            if signState and signState.nearestTerminal and signState.nearestTerminal.terminalId then
-                result = signState.nearestTerminal.terminalId
+    --     local result = signCon.params[getParamName('terminal_override')] or 0
+    --     if result == 0 then -- 0 is automatic terminal detection
+    --         if signState and signState.nearestTerminal and signState.nearestTerminal.terminalId then
+    --             result = signState.nearestTerminal.terminalId
+    --         else
+    --             result = 1
+    --             logger.warn('cannot find signState.nearestTerminal.terminalId for signCon', signCon or 'NIL')
+    --         end
+    --     end
+    --     return result
+    -- end,
+    getTerminalAndStationId = function(config, signCon, signState, getParamName, stationIds)
+        if not(config) or not(config.singleTerminal) then return nil, nil end
+
+        if not(signState) or not(signState.nearestTerminal) then
+            logger.warn('cannot find signState.nearestTerminal for signCon', signCon or 'NIL')
+            return nil, nil
+        end
+
+        local terminalParamValue = signCon.params[getParamName('terminal_override')] or 0
+        if signState.nearestTerminal.isMultiStationGroup then
+            if terminalParamValue == 0 then -- 0 is automatic terminal detection
+                logger.print('getTerminalAndStationId working on auto, signState =') logger.debugPrint(signState)
+                if #stationIds == 1 then return nil, stationIds[1] end
+
+                -- expensive: two twin streetside stations. One could be bulldozed but the other one lives on.
+                -- One could be added later.
+                logger.print('getTerminalAndStationId working harder on auto, #stationIds =', #stationIds)
+                local refStation = {distance = 9999, id = nil}
+                for _, stationId in pairs(stationIds) do
+                    local streetsideStationPosition = edgeUtils.getObjectPosition(stationId)
+                    if streetsideStationPosition then
+                        local distance = edgeUtils.getPositionsDistance(
+                            signState.nearestTerminal.refPosition123,
+                            streetsideStationPosition
+                        )
+                        if distance < refStation.distance then
+                            refStation.distance = distance
+                            refStation.id = stationId
+                        end
+                    end
+                end
+                if refStation.id then
+                    return nil, refStation.id
+                end
+                logger.warn('cannot find posisions of stations in a multistation group')
+                return nil, nil
             else
-                result = 1
-                logger.warn('cannot find signState.nearestTerminal.terminalId for signCon', signCon or 'NIL')
+                local stationId = stationIds[terminalParamValue]
+                -- if not(stationId) then stationId = arrayUtils.getLast(stationIds) end
+                return nil, stationId
             end
         end
-        return result
+
+        if terminalParamValue == 0 then -- 0 is automatic terminal detection
+            return signState.nearestTerminal.terminalId, nil
+        end
+        return terminalParamValue, nil
     end,
-    getStationIndexInStationGroupBase0 = function(stationId, stationGroupId)
-        local stationGroup = api.engine.getComponent(stationGroupId, api.type.ComponentType.STATION_GROUP)
-        logger.print('stationGroup.stations =') logger.debugPrint(stationGroup.stations)
+    getStationIndexInStationGroupBase0 = function(stationId, stationGroup)
+        -- logger.print('stationGroup.stations =') logger.debugPrint(stationGroup.stations)
         local indexBase0 = 0
         for _, staId in pairs(stationGroup.stations) do
             -- this works coz the table indexes have base 1
@@ -304,21 +336,6 @@ local function getHereStartEndIndexes(line, stationGroupId, stationIndexBase0, t
     return hereIndexBase1, startIndexBase1, endIndexBase1
 end
 
-local function getWaitingTimeMsec(line, stopIndex)
-    -- This is a quick and dirty estimate, I doubt the game offers more
-    local max = line.stops[stopIndex].maxWaitingTime * 1000
-    local min = line.stops[stopIndex].minWaitingTime * 1000
-    local result = math.max(constants.guesstimatedStationWaitingTimeMsec, min)
-    return math.ceil(result)
-    -- if max > 0 then
-    --     return (max + min) * 500
-    -- elseif min > 0 then -- max is endless and min is set
-    --     return (min + line.waitingTime) * 500
-    -- else -- max is endless and min is not set
-    --     return line.waitingTime * 1000
-    -- end
-end
-
 local function getMyLineData(vehicleIds, nStops, lineId, lineWaitingTime, buffer)
     -- Here, I average the times across all the trains on this line.
     -- If the trains are wildly different, which is stupid, this could be less accurate;
@@ -329,7 +346,7 @@ local function getMyLineData(vehicleIds, nStops, lineId, lineWaitingTime, buffer
 
     if nStops < 1 or #vehicleIds < 1 then return {} end
 
-    -- the new API hasn't got this yet, only a dumb fixed waitingTime == 180 seconds
+    -- UG TODO the new API hasn't got this yet, only a dumb fixed waitingTime == 180 seconds
     local lineEntity = game.interface.getEntity(lineId)
         -- logger.print('lineEntity.frequency =', lineEntity.frequency)
         -- logger.print('lineWaitingTime =', lineWaitingTime)
@@ -424,17 +441,19 @@ local function getMyLineData(vehicleIds, nStops, lineId, lineWaitingTime, buffer
 end
 
 local function getLastDepartureTime(vehicle, time)
-    -- this is a little slower; it is 0 when a new train leaves the depot
+    -- this is a little slower than doorsTime but more accurate;
+    -- it is 0 when a new train leaves the depot
     local result = math.max(table.unpack(vehicle.lineStopDepartures))
     -- logger.print('lastDepartureTime with unpack =', result)
 
     -- useful when starting a new line or a new train
     if result == 0 then
         if vehicle.doorsTime > 0 then
+            -- add one second to match lsd more closely; still less reliable tho.
             result = math.ceil(vehicle.doorsTime / 1000) + 1000
             logger.print('lastDepartureTime == 0, falling back to doorsTime')
             if result > time then
-                logger.print('doorsTime > time, doorsTime = ' .. result .. ', time = ' .. time)
+                -- logger.print('doorsTime > time, doorsTime = ' .. result .. ', time = ' .. time)
                 result = time
             end
         else
@@ -444,13 +463,13 @@ local function getLastDepartureTime(vehicle, time)
         -- logger.print('vehicle.lineStopDepartures =') logger.debugPrint(vehicle.lineStopDepartures)
         -- logger.print('vehicle.doorsTime =') logger.debugPrint(vehicle.doorsTime)
         -- logger.print('time =') logger.debugPrint(time)
-    else
-        logger.print('lineStopDepartures OK, last departure time = ' .. result .. ', lastDoorsTime would yield ' .. (math.ceil(vehicle.doorsTime / 1000) + 1000))
+    -- else
+        -- logger.print('lineStopDepartures OK, last departure time = ' .. result .. ', lastDoorsTime would yield ' .. (math.ceil(vehicle.doorsTime / 1000) + 1000))
     end
 
 --[[
-    doorsTime is 0 when a new train leaves the depot
-    and -1 when a vehicle has just left the depot
+    doorsTime is -1 when a vehicle has just left the depot
+    and it can be 0 at other early times
     It is always a little sooner then lastDepartureTime, by about 1 second,
     but it may vary.
 ]]
@@ -458,15 +477,14 @@ local function getLastDepartureTime(vehicle, time)
     return result
 end
 
-local function getNextPredictions(stationId, station, nEntries, time, onlyTerminalId, predictionsBufferHelpers, lineBuffer, problemLineIds)
+local function getNextPredictions(stationGroupId, stationGroup, stationId, station, nEntries, time, onlyTerminalId, predictionsBufferHelpers, lineBuffer, problemLineIds)
     logger.print('getNextPredictions starting')
     logger.print('stationId =') logger.debugPrint(stationId)
     local predictions = {}
 
     if not(station) or not(station.terminals) or not(nEntries) or nEntries < 1 then return predictions end
 
-    local stationGroupId = api.engine.system.stationGroupSystem.getStationGroup(stationId)
-    local stationIndexInStationGroupBase0 = utils.getStationIndexInStationGroupBase0(stationId, stationGroupId)
+    local stationIndexInStationGroupBase0 = utils.getStationIndexInStationGroupBase0(stationId, stationGroup)
     if not(stationIndexInStationGroupBase0) then return predictions end
 
     local predictionsBuffer = predictionsBufferHelpers.get(stationId, onlyTerminalId)
@@ -501,7 +519,7 @@ local function getNextPredictions(stationId, station, nEntries, time, onlyTermin
                                 terminalId = terminalId,
                                 originStationGroupId = line.stops[startIndex].stationGroup,
                                 destinationStationGroupId = line.stops[endIndex].stationGroup,
-                                arrivalTime = time + 3600,
+                                arrivalTime = time + 3600, -- add a dummy hour
                                 departureTime = time + 3600,
                                 isProblem = true,
                             }
@@ -588,7 +606,6 @@ local function getNextPredictions(stationId, station, nEntries, time, onlyTermin
                                     local remainingTime = 0
                                     while nextStopIndex ~= hereIndex do
                                         remainingTime = remainingTime + myLineData.averages[nextStopIndex].lsd
-                                            -- + getWaitingTimeMsec(line, nextStopIndex) -- not needed since I check the departures
                                         nextStopIndex = nextStopIndex + 1
                                         if nextStopIndex > nStops then nextStopIndex = nextStopIndex - nStops end
                                     end
@@ -597,7 +614,6 @@ local function getNextPredictions(stationId, station, nEntries, time, onlyTermin
                                         terminalId = terminalId,
                                         originStationGroupId = line.stops[startIndex].stationGroup,
                                         destinationStationGroupId = line.stops[endIndex].stationGroup,
-                                        -- arrivalTime = lastDepartureTime + remainingTime - getWaitingTimeMsec(line, hereIndex),
                                         arrivalTime = lastDepartureTime + remainingTime + myLineData.averages[hereIndex].st,
                                         departureTime = lastDepartureTime + remainingTime + myLineData.averages[hereIndex].lsd,
                                         -- nStopsAway = nStopsAway
@@ -624,16 +640,133 @@ local function getNextPredictions(stationId, station, nEntries, time, onlyTermin
         terminalIndexBase0 = terminalIndexBase0 + 1
     end
 
-    -- logger.print('predictions before sorting =') logger.debugPrint(predictions)
-    table.sort(predictions, function(a, b) return a.arrivalTime < b.arrivalTime end)
+    -- table.sort(predictions, function(a, b) return a.arrivalTime < b.arrivalTime end)
+    -- for i = #predictions, 1, -1 do
+    --     if i > (nEntries or 0) then
+    --         table.remove(predictions, i)
+    --     end
+    -- end
 
-    local results = {}
-    for i = 1, nEntries do
-        results[#results+1] = predictions[i]
+    predictionsBufferHelpers.set(stationId, onlyTerminalId, predictions)
+    return predictions
+end
+
+local function tryUpgradeState(state)
+--[[
+    Routine to fix the old state and update it to new.
+    The previous version was only for trains!
+
+    state looked like:
+    {
+        world_time = 123456,
+        placed_signs = {
+            [80896] = {
+                nearestTerminal = {
+                    cargo = false,
+                    distance = 3.0044617009524,
+                    stationId = 105917,
+                    terminalId = 2,
+                    terminalTag = 1,
+                },
+                stationConId = 119445,
+            },
+            ...
+        }
+    }
+
+    it now looks like:
+    {
+        world_time_sec = 123456,
+        placed_signs = {
+            [107217] = {
+                nearestTerminal = {
+                    cargo = false,
+                    distance = 17.064646354462,
+                    stationId = 105915,
+                    terminalId = 2,
+                    terminalTag = 1,
+                },
+                stationGroupId = 102655,
+            },
+            [107218] = {
+                nearestTerminal = {
+                    isMultiStationGroup = true,
+                    refPosition123 = { 1000.1, 1000.1, 1000.1 },
+                },
+                stationGroupId = 102656,
+            },
+            [107219] = {
+                stationGroupId = 102657,
+            },
+            ...
+        }
+    }
+]]
+    if state.version == constants.currentVersion then return false end
+
+    logger.print('--- state about to be upgraded, old state =') logger.debugPrint(state)
+
+    state.world_time = nil
+
+    for signConId, signState in pairs(state.placed_signs) do
+        if not(edgeUtils.isValidAndExistingId(signConId)) then
+            -- sign is no more around: clean the state
+            logger.warn('signConId' .. (signConId or 'NIL') .. ' is no more around ONE')
+            stateHelpers.removePlacedSign(signConId)
+        else
+            -- an entity with the id of our sign is still around
+            local signCon = api.engine.getComponent(signConId, api.type.ComponentType.CONSTRUCTION)
+            if not(signCon) or not(constructionConfigs.get()[signCon.fileName]) then
+                -- sign is no more around or no more supported: clean the state
+                logger.warn('signConId' .. (signConId or 'NIL') .. ' is no more around TWO')
+                stateHelpers.removePlacedSign(signConId)
+            else
+                logger.print('signState.stationConId =', signState.stationConId)
+                if signState.stationConId then -- was removed with version 1
+                    if not(edgeUtils.isValidAndExistingId(signState.stationConId)) then
+                        -- station is no more around: bulldoze its signs
+                        logger.warn('signConId' .. (signConId or 'NIL') .. ' is no more around THREE')
+                        stateHelpers.removePlacedSign(signConId)
+                        utils.bulldozeConstruction(signConId)
+                    else
+                        local stationCon = api.engine.getComponent(signState.stationConId, api.type.ComponentType.CONSTRUCTION)
+                        if not(stationCon) or not(stationCon.stations) then
+                            -- station is no more around: bulldoze its signs
+                            logger.warn('signConId' .. (signConId or 'NIL') .. ' is no more around FOUR')
+                            stateHelpers.removePlacedSign(signConId)
+                            utils.bulldozeConstruction(signConId)
+                        else
+                            local stationGroupIdsIndexed = {}
+                            for _, stationId in pairs(stationCon.stations) do
+                                if edgeUtils.isValidAndExistingId(stationId) then
+                                    local station = api.engine.getComponent(stationId, api.type.ComponentType.STATION)
+                                    if station then
+                                        local stationGroupId = api.engine.system.stationGroupSystem.getStationGroup(stationId)
+                                        if edgeUtils.isValidAndExistingId(stationGroupId) then
+                                            stationGroupIdsIndexed[stationGroupId] = {
+                                                isCargo = (station and station.cargo or false)
+                                            }
+                                        end
+                                    end
+                                end
+                            end
+                            logger.print('stationGroupIdsIndexed =') logger.debugPrint(stationGroupIdsIndexed)
+                            for stationGroupId, sgData in pairs(stationGroupIdsIndexed) do
+                                local isStationConCargo = (signState and signState.nearestTerminal and signState.nearestTerminal.cargo) or false
+                                if isStationConCargo == sgData.isCargo then
+                                    signState.stationGroupId = stationGroupId
+                                end
+                            end
+                            signState.stationConId = nil
+                        end
+                    end
+                end
+            end
+        end
     end
-
-    predictionsBufferHelpers.set(stationId, onlyTerminalId, results)
-    return results
+    state.version = constants.currentVersion
+    logger.print('--- state upgraded, new state =') logger.debugPrint(state)
+    return true
 end
 
 local function update()
@@ -641,7 +774,7 @@ local function update()
     if not(state.is_on) then return end
 
     local _time = api.engine.getComponent(api.engine.util.getWorld(), api.type.ComponentType.GAME_TIME).gameTime
-    if not(_time) then logger.err('cannot get time') return end
+    if not(_time) then logger.err('update() cannot get time') return end
 
     if math.fmod(_time, constants.refreshPeriodMsec) ~= 0 then
         -- logger.print('skipping')
@@ -650,31 +783,20 @@ local function update()
 
     xpcall(
         function()
-            local startTick = os.clock()
+            local _startTick = os.clock()
 
-            local _clock_time = math.floor(_time / 1000)
-            if _clock_time == state.world_time then return end
+            local _clockTimeSec = math.floor(_time / 1000)
+            -- leave if paused
+            if _clockTimeSec == state.world_time_sec then return end
 
-            state.world_time = _clock_time
+            state.world_time_sec = _clockTimeSec
 
-            local lineBuffer = {}
+            local linesBuffer = {}
             local predictionsBuffer = {
                 byStation = {},
                 byStationTerminal = {}
             }
             local predictionsBufferHelpers = {
-                -- isThere = function(stationId, onlyTerminalId)
-                --     if onlyTerminalId then
-                --         if predictionsBuffer.byStationTerminal[stationId] and predictionsBuffer.byStationTerminal[stationId][onlyTerminalId] then
-                --             return true
-                --         end
-                --     else
-                --         if predictionsBuffer.byStation[stationId] then
-                --             return true
-                --         end
-                --     end
-                --     return false
-                -- end,
                 get = function(stationId, onlyTerminalId)
                     if onlyTerminalId then
                         if predictionsBuffer.byStationTerminal[stationId] then
@@ -697,6 +819,8 @@ local function update()
 
             local _problemLineIds = {} -- utils.getProblemLineIds() -- this is moderately useful and a bit slow
 
+            tryUpgradeState(state)
+
             for signConId, signState in pairs(state.placed_signs) do
                 -- logger.print('signConId =') logger.debugPrint(signConId)
                 -- logger.print('signState =') logger.debugPrint(signState)
@@ -706,71 +830,75 @@ local function update()
                     stateHelpers.removePlacedSign(signConId)
                 else
                     -- an entity with the id of our sign is still around
-                    logger.print('signState.stationConId =', signState.stationConId)
                     local signCon = api.engine.getComponent(signConId, api.type.ComponentType.CONSTRUCTION)
                     -- logger.print('signCon =') logger.debugPrint(signCon)
                     if not(signCon) or not(constructionConfigs.get()[signCon.fileName]) then
-                        -- sign is no more around: clean the state
+                        -- sign is no more around or no more supported: clean the state
                         logger.warn('signConId' .. (signConId or 'NIL') .. ' is no more around TWO')
                         stateHelpers.removePlacedSign(signConId)
                     else
                         local formattedPredictions = {}
                         local config = constructionConfigs.get()[signCon.fileName]
-                        -- LOLLO TODO config.maxEntries is tied to the construction type, make sure the same-type signs have the same maxEntries
+                        -- LOLLO NOTE config.maxEntries is tied to the construction type,
+                        -- and we buffer:
+                        -- make sure sign configs with the same singleTerminal have the same maxEntries
                         if (config.maxEntries or 0) > 0 then
-                            if not(edgeUtils.isValidAndExistingId(signState.stationConId)) then
+                            if not(signState) or not(edgeUtils.isValidAndExistingId(signState.stationGroupId)) then
                                 -- station is no more around: bulldoze its signs
                                 logger.warn('signConId' .. (signConId or 'NIL') .. ' is no more around THREE')
                                 stateHelpers.removePlacedSign(signConId)
                                 utils.bulldozeConstruction(signConId)
                             else
-                                local stationCon = api.engine.getComponent(signState.stationConId, api.type.ComponentType.CONSTRUCTION)
-                                if not(stationCon) or not(stationCon.stations) or #stationCon.stations == 0 then
+                                logger.print('signState.stationGroupId =', signState.stationGroupId)
+                                local stationGroup = api.engine.getComponent(signState.stationGroupId, api.type.ComponentType.STATION_GROUP)
+                                if not(stationGroup) or not(stationGroup.stations) then
                                     -- station is no more around: bulldoze its signs
                                     logger.warn('signConId' .. (signConId or 'NIL') .. ' is no more around FOUR')
                                     stateHelpers.removePlacedSign(signConId)
                                     utils.bulldozeConstruction(signConId)
-                                else
-                                    local stationIds = stationCon.stations
+                                elseif #stationGroup.stations ~= 0 then
+                                    local stationIds = stationGroup.stations
                                     local function _getParamName(subfix) return config.paramPrefix .. subfix end
                                     local rawPredictions = nil
-                                    -- the player may have changed the cargo flag or the terminal in the construction params
-                                    local isCargo = utils.getIsCargo(config, signCon, signState, _getParamName)
-                                    logger.print('isCargo =') logger.debugPrint(isCargo)
-                                    local terminalId = utils.getTerminalId(config, signCon, signState, _getParamName)
-                                    logger.print('terminalId =') logger.debugPrint(terminalId)
-
+                                    -- the player may have changed the terminal in the construction params
+                                    local chosenTerminalId, chosenStationId = utils.getTerminalAndStationId(config, signCon, signState, _getParamName, stationIds)
+                                    logger.print('chosenTerminalId =', chosenTerminalId, 'chosenStationId =', chosenStationId)
                                     for _, stationId in pairs(stationIds) do
                                         -- this works coz the table indexes have base 1
-                                        if edgeUtils.isValidAndExistingId(stationId) then
-                                            local station = api.engine.getComponent(stationId, api.type.ComponentType.STATION)
-                                            logger.print('station', stationId, 'has station.cargo =', (station.cargo or 'false'))
-                                            if isCargo == not(not(station.cargo)) then
+                                        if not(chosenStationId) or chosenStationId == stationId then
+                                            if edgeUtils.isValidAndExistingId(stationId) then
+                                                local station = api.engine.getComponent(stationId, api.type.ComponentType.STATION)
                                                 local nextPredictions = getNextPredictions(
+                                                    signState.stationGroupId,
+                                                    stationGroup,
                                                     stationId,
                                                     station,
                                                     config.maxEntries,
                                                     _time,
-                                                    terminalId, -- nil if config.singleTerminal == falsy
+                                                    chosenTerminalId, -- nil if config.singleTerminal == falsy
                                                     predictionsBufferHelpers,
-                                                    lineBuffer,
+                                                    linesBuffer,
                                                     _problemLineIds
                                                 )
                                                 if rawPredictions == nil then
                                                     rawPredictions = nextPredictions
                                                 else
-                                                    logger.warn('this concat should never be required ONE')
+                                                    logger.print('this concat should never be required except for twin streetside stations')
                                                     arrayUtils.concatValues(rawPredictions, nextPredictions)
                                                 end
-                                            -- else
-                                            --     logger.print('skipping station', stationId, 'because of cargo')
-                                            --     logger.print('isCargo =') logger.debugPrint(isCargo)
-                                            --     logger.print('not(not(station.cargo)) =') logger.debugPrint(not(not(station.cargo)))
+                                            end
+                                        end
+                                    end
+                                    if rawPredictions then
+                                        table.sort(rawPredictions, function(a, b) return a.arrivalTime < b.arrivalTime end)
+                                        for i = #rawPredictions, 1, -1 do
+                                            if i > (config.maxEntries or 0) then
+                                                table.remove(rawPredictions, i)
                                             end
                                         end
                                     end
                                     -- logger.print('rawPredictions =') logger.debugPrint(rawPredictions)
-                                    formattedPredictions = utils.getFormattedPredictions(rawPredictions or {}, _time, terminalId)
+                                    formattedPredictions = utils.getFormattedPredictions(rawPredictions or {}, _time, chosenTerminalId)
                                 end
                             end
                         end
@@ -779,14 +907,14 @@ local function update()
                         local newName = utils.getNewSignConName(
                             formattedPredictions,
                             config,
-                            utils.formatClockString(_clock_time)
+                            utils.formatClockString(_clockTimeSec)
                         )
                         api.cmd.sendCommand(api.cmd.make.setName(signConId, newName))
                     end
                 end
             end
 
-            local executionTime = math.ceil((os.clock() - startTick) * 1000)
+            local executionTime = math.ceil((os.clock() - _startTick) * 1000)
             logger.print('Full update took ' .. executionTime .. 'ms')
         end,
         logger.xpErrorHandler
@@ -817,7 +945,7 @@ local function handleEvent(src, id, name, args)
                 local config = constructionConfigs.get()[signCon.fileName]
                 if not(config) then return end
 
-                -- rename the construction so it shows something at once
+                -- rename the sign construction so it shows something at once
                 local _times = api.engine.getComponent(api.engine.util.getWorld(), api.type.ComponentType.GAME_TIME)
                 if _times and type(_times.gameTime) == 'number' then
                     local newName = utils.getNewSignConName(
@@ -828,16 +956,19 @@ local function handleEvent(src, id, name, args)
                     api.cmd.sendCommand(api.cmd.make.setName(args.signConId, newName))
                 end
 
-                local nearestTerminal = stationHelpers.getNearestTerminalWithStationCon(
-                    transfUtilsUG.new(signCon.transf:cols(0), signCon.transf:cols(1), signCon.transf:cols(2), signCon.transf:cols(3)),
-                    args.stationConId,
-                    false -- not only passengers
-                )
+                local nearestTerminal = config.singleTerminal
+                    and stationHelpers.getNearestTerminalWithStationGroup(
+                        transfUtilsUG.new(signCon.transf:cols(0), signCon.transf:cols(1), signCon.transf:cols(2), signCon.transf:cols(3)),
+                        args.stationGroupId, -- in fact, it is a station group id
+                        false -- not only passengers
+                    )
+                    or nil
                 logger.print('freshly calculated nearestTerminal =') logger.debugPrint(nearestTerminal)
                 stateHelpers.setPlacedSign(
                     args.signConId,
                     {
-                        stationConId = args.stationConId,
+                        -- stationConId = args.stationConId,
+                        stationGroupId = args.stationGroupId,
                         nearestTerminal = nearestTerminal,
                     }
                 )

@@ -263,6 +263,16 @@ utils.oneTwoThree2XYZ = function(arr)
     }
 end
 
+utils.xYZ2OneTwoThree = function(arr)
+    if type(arr) ~= 'table' and type(arr) ~= 'userdata' then return nil end
+
+    return {
+        arr[1] or arr.x,
+        arr[2] or arr.y,
+        arr[3] or arr.z,
+    }
+end
+
 utils.getPositionRaisedBy = function(position, raiseBy)
     -- faster than calling mul()
     if position == nil or type(raiseBy) ~= 'number' then return position end

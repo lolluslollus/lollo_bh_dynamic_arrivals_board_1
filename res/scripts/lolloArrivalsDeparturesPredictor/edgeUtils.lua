@@ -633,13 +633,21 @@ helper.getNodeIdsBetweenNeighbourEdgeIds = function(edgeIds, isIncludeExclusiveO
 end
 
 helper.getObjectPosition = function(objectId)
-    local objectTransf = helper.getObjectTransf(objectId)
-    if not(objectTransf) then return nil end
+    if not(helper.isValidAndExistingId(objectId)) then return nil end
+
+    local modelInstanceList = api.engine.getComponent(objectId, api.type.ComponentType.MODEL_INSTANCE_LIST)
+    if not(modelInstanceList) then return nil end
+
+    local fatInstances = modelInstanceList.fatInstances
+    if not(fatInstances) or not(fatInstances[1]) or not(fatInstances[1].transf) or not(fatInstances[1].transf.cols) then return nil end
+
+    local xyzw = fatInstances[1].transf:cols(3)
+    if not(xyzw) or not(xyzw.x) or not(xyzw.y) or not(xyzw.z) then return nil end
 
     return {
-        [1] = objectTransf[13],
-        [2] = objectTransf[14],
-        [3] = objectTransf[15]
+        xyzw.x,
+        xyzw.y,
+        xyzw.z,
     }
 end
 

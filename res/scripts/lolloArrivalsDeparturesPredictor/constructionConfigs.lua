@@ -1,6 +1,10 @@
 local arrayUtils = require('lolloArrivalsDeparturesPredictor.arrayUtils')
 local stringUtils = require('lolloArrivalsDeparturesPredictor.stringUtils')
 
+-- LOLLO NOTE config.maxEntries is tied to the construction type,
+-- and we buffer:
+-- make sure sign configs with the same singleTerminal have the same maxEntries
+
 local myConstructionConfigs = {
     ['asset/lolloArrivalsDeparturesPredictor/platform_departures_display.con'] = {
         singleTerminal = true,
@@ -12,6 +16,17 @@ local myConstructionConfigs = {
         -- LOLLO NOTE adding a prefix is good for respecting other constructions,
         -- but I could very well use a constant instead of this
         paramPrefix = 'platform_departures_display_',
+    },
+    ['asset/lolloArrivalsDeparturesPredictor/street_platform_departures_display.con'] = {
+        singleTerminal = true,
+        clock = true,
+        isArrivals = false,
+        maxEntries = 2,
+        track = false,
+        absoluteArrivalTime = false,
+        -- LOLLO NOTE adding a prefix is good for respecting other constructions,
+        -- but I could very well use a constant instead of this
+        paramPrefix = 'street_platform_departures_display_',
     },
     ['asset/lolloArrivalsDeparturesPredictor/station_departures_display.con'] = {
         singleTerminal = false,

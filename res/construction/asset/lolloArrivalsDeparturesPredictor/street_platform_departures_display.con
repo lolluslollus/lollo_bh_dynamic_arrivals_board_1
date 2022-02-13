@@ -2,7 +2,7 @@ local constants = require('lolloArrivalsDeparturesPredictor.constants')
 local constructionConfigs = require('lolloArrivalsDeparturesPredictor.constructionConfigs')
 local constructionHelpers = require('lolloArrivalsDeparturesPredictor.constructionHelpers')
 
-local _styles = { 'station_board', 'station_board_hanging', 'station_board_floating', 'station_wide_board', 'station_wide_board_hanging', 'station_wide_board_floating' }
+local _styles = { 'platform_departures_board', 'platform_departures_board_floating', }
 
 local _paramPrefix = constructionConfigs.getParamPrefixFromCon()
 
@@ -21,10 +21,16 @@ local function _getParams()
             key = _getParamName('style'),
             name = _('Style'),
             uiType = 'ICON_BUTTON',
-            values = constructionHelpers.getIcons(_styles),
-            defaultIndex = 3
+            values = constructionHelpers.getIcons(_styles)
         },
+        -- {
+        --     key = _getParamName('align2Platform'),
+        --     name = _('Align2Platform'),
+        --     values = { _('No'), _('Yes') },
+        --     defaultIndex = 1
+        -- },
     }
+    constructionHelpers.addTerminalOverrideParam(params, _getParamName)
 
     return params
 end
@@ -33,16 +39,21 @@ function data()
     return {
         type = 'ASSET_DEFAULT',
         description = {
-            name = _('StationArrivalsDisplayName'),
-            description = _('StationArrivalsDisplayDesc'),
-            icon = 'ui/construction/asset/lolloArrivalsDeparturesPredictor/station_arrivals_display@2x.tga'
+            name = _('StreetPlatformDeparturesDisplayName'),
+            description = _('StreetPlatformDeparturesDisplayDesc'),
+            icon = 'ui/construction/asset/lolloArrivalsDeparturesPredictor/street_platform_departures_display@2x.tga'
         },
         availability = {},
         buildMode = 'SINGLE',
         categories = { 'displays' },
-        order = 11,
+        order = 13,
         skipCollision = true,
         autoRemovable = false,
+        snapping = {
+            rail = false,
+            road = true,
+            water = false,
+        },
         params = _getParams(),
         updateFn = function(params)
             local result = {
@@ -51,10 +62,12 @@ function data()
                 terrainAlignmentLists = constructionHelpers.getDummyTerrainAlignmentLists(),
             }
 
+            -- local _align = params[_getParamName('align2Platform')] or 1
             local _style = _styles[params[_getParamName('style')] + 1]
+            local _transf = { 1, 0, 0, 0,  0, 1, 0, 0,  0, 0, 1, 0,  0, 0, 0.0, 1 }
             result.models[#result.models + 1] = {
                 id = _getMdl(_style),
-                transf = constants.idTransf,
+                transf = _transf
             }
             -- result.models[#result.models + 1] = {
             --     id = 'lolloArrivalsDeparturesPredictor/icon/blue.mdl',

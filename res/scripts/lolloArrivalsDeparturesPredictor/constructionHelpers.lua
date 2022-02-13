@@ -17,17 +17,6 @@ local helpers = {
 
         return params
     end,
-    addCargoOverrideParam = function(params, getParamName)
-        params[#params+1] = {
-            key = getParamName('cargo_override'),
-            name = _('StationSection'),
-            tooltip = _('GuessedTooltip'),
-            values = {_('Auto'), _('Passengers'), _('Cargo')},
-            uiType = 'BUTTON'
-        }
-
-        return params
-    end,
     getDummyGroundFaces = function()
         --[[
             LOLLO NOTE

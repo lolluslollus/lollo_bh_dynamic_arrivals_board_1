@@ -35,19 +35,23 @@ local utils = {
         end
     end
 }
-
+-- LOLLO TODO in the picker popup, add icons to tell if it is a port, an airport, a train station or a road station
+-- UG TODO there is no obvious way of doing this
 local guiHelpers = {
     showNearbyStationPicker = function(stationCons, tentativeStationConId, joinCallback)
         -- print('showNearbyStationPicker starting')
-        local layout = api.gui.layout.BoxLayout.new('VERTICAL')
+        local list = api.gui.comp.List.new(false, api.gui.util.Orientation.VERTICAL, false)
+        list:setDeselectAllowed(false)
+        list:setVerticalScrollBarPolicy(0) -- 0 as needed 1 always off 2 always show 3 simple
         local window = api.gui.util.getById(constants.guiIds.stationPickerWindowId)
         if window == nil then
-            window = api.gui.comp.Window.new(_texts.stationPickerWindowTitle, layout)
+            window = api.gui.comp.Window.new(_texts.stationPickerWindowTitle, list)
             window:setId(constants.guiIds.stationPickerWindowId)
         else
-            window:setContent(layout)
+            window:setContent(list)
             window:setVisible(true, false)
         end
+        window:setResizable(true)
 
         local function addJoinButtons()
             if type(stationCons) ~= 'table' then return end
@@ -96,7 +100,7 @@ local guiHelpers = {
                 for _, value in pairs(components) do
                     guiStationsTable:addRow(value)
                 end
-                layout:addItem(guiStationsTable)
+                list:addItem(guiStationsTable)
             end
         end
 

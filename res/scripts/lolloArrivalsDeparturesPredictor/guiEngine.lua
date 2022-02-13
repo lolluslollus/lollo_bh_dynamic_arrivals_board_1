@@ -16,12 +16,12 @@ local function _sendScriptEvent(name, args)
     )
 end
 
-local function _joinSignBase(signConId, stationConId)
+local function _joinSignBase(signConId, id)
     _sendScriptEvent(
         constants.events.join_sign_to_station,
         {
             signConId = signConId,
-            stationConId = stationConId
+            stationGroupId = id,
         }
     )
 end
@@ -39,21 +39,22 @@ local function _tryJoinSign(signConId, tentativeStationConId)
     local signTransf_lua = transfUtilsUG.new(signTransf_c:cols(0), signTransf_c:cols(1), signTransf_c:cols(2), signTransf_c:cols(3))
     if signTransf_lua == nil then return false end
 
-    -- logger.print('conTransf =') logger.debugPrint(signTransf_lua)
-    local nearbyStationCons = stationHelpers.getNearbyStationCons(signTransf_lua, constants.searchRadius4NearbyStation2JoinMetres, false)
-    -- local nearbyStations = stationHelpers.getNearbyStationGroups(signTransf_lua, constants.searchRadius4NearbyStation2JoinMetres, false)
-    logger.print('#nearbyStations =', #nearbyStationCons)
-    if #nearbyStationCons == 0 then
+    -- logger.print('signTransf_lua =') logger.debugPrint(signTransf_lua)
+    local nearbyObjects = stationHelpers.getNearbyStationGroups(signTransf_lua, constants.searchRadius4NearbyStation2JoinMetres, false)
+    logger.print('_tryJoinSign running, #nearbyObjects =', #nearbyObjects)
+    -- logger.print('nearbyObjects =') logger.debugPrint(nearbyObjects)
+    if #nearbyObjects == 0 then
         guiHelpers.showWarningWindowWithMessage(_('CannotFindStationToJoin'))
         return false
-    elseif #nearbyStationCons == 1 then
-        _joinSignBase(signConId, nearbyStationCons[1].id)
+    elseif #nearbyObjects == 1 then
+        _joinSignBase(signConId, nearbyObjects[1].id)
     else
+        table.sort(nearbyObjects, function(a, b) return a.name < b.name end)
         guiHelpers.showNearbyStationPicker(
-            nearbyStationCons,
+            nearbyObjects,
             tentativeStationConId,
-            function(stationConId)
-                _joinSignBase(signConId, stationConId)
+            function(objectId)
+                _joinSignBase(signConId, objectId)
             end
         )
     end
@@ -74,11 +75,10 @@ local function handleEvent(id, name, args)
         xpcall(
             function()
                 local _state = stateHelpers.getState()
-                -- logger.print('state =') logger.debugPrint(_state)
-                local stationConId = (_state.placed_signs and _state.placed_signs[args]) and _state.placed_signs[args].stationConId or nil
-                if stationConId then return end
+                local stationGroupId = (_state.placed_signs and _state.placed_signs[args]) and _state.placed_signs[args].stationGroupId or nil
+                if stationGroupId then return end
 
-                _tryJoinSign(args, stationConId) -- args here is the construction id
+                _tryJoinSign(args, stationGroupId) -- args here is the sign construction id
             end,
             logger.xpErrorHandler
         )
@@ -90,7 +90,7 @@ local function handleEvent(id, name, args)
             local _toAdd = args.proposal.toAdd
             if _toAdd and _toAdd[1] then
                 local _config = constructionConfigs.get()[_toAdd[1].fileName]
-                -- logger.print('conProps =') logger.debugPrint(_config)
+                -- logger.print('_config =') logger.debugPrint(_config)
                 if _config and args.result and args.result[1] then
                     xpcall(
                         function()
@@ -121,7 +121,6 @@ local function handleEvent(id, name, args)
         -- I tried 20480 characters or more, that will do.
         -- The only drawback is, when hovering they show a long tooltip - with one row only, luckily.
         -- logger.print('LOLLO caught gui event, id = ', id, ' name = ', name, ' args = ') -- logger.debugPrint(args)
-        -- logger.print('construction.get() =') logger.debugPrint(construction.get())
 
         if args and args.proposal and args.proposal.toRemove and args.proposal.toRemove[1] then
             local _signConId = args.proposal.toRemove[1]
