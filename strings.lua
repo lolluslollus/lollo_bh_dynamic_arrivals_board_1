@@ -3,7 +3,7 @@ function data()
 		en = {
             ["ModDesc"] =
                 [[
-                    Displays for incoming and outgoing vehicles - only tested with trains.
+                    Displays for incoming and outgoing vehicles.
                     Turn the updates on or off with the bottom bar. When turned on, they update every 5 seconds.
 
                     I have been thinking long and hard whether to publish this mod or not, since I copied the idea from badgerrhax. However, this is my own code and my own models, so I do. If you don't like it, don't use it.
