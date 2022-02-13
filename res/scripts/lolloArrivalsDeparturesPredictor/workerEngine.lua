@@ -15,6 +15,7 @@ local _texts = {
     due = _('Due'),
     from = _('From'),
     fromSpace = _('FromSpace'),
+    lineName = '', -- let's leave it empty
     minutesShort = _('MinutesShort'),
     origin = _('Origin'),
     platform = _('PlatformShort'),
@@ -57,6 +58,13 @@ local utils = {
     end,
     formatClockStringHHMM = function(clock_time)
         return string.format('%02d:%02d', (clock_time / 60 / 60) % 24, (clock_time / 60) % 60)
+    end,
+    getTextBetweenBrackets = function(str)
+        if not(str) then return nil end
+
+        local str1 = string.gsub(str, '[^(]*%(', '')
+        local str2 = string.gsub(str1, '%)[^)]*', '')
+        return str2
     end,
     getProblemLineIds = function()
         local results = {}
@@ -146,6 +154,7 @@ utils.getFormattedPredictions = function(predictions, time, fallbackTerminalIdIf
     if predictions then
         for _, rawEntry in ipairs(predictions) do
             local fmtEntry = {
+                lineName = rawEntry.lineName or '-',
                 originString = '-',
                 destinationString = '-',
                 etaMinutesString = _texts.due,
@@ -197,6 +206,7 @@ utils.getFormattedPredictions = function(predictions, time, fallbackTerminalIdIf
     end
     while #results < 1 do
         results[#results+1] = {
+            lineName = '-',
             originString = _texts.sorryNoService,
             destinationString = _texts.sorryNoService,
             etaMinutesString = '-',
@@ -221,6 +231,8 @@ utils.getNewSignConName = function(formattedPredictions, config, clockString)
             end
             result = result .. '@_' .. i .. '_@' .. prediction.destinationString
             i = i + 1
+            result = result .. '@_' .. i .. '_@' .. prediction.lineName
+            i = i + 1
             result = result .. '@_' .. i .. '_@' .. (config.absoluteArrivalTime and prediction.departureTimeString or prediction.etdMinutesString)
             -- result = result .. '@_' .. i .. '_@' .. (config.absoluteArrivalTime and prediction.arrivalTimeString or prediction.etaMinutesString)
             i = i + 1
@@ -230,10 +242,12 @@ utils.getNewSignConName = function(formattedPredictions, config, clockString)
         end
     else
         if config.isArrivals then
-            result = '@_1_@' .. _texts.from .. '@_2_@' .. _texts.platform .. '@_3_@' .. _texts.time
-            local i = 4
+            result = '@_1_@' .. _texts.from .. '@_2_@' .. _texts.lineName .. '@_3_@' .. _texts.platform .. '@_4_@' .. _texts.time
+            local i = 5
             for _, prediction in ipairs(formattedPredictions) do
                 result = result .. '@_' .. i .. '_@' .. prediction.originString
+                i = i + 1
+                result = result .. '@_' .. i .. '_@' .. prediction.lineName
                 i = i + 1
                 result = result .. '@_' .. i .. '_@' .. prediction.arrivalTerminal
                 i = i + 1
@@ -245,10 +259,12 @@ utils.getNewSignConName = function(formattedPredictions, config, clockString)
             end
             result = result .. '@_' .. constants.nameTags.header .. '_@' .. _texts.arrivalsAllCaps
         else
-            result = '@_1_@' .. _texts.to .. '@_2_@' .. _texts.platform .. '@_3_@' .. _texts.time
-            local i = 4
+            result = '@_1_@' .. _texts.to .. '@_2_@' .. _texts.lineName .. '@_3_@' .. _texts.platform .. '@_4_@' .. _texts.time
+            local i = 5
             for _, prediction in ipairs(formattedPredictions) do
                 result = result .. '@_' .. i .. '_@' .. prediction.destinationString
+                i = i + 1
+                result = result .. '@_' .. i .. '_@' .. prediction.lineName
                 i = i + 1
                 result = result .. '@_' .. i .. '_@' .. prediction.arrivalTerminal
                 i = i + 1
@@ -344,6 +360,11 @@ local function getMyLineData(vehicleIds, nStops, lineId, lineWaitingTime, buffer
     if buffer[lineId] then logger.print('using line buffer for lineID =', lineId) return buffer[lineId] end
     logger.print('NOT using line buffer for lineID =', lineId)
 
+    local name = api.engine.getComponent(lineId, api.type.ComponentType.NAME)
+    if name and name.name then
+        name = utils.getTextBetweenBrackets(name.name)
+    end
+
     if nStops < 1 or #vehicleIds < 1 then return {} end
 
     -- UG TODO the new API hasn't got this yet, only a dumb fixed waitingTime == 180 seconds
@@ -436,7 +457,7 @@ local function getMyLineData(vehicleIds, nStops, lineId, lineWaitingTime, buffer
         period = period + averages[index].lsd
     end
 
-    buffer[lineId] = {averages = averages, period = period, vehicles = vehicles}
+    buffer[lineId] = {averages = averages, name = name, period = period, vehicles = vehicles}
     return buffer[lineId]
 end
 
@@ -616,6 +637,7 @@ local function getNextPredictions(stationGroupId, stationGroup, stationId, stati
                                         destinationStationGroupId = line.stops[endIndex].stationGroup,
                                         arrivalTime = lastDepartureTime + remainingTime + myLineData.averages[hereIndex].st,
                                         departureTime = lastDepartureTime + remainingTime + myLineData.averages[hereIndex].lsd,
+                                        lineName = myLineData.name,
                                         -- nStopsAway = nStopsAway
                                     }
 
@@ -627,6 +649,7 @@ local function getNextPredictions(stationGroupId, stationGroup, stationId, stati
                                             destinationStationGroupId = line.stops[endIndex].stationGroup,
                                             arrivalTime = predictions[#predictions].arrivalTime + myLineData.period,
                                             departureTime = predictions[#predictions].departureTime + myLineData.period,
+                                            lineName = myLineData.name,
                                             -- nStopsAway = nStopsAway
                                         }
                                     end

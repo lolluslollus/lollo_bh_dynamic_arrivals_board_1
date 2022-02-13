@@ -1,0 +1,38 @@
+function data()
+	local constants = require('lolloArrivalsDeparturesPredictor.constants')
+	local modelHelpers = require('lolloArrivalsDeparturesPredictor.modelHelpers')
+
+	return {
+		boundingInfo = modelHelpers.getVoidBoundingInfo(),
+		collider = modelHelpers.getVoidCollider(),
+		lods = {
+			{
+				node = {
+					children = {
+						{
+							materials = {
+								"lolloArrivalsDeparturesPredictor/rough_iron.mtl",
+								-- "lolloArrivalsDeparturesPredictor/rough_alu.mtl",
+								"lolloArrivalsDeparturesPredictor/glass_dark.mtl",
+								"lolloArrivalsDeparturesPredictor/rough_alu_opaque.mtl",
+							},
+							-- mesh = "lolloArrivalsDeparturesPredictor/platform_display_lod0.msh",
+							mesh = "lolloArrivalsDeparturesPredictor/platform_display_2_lod0.msh",
+							transf = constants.idTransf,
+						},
+					},
+					name = "RootNode",
+					transf = { 0, 1, 0, 0,  -1, 0, 0, 0,  0, 0, 1, 0,  0, 0, 0, 1, },
+					-- transf = { 0, -1, 0, 0,  1, 0, 0, 0,  0, 0, 1, 0,  0, 0, 0, 1, }
+				},
+				static = false,
+				visibleFrom = 0,
+				visibleTo = 250,
+			},
+		},
+		metadata = {
+			labelList = modelHelpers.getStreetPlatformDisplayLabelList(),
+		},
+		version = 1,
+	}
+end

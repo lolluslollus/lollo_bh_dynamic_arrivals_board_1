@@ -2,7 +2,7 @@ local constants = require('lolloArrivalsDeparturesPredictor.constants')
 local constructionConfigs = require('lolloArrivalsDeparturesPredictor.constructionConfigs')
 local constructionHelpers = require('lolloArrivalsDeparturesPredictor.constructionHelpers')
 
-local _styles = { 'platform_departures_board', 'platform_departures_board_floating', }
+local _styles = { 'street_platform_departures_board', 'street_platform_departures_board_floating', }
 
 local _paramPrefix = constructionConfigs.getParamPrefixFromCon()
 
