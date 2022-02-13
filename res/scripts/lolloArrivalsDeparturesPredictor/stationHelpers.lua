@@ -443,7 +443,7 @@ local utils = {
                                 logger.print('isStationCargo =', isStationCargo)
                                 if not(isStationCargo) or not(isOnlyPassengers) then
                                     -- local isStreet = false
-                                    print('#station.terminals =', #station.terminals)
+                                    logger.print('#station.terminals =', #station.terminals)
                                     for _, terminal in pairs(station.terminals) do
                                         if terminal and terminal.vehicleNodeId and terminal.vehicleNodeId.entity
                                         and edgeUtils.isValidAndExistingId(terminal.vehicleNodeId.entity) then
