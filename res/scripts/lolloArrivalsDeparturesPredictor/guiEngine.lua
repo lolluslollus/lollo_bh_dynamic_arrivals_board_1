@@ -5,6 +5,7 @@ local guiHelpers = require('lolloArrivalsDeparturesPredictor.guiHelpers')
 local logger = require('lolloArrivalsDeparturesPredictor.logger')
 local stateHelpers = require ("lolloArrivalsDeparturesPredictor.stateHelpers")
 local stationHelpers = require('lolloArrivalsDeparturesPredictor.stationHelpers')
+local transfUtils = require('lolloArrivalsDeparturesPredictor.transfUtils')
 local transfUtilsUG = require('transf')
 
 
@@ -18,7 +19,7 @@ end
 
 local function _joinSignBase(signConId, id)
     _sendScriptEvent(
-        constants.events.join_sign_to_station,
+        constants.events.join_sign_to_station_group,
         {
             signConId = signConId,
             stationGroupId = id,
@@ -26,7 +27,7 @@ local function _joinSignBase(signConId, id)
     )
 end
 
-local function _tryJoinSign(signConId, tentativeStationConId)
+local function _tryJoinSign(signConId, tentativeObjectId)
     if not(edgeUtils.isValidAndExistingId(signConId)) then return false end
 
     local con = api.engine.getComponent(signConId, api.type.ComponentType.CONSTRUCTION)
@@ -50,9 +51,10 @@ local function _tryJoinSign(signConId, tentativeStationConId)
         _joinSignBase(signConId, nearbyObjects[1].id)
     else
         table.sort(nearbyObjects, function(a, b) return a.name < b.name end)
-        guiHelpers.showNearbyStationPicker(
+        guiHelpers.showNearbyObjectPicker(
             nearbyObjects,
-            tentativeStationConId,
+            transfUtils.transf2Position(signTransf_lua),
+            tentativeObjectId,
             function(objectId)
                 _joinSignBase(signConId, objectId)
             end

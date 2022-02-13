@@ -933,7 +933,7 @@ local function handleEvent(src, id, name, args)
                 stateHelpers.removePlacedSign(args.signConId)
                 utils.bulldozeConstruction(args.signConId)
                 logger.print('state after =') logger.debugPrint(stateHelpers.getState())
-            elseif name == constants.events.join_sign_to_station then
+            elseif name == constants.events.join_sign_to_station_group then
                 logger.print('state before =') logger.debugPrint(stateHelpers.getState())
                 if not(args) or not(edgeUtils.isValidAndExistingId(args.signConId)) then return end
 

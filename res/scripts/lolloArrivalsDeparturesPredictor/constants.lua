@@ -7,14 +7,14 @@ local constants = {
     eventId = '__lollo_departures_arrivals_predictor__',
     events = {
         hide_warnings = 'hide_warnings',
-        join_sign_to_station = 'join_sign_to_station',
+        join_sign_to_station_group = 'join_sign_to_station_group',
         remove_display_construction = 'remove_display_construction',
         toggle_notaus = 'toggle_notaus'
     },
 
     guiIds = {
         dynamicOnOffButtonId = 'lollo_arrivals_departures_predictor_dynamic_on_off_button',
-        stationPickerWindowId = 'lollo_arrivals_departures_predictor_picker_window',
+        objectPickerWindowId = 'lollo_arrivals_departures_predictor_picker_window',
         warningWindowWithMessageId = 'lollo_arrivals_departures_predictor_warning_window_with_message',
     },
 

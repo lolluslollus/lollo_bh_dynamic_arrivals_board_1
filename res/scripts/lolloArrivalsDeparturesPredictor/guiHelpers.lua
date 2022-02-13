@@ -1,4 +1,5 @@
 local constants = require('lolloArrivalsDeparturesPredictor.constants')
+local logger = require('lolloArrivalsDeparturesPredictor.logger')
 local stringUtils = require('lolloArrivalsDeparturesPredictor.stringUtils')
 
 
@@ -8,16 +9,17 @@ local _texts = {
     goBack = _('GoBack'),
     goThere = _('GoThere'), -- cannot put this directly inside the loop for some reason
     join = _('Join'),
-    stationPickerWindowTitle = _('StationPickerWindowTitle'),
+    objectPickerWindowTitle = _('StationPickerWindowTitle'),
     warningWindowTitle = _('WarningWindowTitle'),
 }
 
 local _windowXShift = -200
 
 local utils = {
-    moveCamera = function(position)
+    moveCamera = function(position123)
+        -- logger.print('moveCamera starting, position123 =') logger.debugPrint(position123)
         local cameraData = game.gui.getCamera()
-        game.gui.setCamera({position[1], position[2], cameraData[3], cameraData[4], cameraData[5]})
+        game.gui.setCamera({position123[1], position123[2], cameraData[3], cameraData[4], cameraData[5]})
     end,
     modifyOnOffButtonLayout = function(layout, isOn)
         local img = nil
@@ -38,31 +40,34 @@ local utils = {
 -- LOLLO TODO in the picker popup, add icons to tell if it is a port, an airport, a train station or a road station
 -- UG TODO there is no obvious way of doing this
 local guiHelpers = {
-    showNearbyStationPicker = function(stationCons, tentativeStationConId, joinCallback)
-        -- print('showNearbyStationPicker starting')
+    showNearbyObjectPicker = function(objects2Pick, startPosition123, tentativeObjectId, joinCallback)
+        -- logger.print('showNearbyObjectPicker starting')
         local list = api.gui.comp.List.new(false, api.gui.util.Orientation.VERTICAL, false)
         list:setDeselectAllowed(false)
         list:setVerticalScrollBarPolicy(0) -- 0 as needed 1 always off 2 always show 3 simple
-        local window = api.gui.util.getById(constants.guiIds.stationPickerWindowId)
+        local layout = api.gui.layout.BoxLayout.new('VERTICAL')
+        layout:addItem(list)
+
+        local window = api.gui.util.getById(constants.guiIds.objectPickerWindowId)
         if window == nil then
-            window = api.gui.comp.Window.new(_texts.stationPickerWindowTitle, list)
-            window:setId(constants.guiIds.stationPickerWindowId)
+            window = api.gui.comp.Window.new(_texts.objectPickerWindowTitle, layout)
+            window:setId(constants.guiIds.objectPickerWindowId)
         else
-            window:setContent(list)
+            window:setContent(layout)
             window:setVisible(true, false)
         end
         window:setResizable(true)
 
         local function addJoinButtons()
-            if type(stationCons) ~= 'table' then return end
+            if type(objects2Pick) ~= 'table' then return end
 
             local components = {}
-            for _, stationCon in pairs(stationCons) do
-                local name = api.gui.comp.TextView.new(stationCon.uiName or stationCon.name or '')
-                local cargoIcon = stationCon.isCargo
+            for _, object in pairs(objects2Pick) do
+                local name = api.gui.comp.TextView.new(object.uiName or object.name or '')
+                local cargoIcon = object.isCargo
                     and api.gui.comp.ImageView.new('ui/icons/construction-menu/category_cargo.tga')
                     or api.gui.comp.TextView.new('')
-                local passengerIcon = stationCon.isPassenger
+                local passengerIcon = object.isPassenger
                     and api.gui.comp.ImageView.new('ui/icons/construction-menu/category_passengers.tga')
                     or api.gui.comp.TextView.new('')
 
@@ -72,7 +77,7 @@ local guiHelpers = {
                 local gotoButton = api.gui.comp.Button.new(gotoButtonLayout, true)
                 gotoButton:onClick(
                     function()
-                        utils.moveCamera(stationCon.position)
+                        utils.moveCamera(object.position)
                         -- game.gui.setCamera({con.position[1], con.position[2], 100, 0, 0})
                     end
                 )
@@ -83,11 +88,11 @@ local guiHelpers = {
                 local joinButton = api.gui.comp.Button.new(joinButtonLayout, true)
                 joinButton:onClick(
                     function()
-                        if type(joinCallback) == 'function' then joinCallback(stationCon.id) end
+                        if type(joinCallback) == 'function' then joinCallback(object.id) end
                         window:setVisible(false, false)
                     end
                 )
-                if stationCon.id == tentativeStationConId then
+                if object.id == tentativeObjectId then
                     joinButton:setEnabled(false)
                 end
 
@@ -95,16 +100,40 @@ local guiHelpers = {
             end
 
             if #components > 0 then
-                local guiStationsTable = api.gui.comp.Table.new(#components, 'NONE')
-                guiStationsTable:setNumCols(5)
+                local guiObjectsTable = api.gui.comp.Table.new(#components, 'NONE')
+                guiObjectsTable:setNumCols(5)
                 for _, value in pairs(components) do
-                    guiStationsTable:addRow(value)
+                    guiObjectsTable:addRow(value)
                 end
-                list:addItem(guiStationsTable)
+                list:addItem(guiObjectsTable)
             end
         end
 
+        local function addGoBackButton()
+            if not(startPosition123) then logger.warn('startPosition123 not found') return end
+
+            local buttonLayout = api.gui.layout.BoxLayout.new('HORIZONTAL')
+            buttonLayout:addItem(api.gui.comp.ImageView.new('ui/design/window-content/arrow_style1_left.tga'))
+            buttonLayout:addItem(api.gui.comp.TextView.new(_texts.goBack))
+            local button = api.gui.comp.Button.new(buttonLayout, true)
+            button:onClick(
+                function()
+                    -- UG TODO this dumps, ask UG to fix it
+                    -- api.gui.util.CameraController:setCameraData(
+                    --     api.type.Vec2f.new(startPosition123[1], startPosition123[2]),
+                    --     100, 0, 0
+                    -- )
+                    -- x, y, distance, angleInRad, pitchInRad
+                    -- logger.print('startPosition123 =') logger.debugPrint(startPosition123)
+                    utils.moveCamera(startPosition123)
+                    -- game.gui.setCamera({startPosition123[1], startPosition123[2], 100, 0, 0})
+                end
+            )
+            layout:addItem(button)
+        end
+
         addJoinButtons()
+        addGoBackButton()
 
         -- window:setHighlighted(true)
         local position = api.gui.util.getMouseScreenPos()
@@ -146,7 +175,7 @@ local guiHelpers = {
         local button = api.gui.comp.ToggleButton.new(buttonLayout)
         button:setSelected(isDynamicOn, false)
         button:onToggle(function(isOn) -- isOn is boolean
-            print('toggled; isOn = ', isOn)
+            logger.print('toggled; isOn = ', isOn)
             while buttonLayout:getNumItems() > 0 do
                 local item0 = buttonLayout:getItem(0)
                 buttonLayout:removeItem(item0)
