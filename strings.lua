@@ -9,7 +9,8 @@ function data()
                     I have been thinking long and hard whether to publish this mod or not, since I copied the idea from badgerrhax. However, this is my own code and my own models, so I do. If you don't like it, don't use it.
 
                     NOTES:
-                    - These things can be performance-intensive, so you can switch them on and off from the bottom bar. If you think they are not working, check your bottom bar, unpause the game and wait a little.
+                    - These things can be performance-intensive, so you can switch them on and off from the bottom bar.
+                    - If you think they are not working, check your bottom bar, unpause the game and wait a little.
                     - Accuracy improves over time.
                     - Accuracy goes down when you add or remove vehicles, it picks up again after a bit.
                     - Rearrange these at any time with the construction mover.
