@@ -3,7 +3,6 @@ local constructionConfigs = require('lolloArrivalsDeparturesPredictor.constructi
 local constructionHelpers = require('lolloArrivalsDeparturesPredictor.constructionHelpers')
 
 local _styles = { 'street_platform_departures_board', 'street_platform_departures_board_floating', }
-
 local _paramPrefix = constructionConfigs.getParamPrefixFromCon()
 
 local function _getParamName(name)
@@ -23,12 +22,6 @@ local function _getParams()
             uiType = 'ICON_BUTTON',
             values = constructionHelpers.getIcons(_styles)
         },
-        -- {
-        --     key = _getParamName('align2Platform'),
-        --     name = _('Align2Platform'),
-        --     values = { _('No'), _('Yes') },
-        --     defaultIndex = 1
-        -- },
     }
     constructionHelpers.addTerminalOverrideParam(params, _getParamName)
 
@@ -62,7 +55,6 @@ function data()
                 terrainAlignmentLists = constructionHelpers.getDummyTerrainAlignmentLists(),
             }
 
-            -- local _align = params[_getParamName('align2Platform')] or 1
             local _style = _styles[params[_getParamName('style')] + 1]
             local _transf = { 1, 0, 0, 0,  0, 1, 0, 0,  0, 0, 1, 0,  0, 0, 0.0, 1 }
             result.models[#result.models + 1] = {
