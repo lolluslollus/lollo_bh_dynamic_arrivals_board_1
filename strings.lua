@@ -46,7 +46,7 @@ function data()
             ["GoThere"] = "Go there",
             ["GuessedTooltip"] = "Adjust this if required",
             ["Join"] = "Join",
-            ["MinutesShort"] = "min",
+            ["MinutesShort"] = "'",
             ["No"] = "No",
             ["Origin"] = "Origin",
             ["Passengers"] = "Passengers",
