@@ -39,6 +39,7 @@ local function getRegexParams(counter)
         -- expr = "@1([^@]+)@", -- works best
         -- expr = "@" .. counter .. "([^@]+)@",
         expr = "@_" .. counter .. "_@([^@]+)@",
+        -- expr = "@_" .. counter .. "_@([^@]*)@", -- LOLLO TODO test this with empty texts, it might be better
         replace="\\1", -- works
     }
 end
