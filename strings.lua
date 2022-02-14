@@ -5,7 +5,7 @@ function data()
                 [[
                     Displays for incoming and outgoing vehicles.
                     Turn the updates on or off with the bottom bar. When turned on, they update every 5 seconds.
-                    If you add a pair of brackets to your line names, the displays will show the stuff between the brackets.
+                    If you add a pair of brackets to your line names, the displays will show the stuff between the brackets, same as https://steamcommunity.com/sharedfiles/filedetails/?id=2528202101.
 
                     I have been thinking long and hard whether to publish this mod or not, since I copied the idea from badgerrhax. However, this is my own code and my own models, so I do. If you don't like it, don't use it.
 
