@@ -256,7 +256,6 @@ local _getNearestTerminalsWithStationGroup = function(transf, stationGroupId, is
     return nearestTerminals
 end
 
----@diagnostic disable-next-line: unused-function
 local _getNearbyTrainStationGroupsIndexed = function(transf, searchRadius, isOnlyPassengers)
     logger.print('_getNearbyTrainStationGroupsIndexed starting, isOnlyPassengers =', isOnlyPassengers or 'NIL')
     if type(transf) ~= 'table' then return {} end
@@ -269,58 +268,63 @@ local _getNearbyTrainStationGroupsIndexed = function(transf, searchRadius, isOnl
     -- What I really want here is a list with one item each construction, but that could be an expensive loop,
     -- so I check the stations instead and index by the construction.
 
+    local conBuffer = {}
     local stationIdsIndexed = {}
     local _edgeIds = edgeUtils.getNearbyObjectIds(transf, searchRadius, api.type.ComponentType.BASE_EDGE_TRACK)
-    for key, edgeId in pairs(_edgeIds) do
+    for _, edgeId in pairs(_edgeIds) do
         local conId = api.engine.system.streetConnectorSystem.getConstructionEntityForEdge(edgeId)
         if edgeUtils.isValidAndExistingId(conId) then
-            local con = api.engine.getComponent(conId, api.type.ComponentType.CONSTRUCTION)
+            local con = conBuffer[conId] or api.engine.getComponent(conId, api.type.ComponentType.CONSTRUCTION)
             if con and con.stations then
+                conBuffer[conId] = {stations = con.stations, transf = con.transf}
                 for _, stationId in pairs(con.stations) do
-                    stationIdsIndexed[stationId] = true
+                    stationIdsIndexed[stationId] = {
+                        conId = conId,
+                        conPosition = transfUtils.xYZ2OneTwoThree(con.transf:cols(3))
+                    }
                 end
+            else
+                conBuffer[conId] = {} -- also buffer invalid stations so we don't need more api calls
             end
         end
     end
     logger.print('stationIdsIndexed =') logger.debugPrint(stationIdsIndexed)
 
-    local _station2ConstructionMap = api.engine.system.streetConnectorSystem.getStation2ConstructionMap()
+    -- local _station2ConstructionMap = api.engine.system.streetConnectorSystem.getStation2ConstructionMap()
     local _resultsIndexed = {}
-    for stationId, _ in pairs(stationIdsIndexed) do
+    for stationId, myStationData in pairs(stationIdsIndexed) do
         if edgeUtils.isValidAndExistingId(stationId) then
-            local conId = _station2ConstructionMap[stationId]
-            if edgeUtils.isValidAndExistingId(conId) then
-                logger.print('found conId =', conId)
-                local con = api.engine.getComponent(conId, api.type.ComponentType.CONSTRUCTION)
-                local station = api.engine.getComponent(stationId, api.type.ComponentType.STATION)
-                if con and station then
-                    local isStationCargo = station.cargo or false
-                    logger.print('isStationCargo =', isStationCargo)
-                    if not(isStationCargo) or not(isOnlyPassengers) then
-                        local stationGroupId = api.engine.system.stationGroupSystem.getStationGroup(stationId)
-                        local name = ''
-                        local stationGroupName = api.engine.getComponent(stationGroupId, api.type.ComponentType.NAME)
-                        if stationGroupName ~= nil then name = stationGroupName.name end
+            local conId = myStationData.conId
+            local conPosition = myStationData.conPosition
+            logger.print('found conId =', conId, 'and its position')
+            local station = api.engine.getComponent(stationId, api.type.ComponentType.STATION)
+            if conPosition and station then
+                local isStationCargo = station.cargo or false
+                logger.print('isStationCargo =', isStationCargo)
+                if not(isStationCargo) or not(isOnlyPassengers) then
+                    local stationGroupId = api.engine.system.stationGroupSystem.getStationGroup(stationId)
+                    local name = ''
+                    local stationGroupName = api.engine.getComponent(stationGroupId, api.type.ComponentType.NAME)
+                    if stationGroupName ~= nil then name = stationGroupName.name end
 
-                        local isTwinCargo = false
-                        local isTwinPassenger = false
+                    local isTwinCargo = false
+                    local isTwinPassenger = false
 
-                        if _resultsIndexed[stationGroupId] ~= nil then
-                            -- logger.print('found a twin, it is') logger.debugPrint(resultsIndexed[conId])
-                            if stringUtils.isNullOrEmptyString(name) then
-                                name = _resultsIndexed[stationGroupId].name or ''
-                            end
-                            if _resultsIndexed[stationGroupId].isCargo then isTwinCargo = true end
-                            if _resultsIndexed[stationGroupId].isPassenger then isTwinPassenger = true end
+                    if _resultsIndexed[stationGroupId] ~= nil then
+                        -- logger.print('found a twin, it is') logger.debugPrint(resultsIndexed[conId])
+                        if stringUtils.isNullOrEmptyString(name) then
+                            name = _resultsIndexed[stationGroupId].name
                         end
-                        _resultsIndexed[stationGroupId] = {
-                            id = stationGroupId,
-                            isCargo = isStationCargo or isTwinCargo,
-                            isPassenger = not(isStationCargo) or isTwinPassenger,
-                            name = name,
-                            position = transfUtils.xYZ2OneTwoThree(con.transf:cols(3))
-                        }
+                        if _resultsIndexed[stationGroupId].isCargo then isTwinCargo = true end
+                        if _resultsIndexed[stationGroupId].isPassenger then isTwinPassenger = true end
                     end
+                    _resultsIndexed[stationGroupId] = {
+                        id = stationGroupId,
+                        isCargo = isStationCargo or isTwinCargo,
+                        isPassenger = not(isStationCargo) or isTwinPassenger,
+                        name = name or '',
+                        position = conPosition
+                    }
                 end
             end
         end
@@ -426,8 +430,8 @@ local utils = {
             if edgeUtils.isValidAndExistingId(stationGroupId) then
                 local stationGroup = api.engine.getComponent(stationGroupId, api.type.ComponentType.STATION_GROUP)
                 if stationGroup and stationGroup.stations then
-                    local stationGroupNames = api.engine.getComponent(stationGroupId, api.type.ComponentType.NAME)
-                    local stationGroupName = (stationGroupNames and stationGroupNames.name) and stationGroupNames.name or ''
+                    local stationGroupName_struct = api.engine.getComponent(stationGroupId, api.type.ComponentType.NAME)
+                    local stationGroupName = (stationGroupName_struct and stationGroupName_struct.name) and stationGroupName_struct.name or ''
                     local isStationGroupWithCargo = false
                     local isStationGroupWithPassengers = false
                     local position = { x = 0, y = 0, z = 0 }
@@ -533,8 +537,7 @@ local utils = {
         end
         logger.print('resultsIndexed before adding train stations =') logger.debugPrint(_resultsIndexed)
         -- this may be a little redundant but train stations can be really huge
-        -- and we never know how far they are meant to be located.
-        -- LOLLO TODO see if we really need this
+        -- and we never know how far our panels are meant to be located.
         arrayUtils.concatKeysValues(_resultsIndexed, _getNearbyTrainStationGroupsIndexed(transf, 2 * searchRadius, isOnlyPassengers))
         logger.print('resultsIndexed after adding train stations =') logger.debugPrint(_resultsIndexed)
         local results = {}
