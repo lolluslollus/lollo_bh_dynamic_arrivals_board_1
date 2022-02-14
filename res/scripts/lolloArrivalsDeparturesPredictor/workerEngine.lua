@@ -20,6 +20,7 @@ local _texts = {
     origin = _('Origin'),
     platform = _('PlatformShort'),
     sorryNoService = _('SorryNoService'),
+    sorryTrouble = _('SorryTrouble'),
     sorryTroubleShort = _('SorryTroubleShort'),
     time = _('Time'),
     to = _('To'),
@@ -163,32 +164,41 @@ utils.getFormattedPredictions = function(predictions, time, fallbackTerminalIdIf
                 departureTimeString = _texts.due,
                 arrivalTerminal = (rawEntry.terminalId or '-'), -- the terminal id has base 1
             }
-            if edgeUtils.isValidAndExistingId(rawEntry.destinationStationGroupId) then
-                local destinationStationGroupName = api.engine.getComponent(rawEntry.destinationStationGroupId, api.type.ComponentType.NAME)
-                if destinationStationGroupName and destinationStationGroupName.name then
-                    fmtEntry.destinationString = destinationStationGroupName.name
-                    -- LOLLO NOTE sanitize away the characters that we use in the regex in the model
-                    fmtEntry.destinationString:gsub('_', ' ')
-                    fmtEntry.destinationString:gsub('@', ' ')
-                end
-            end
-            if edgeUtils.isValidAndExistingId(rawEntry.originStationGroupId) then
-                local originStationGroupName = api.engine.getComponent(rawEntry.originStationGroupId, api.type.ComponentType.NAME)
-                if originStationGroupName and originStationGroupName.name then
-                    -- fmtEntry.originString = _texts.fromSpace .. originStationGroupName.name
-                    fmtEntry.originString = originStationGroupName.name
-                    -- LOLLO NOTE sanitize away the characters that we use in the regex in the model
-                    fmtEntry.originString:gsub('_', ' ')
-                    fmtEntry.originString:gsub('@', ' ')
-                end
-            end
 
             if rawEntry.isProblem then
+                fmtEntry.destinationString = _texts.sorryTrouble
+                -- sanitize away the characters that we use in the regex in the model
+                fmtEntry.destinationString:gsub('_', ' ')
+                fmtEntry.destinationString:gsub('@', ' ')
+                fmtEntry.originString = _texts.sorryTrouble
+                -- sanitize away the characters that we use in the regex in the model
+                fmtEntry.originString:gsub('_', ' ')
+                fmtEntry.originString:gsub('@', ' ')
                 fmtEntry.arrivalTimeString = _texts.sorryTroubleShort
                 fmtEntry.departureTimeString = _texts.sorryTroubleShort
                 fmtEntry.etaMinutesString = _texts.sorryTroubleShort
                 fmtEntry.etdMinutesString = _texts.sorryTroubleShort
             else
+                if edgeUtils.isValidAndExistingId(rawEntry.destinationStationGroupId) then
+                    local destinationStationGroupName = api.engine.getComponent(rawEntry.destinationStationGroupId, api.type.ComponentType.NAME)
+                    if destinationStationGroupName and destinationStationGroupName.name then
+                        fmtEntry.destinationString = destinationStationGroupName.name
+                        -- sanitize away the characters that we use in the regex in the model
+                        fmtEntry.destinationString:gsub('_', ' ')
+                        fmtEntry.destinationString:gsub('@', ' ')
+                    end
+                end
+                if edgeUtils.isValidAndExistingId(rawEntry.originStationGroupId) then
+                    local originStationGroupName = api.engine.getComponent(rawEntry.originStationGroupId, api.type.ComponentType.NAME)
+                    if originStationGroupName and originStationGroupName.name then
+                        -- fmtEntry.originString = _texts.fromSpace .. originStationGroupName.name
+                        fmtEntry.originString = originStationGroupName.name
+                        -- sanitize away the characters that we use in the regex in the model
+                        fmtEntry.originString:gsub('_', ' ')
+                        fmtEntry.originString:gsub('@', ' ')
+                    end
+                end
+
                 local expectedMinutesToArrival = math.floor((rawEntry.arrivalTime - time) / 60000)
                 if expectedMinutesToArrival > 0 then
                     fmtEntry.arrivalTimeString = utils.formatClockStringHHMM(rawEntry.arrivalTime / 1000)
