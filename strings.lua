@@ -57,6 +57,7 @@ function data()
             ["StationPickerWindowTitle"] = "Pick a station to join",
             ["StationSection"] = "Station Section",
             ["Time"] = "Time",
+            ["TimeDisplay"] = "Time Display",
             ["To"] = "To",
             ["WarningWindowTitle"] = "Warning",
             ["Yes"] = "Yes",

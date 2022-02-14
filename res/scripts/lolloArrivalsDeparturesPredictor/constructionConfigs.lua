@@ -12,7 +12,6 @@ local myConstructionConfigs = {
         isArrivals = false,
         maxEntries = 2,
         track = true,
-        absoluteArrivalTime = false,
         -- LOLLO NOTE adding a prefix is good for respecting other constructions,
         -- but I could very well use a constant instead of this
         paramPrefix = 'platform_departures_display_',
@@ -23,7 +22,6 @@ local myConstructionConfigs = {
         isArrivals = false,
         maxEntries = 2,
         track = false,
-        absoluteArrivalTime = false,
         -- LOLLO NOTE adding a prefix is good for respecting other constructions,
         -- but I could very well use a constant instead of this
         paramPrefix = 'street_platform_departures_display_',
@@ -33,7 +31,6 @@ local myConstructionConfigs = {
         clock = true,
         isArrivals = false,
         maxEntries = 8,
-        absoluteArrivalTime = true,
         paramPrefix = 'station_departures_display_',
     },
     ['asset/lolloArrivalsDeparturesPredictor/station_arrivals_display.con'] = {
@@ -41,7 +38,6 @@ local myConstructionConfigs = {
         clock = true,
         isArrivals = true,
         maxEntries = 8,
-        absoluteArrivalTime = true,
         paramPrefix = 'station_arrivals_display_',
     }
 }

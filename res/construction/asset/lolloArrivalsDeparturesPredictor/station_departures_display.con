@@ -23,7 +23,7 @@ local function _getParams()
             uiType = 'ICON_BUTTON',
             values = constructionHelpers.getIcons(_styles),
             defaultIndex = 3
-        }
+        },
     }
 
     return params

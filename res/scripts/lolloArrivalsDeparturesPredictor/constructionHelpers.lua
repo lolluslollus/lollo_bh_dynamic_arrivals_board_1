@@ -14,8 +14,6 @@ local helpers = {
             values = terminals,
             uiType = 'COMBOBOX'
         }
-
-        return params
     end,
     getDummyGroundFaces = function()
         --[[

@@ -29,6 +29,12 @@ local function _getParams()
             values = { _('No'), _('Yes') },
             defaultIndex = 1
         },
+        {
+            key = _getParamName('absoluteTime'),
+            name = _('TimeDisplay'),
+            uiType = 'ICON_BUTTON',
+            values = constructionHelpers.getIcons({'relative_time', 'absolute_time'}),
+        },
     }
     constructionHelpers.addTerminalOverrideParam(params, _getParamName)
 

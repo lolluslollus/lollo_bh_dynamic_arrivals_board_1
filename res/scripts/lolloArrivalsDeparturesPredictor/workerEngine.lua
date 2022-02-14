@@ -231,9 +231,11 @@ utils.getFormattedPredictions = function(predictions, time, fallbackTerminalIdIf
     return results
 end
 
-utils.getNewSignConName = function(formattedPredictions, config, clockString)
+utils.getNewSignConName = function(formattedPredictions, config, clockString, signCon)
     local result = ''
     if config.singleTerminal then
+        local function _getParamName(subfix) return config.paramPrefix .. subfix end
+        local isAbsoluteTime = signCon.params[_getParamName('absoluteTime')] == 1
         local i = 1
         for _, prediction in ipairs(formattedPredictions) do
             if config.track and i == 1 then
@@ -243,7 +245,7 @@ utils.getNewSignConName = function(formattedPredictions, config, clockString)
             i = i + 1
             result = result .. '@_' .. i .. '_@' .. prediction.lineName
             i = i + 1
-            result = result .. '@_' .. i .. '_@' .. (config.absoluteArrivalTime and prediction.departureTimeString or prediction.etdMinutesString)
+            result = result .. '@_' .. i .. '_@' .. (isAbsoluteTime and prediction.departureTimeString or prediction.etdMinutesString)
             i = i + 1
         end
         if config.clock and clockString then
@@ -1025,7 +1027,8 @@ local function update()
                         local newName = utils.getNewSignConName(
                             formattedPredictions,
                             config,
-                            utils.formatClockString(_clockTimeSec)
+                            utils.formatClockString(_clockTimeSec),
+                            signCon
                         )
                         api.cmd.sendCommand(api.cmd.make.setName(signConId, newName))
                     end
@@ -1069,7 +1072,8 @@ local function handleEvent(src, id, name, args)
                     local newName = utils.getNewSignConName(
                         {},
                         config,
-                        utils.formatClockString(math.floor(_times.gameTime / 1000))
+                        utils.formatClockString(math.floor(_times.gameTime / 1000)),
+                        signCon
                     )
                     api.cmd.sendCommand(api.cmd.make.setName(args.signConId, newName))
                 end
