@@ -43,7 +43,30 @@ end
 -- I doubt they fit in the narrow station panel.
 -- The train track platform panel probably has a bit of space.
 local utils = {
-    getPlatformDisplayLabelList = function()
+    -- LOLLO NOTE if a construction contains models without bounding info and collider,
+    -- it will still detect collisions with them. With these, we avoid that problem.
+    getVoidBoundingInfo = function()
+        return {} -- this seems the same as the following
+        -- return {
+        --     bbMax = { 0, 0, 0 },
+        --     bbMin = { 0, 0, 0 },
+        -- }
+    end,
+    getVoidCollider = function()
+        -- return {
+        --     params = {
+        --         halfExtents = { 0, 0, 0, },
+        --     },
+        --     transf = { 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, },
+        --     type = 'BOX',
+        -- }
+        return {
+            type = 'NONE'
+        }
+    end,
+}
+
+    utils.getPlatformDisplayLabelList = function()
         local _zed0 = 2.67
         local _dZed = -0.1
         local function zed(counter) -- 3 items per row
@@ -318,8 +341,12 @@ local utils = {
                 },
             },
         }
-    end,
-    getStreetPlatformDisplayLabelList = function()
+    end
+    utils.getStreetPlatformDisplayLabelList = function()
+        -- for now, these are the same as the train displays,
+        -- except they have no track number.
+        -- This can be set in the construction configs,
+        -- without making a dedicated model.
         local _zed0 = 2.67
         local _dZed = -0.1
         local function zed(counter) -- 3 items per row
@@ -346,7 +373,7 @@ local utils = {
                     nLines = 1,
                     params = getRegexParams(constants.nameTags.clock),
                     renderMode = "EMISSIVE",
-                    size = _sizeLeft,
+                    size = _size1,
                     transf = { 0.1, 0, 0, 0,  0, 0, 0.1, 0,  0, -1, 0, 0,  0.26, _yShiftA, 2.8, 1, },
                     type = "NAME",
                     verticalAlignment = "CENTER",
@@ -362,8 +389,24 @@ local utils = {
                     nLines = 1,
                     params = getRegexParams(1),
                     renderMode = "EMISSIVE",
-                    size = _sizeLeft,
+                    size = _size1,
                     transf = { 0.1, 0, 0, 0,  0, 0, 0.1, 0,  0, -1, 0, 0,  0.26, _yShiftA, zed(1), 1, },
+                    type = "NAME",
+                    verticalAlignment = "CENTER",
+                },
+                {
+                    alignment = "LEFT",
+                    alpha = 1,
+                    alphaMode = "CUTOUT",
+                    childId = "",
+                    color = { 1, 0.541, 0, },
+                    filter = "CUSTOM",
+                    fitting = "CUT",
+                    nLines = 1,
+                    params = getRegexParams(2),
+                    renderMode = "EMISSIVE",
+                    size = _size2,
+                    transf = { 0.1, 0, 0, 0,  0, 0, 0.1, 0,  0, -1, 0, 0,  1.00, _yShiftA, zed(2), 1, },
                     type = "NAME",
                     verticalAlignment = "CENTER",
                 },
@@ -378,7 +421,7 @@ local utils = {
                     nLines = 1,
                     params = getRegexParams(3),
                     renderMode = "EMISSIVE",
-                    size = _sizeMid,
+                    size = _size3,
                     transf = { 0.1, 0, 0, 0,  0, 0, 0.1, 0,  0, -1, 0, 0,  1.24, _yShiftA, zed(3), 1, },
                     type = "NAME",
                     verticalAlignment = "CENTER",
@@ -394,8 +437,24 @@ local utils = {
                     nLines = 1,
                     params = getRegexParams(4),
                     renderMode = "EMISSIVE",
-                    size = _sizeLeft,
+                    size = _size1,
                     transf = { 0.1, 0, 0, 0,  0, 0, 0.1, 0,  0, -1, 0, 0,  0.26, _yShiftA, zed(4), 1, },
+                    type = "NAME",
+                    verticalAlignment = "CENTER",
+                },
+                {
+                    alignment = "LEFT",
+                    alpha = 1,
+                    alphaMode = "CUTOUT",
+                    childId = "",
+                    color = { 1, 0.541, 0, },
+                    filter = "CUSTOM",
+                    fitting = "CUT",
+                    nLines = 1,
+                    params = getRegexParams(5),
+                    renderMode = "EMISSIVE",
+                    size = _size2,
+                    transf = { 0.1, 0, 0, 0,  0, 0, 0.1, 0,  0, -1, 0, 0,  1.00, _yShiftA, zed(5), 1, },
                     type = "NAME",
                     verticalAlignment = "CENTER",
                 },
@@ -410,7 +469,7 @@ local utils = {
                     nLines = 1,
                     params = getRegexParams(6),
                     renderMode = "EMISSIVE",
-                    size = _sizeMid,
+                    size = _size3,
                     transf = { 0.1, 0, 0, 0,  0, 0, 0.1, 0,  0, -1, 0, 0,  1.24, _yShiftA, zed(6), 1, },
                     type = "NAME",
                     verticalAlignment = "CENTER",
@@ -443,8 +502,24 @@ local utils = {
                     nLines = 1,
                     params = getRegexParams(1),
                     renderMode = "EMISSIVE",
-                    size = _sizeLeft,
+                    size = _size1,
                     transf = { -0.1, 0, 0, 0,  0, 0, 0.1, 0,  0, 1, 0, 0,  1.54, _yShiftB, zed(1), 1, },
+                    type = "NAME",
+                    verticalAlignment = "CENTER",
+                },
+                {
+                    alignment = "LEFT",
+                    alpha = 1,
+                    alphaMode = "CUTOUT",
+                    childId = "",
+                    color = { 1, 0.541, 0, },
+                    filter = "CUSTOM",
+                    fitting = "CUT",
+                    nLines = 1,
+                    params = getRegexParams(2),
+                    renderMode = "EMISSIVE",
+                    size = _size2,
+                    transf = { -0.1, 0, 0, 0,  0, 0, 0.1, 0,  0, 1, 0, 0,  0.805, _yShiftB, zed(2), 1, },
                     type = "NAME",
                     verticalAlignment = "CENTER",
                 },
@@ -459,7 +534,7 @@ local utils = {
                     nLines = 1,
                     params = getRegexParams(3),
                     renderMode = "EMISSIVE",
-                    size = _sizeRight,
+                    size = _size3,
                     transf = { -0.1, 0, 0, 0,  0, 0, 0.1, 0,  0, 1, 0, 0,  0.55, _yShiftB, zed(3), 1, },
                     type = "NAME",
                     verticalAlignment = "CENTER",
@@ -475,8 +550,24 @@ local utils = {
                     nLines = 1,
                     params = getRegexParams(4),
                     renderMode = "EMISSIVE",
-                    size = _sizeLeft,
+                    size = _size1,
                     transf = { -0.1, 0, 0, 0,  0, 0, 0.1, 0,  0, 1, 0, 0,  1.54, _yShiftB, zed(4), 1, },
+                    type = "NAME",
+                    verticalAlignment = "CENTER",
+                },
+                {
+                    alignment = "LEFT",
+                    alpha = 1,
+                    alphaMode = "CUTOUT",
+                    childId = "",
+                    color = { 1, 0.541, 0, },
+                    filter = "CUSTOM",
+                    fitting = "CUT",
+                    nLines = 1,
+                    params = getRegexParams(5),
+                    renderMode = "EMISSIVE",
+                    size = _size2,
+                    transf = { -0.1, 0, 0, 0,  0, 0, 0.1, 0,  0, 1, 0, 0,  0.805, _yShiftB, zed(5), 1, },
                     type = "NAME",
                     verticalAlignment = "CENTER",
                 },
@@ -491,15 +582,15 @@ local utils = {
                     nLines = 1,
                     params = getRegexParams(6),
                     renderMode = "EMISSIVE",
-                    size = _sizeRight,
+                    size = _size3,
                     transf = { -0.1, 0, 0, 0,  0, 0, 0.1, 0,  0, 1, 0, 0,  0.55, _yShiftB, zed(6), 1, },
                     type = "NAME",
                     verticalAlignment = "CENTER",
                 },
             },
         }
-    end,
-    getStationDisplayLabelList = function()
+    end
+    utils.getStationDisplayLabelList = function()
         local _zed0 = 3.65
         local _dZed = -0.1
         local function zed(counter) -- 4 items per row
@@ -1045,8 +1136,8 @@ local utils = {
                 },
             },
         }
-    end,
-    getStationWideDisplayLabelList = function()
+    end
+    utils.getStationWideDisplayLabelList = function()
         local _zed0 = 3.65
         local _dZed = -0.1
         local function zed(counter) -- 4 items per row
@@ -1740,28 +1831,6 @@ local utils = {
                 },
             },
         }
-    end,
-    -- LOLLO NOTE if a construction contains models without bounding info and collider,
-    -- it will still detect collisions with them. With these, we avoid that problem.
-    getVoidBoundingInfo = function()
-        return {} -- this seems the same as the following
-        -- return {
-        --     bbMax = { 0, 0, 0 },
-        --     bbMin = { 0, 0, 0 },
-        -- }
-    end,
-    getVoidCollider = function()
-        -- return {
-        --     params = {
-        --         halfExtents = { 0, 0, 0, },
-        --     },
-        --     transf = { 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, },
-        --     type = 'BOX',
-        -- }
-        return {
-            type = 'NONE'
-        }
-    end,
-}
+    end
 
 return utils
