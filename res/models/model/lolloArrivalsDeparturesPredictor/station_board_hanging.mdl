@@ -11,7 +11,6 @@ function data()
 					children = {
 						{
 							materials = {
-								-- "lolloArrivalsDeparturesPredictor/rough_alu.mtl",
 								"lolloArrivalsDeparturesPredictor/rough_alu_opaque.mtl",
 								"lolloArrivalsDeparturesPredictor/glass_dark.mtl",
 							},

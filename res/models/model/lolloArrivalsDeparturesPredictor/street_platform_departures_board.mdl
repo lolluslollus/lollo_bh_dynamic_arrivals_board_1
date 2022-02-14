@@ -12,18 +12,15 @@ function data()
 						{
 							materials = {
 								"lolloArrivalsDeparturesPredictor/rough_iron.mtl",
-								-- "lolloArrivalsDeparturesPredictor/rough_alu.mtl",
 								"lolloArrivalsDeparturesPredictor/glass_dark.mtl",
 								"lolloArrivalsDeparturesPredictor/rough_alu_opaque.mtl",
 							},
-							-- mesh = "lolloArrivalsDeparturesPredictor/platform_display_lod0.msh",
 							mesh = "lolloArrivalsDeparturesPredictor/platform_display_2_lod0.msh",
 							transf = constants.idTransf,
 						},
 					},
 					name = "RootNode",
 					transf = { 0, 1, 0, 0,  -1, 0, 0, 0,  0, 0, 1, 0,  0, 0, 0, 1, },
-					-- transf = { 0, -1, 0, 0,  1, 0, 0, 0,  0, 0, 1, 0,  0, 0, 0, 1, }
 				},
 				static = false,
 				visibleFrom = 0,
