@@ -18,5 +18,17 @@ local c = getBracketsContent('(aaaab12 _?)')
 local d = getBracketsContent('(aaaa(b12 _?) ajs')
 local e = getBracketsContent('aaaab12 _? ajs')
 
+local deltaI = 0
+local _fetchNextDelta = function()
+    -- + 1, -1, +2, -2, +3. -3 and so on
+    if deltaI > 0 then deltaI = -deltaI else deltaI = -deltaI + 1 end
+end
+
+local aa = {}
+for i = 1, 25, 1 do
+    aa[i] = deltaI
+    _fetchNextDelta()
+end
+
 
 local dummy = 123
