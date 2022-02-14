@@ -22,9 +22,9 @@ local constants = require('lolloArrivalsDeparturesPredictor.constants')
 ]]
 
 -- for platform panels, stick this in the model editor under "options - config - name"
--- local _testText = "@_track_@88@_1_@Brignole@_2_@IC 999@_3_@12:25@_4_@Ü Bigottu@_5_@REG 11198@_6_@1:11@_clock_@01:12:20@"
+-- local _testText = "@_track_@88@_1_@Stazione di Genova Brignole@_2_@IC 999IC 999IC 999@_3_@22:25@_4_@Ü Bigottu@_5_@REG 11198-REG 11198@_6_@1:11@_clock_@01:12:20@"
 -- for station panels, stick this in the model editor under "options - config - name"
--- local _testText = "@_header_@Departures@_footer_@VeryVeryVeryLongLongLongTextTextText@_1_@To@_2_@@_3_@Platform@_4_@TimeLong@_5_@Brignole@_6_@IC335@_7_@2@_8_@1:50@_9_@Torino Porta Nuova Molto molto molto lungo@_10_@REG 1157999 with restaurant@_11_@21@_12_@19:42@_13_@Sestri Levante@_14_@TEE 34@_15_@12@_16_@19:48@_17_@Milano Centrale@_18_@REG 11194@_19_@24@_20_@19:59@_21_@Milano Centrale@_22_@REG 98989@_23_@24@_24_@20:59@_25_@Milano Centrale@_26_@IC 942@_27_@24@_28_@21:59@_29_@Venezia Santa Lucia@_30_@IC 777@_32_@24@_32_@22:59@_33_@Ventimiglia - Marseille@_34_@IC 888@_35_@24@_36_@23:59@_clock_@01:12:20@"
+-- local _testText = "@_header_@Departures@_footer_@VeryVeryVeryLongLongLongTextTextText@_1_@To@_2_@@_3_@Platform@_4_@TimeLong@_5_@Stazione Di Genova Brignole@_6_@IC335IC335@_7_@2@_8_@1:50@_9_@Torino Porta Nuova Molto molto molto lungo@_10_@REG 1157999 with restaurant@_11_@21@_12_@19:42@_13_@Sestri Levante@_14_@TEE 34@_15_@12@_16_@19:48@_17_@Milano Centrale@_18_@REG 11194@_19_@24@_20_@19:59@_21_@Milano Centrale@_22_@REG 98989@_23_@24@_24_@20:59@_25_@Milano Centrale@_26_@IC 942@_27_@24@_28_@21:59@_29_@Venezia Santa Lucia@_30_@IC 777@_32_@24@_32_@22:59@_33_@Ventimiglia - Marseille@_34_@IC 888@_35_@24@_36_@23:59@_clock_@01:12:20@"
 
 local function getRegexParams(counter)
     return {
@@ -50,9 +50,9 @@ local utils = {
             return _zed0 + math.floor((counter - 1) / 3) * _dZed
         end
 
-        local _sizeLeft = {10, 1}
-        local _sizeMid = {3, 1}
-        local _sizeRight = { 3, 1, }
+        local _size1 = {7.2, 1}
+        local _size2 = {3.0, 0.667}
+        local _size3 = {3, 1}
         local _yShiftA = -0.12
         local _yShiftB = 0.12
 
@@ -70,7 +70,7 @@ local utils = {
                     nLines = 1,
                     params = getRegexParams(constants.nameTags.clock),
                     renderMode = "EMISSIVE",
-                    size = _sizeLeft,
+                    size = _size1,
                     transf = { 0.1, 0, 0, 0,  0, 0, 0.1, 0,  0, -1, 0, 0,  0.26, _yShiftA, 2.8, 1, },
                     type = "NAME",
                     verticalAlignment = "CENTER",
@@ -86,7 +86,7 @@ local utils = {
                     nLines = 1,
                     params = getRegexParams(constants.nameTags.track),
                     renderMode = "EMISSIVE",
-                    size = _sizeMid,
+                    size = _size3,
                     transf = { 0.1, 0, 0, 0,  0, 0, 0.1, 0,  0, -1, 0, 0,  1.24, _yShiftA, 2.8, 1, },
                     type = "NAME",
                     verticalAlignment = "CENTER",
@@ -102,8 +102,24 @@ local utils = {
                     nLines = 1,
                     params = getRegexParams(1),
                     renderMode = "EMISSIVE",
-                    size = _sizeLeft,
+                    size = _size1,
                     transf = { 0.1, 0, 0, 0,  0, 0, 0.1, 0,  0, -1, 0, 0,  0.26, _yShiftA, zed(1), 1, },
+                    type = "NAME",
+                    verticalAlignment = "CENTER",
+                },
+                {
+                    alignment = "LEFT",
+                    alpha = 1,
+                    alphaMode = "CUTOUT",
+                    childId = "",
+                    color = { 1, 0.541, 0, },
+                    filter = "CUSTOM",
+                    fitting = "CUT",
+                    nLines = 1,
+                    params = getRegexParams(2),
+                    renderMode = "EMISSIVE",
+                    size = _size2,
+                    transf = { 0.1, 0, 0, 0,  0, 0, 0.1, 0,  0, -1, 0, 0,  1.00, _yShiftA, zed(2), 1, },
                     type = "NAME",
                     verticalAlignment = "CENTER",
                 },
@@ -118,7 +134,7 @@ local utils = {
                     nLines = 1,
                     params = getRegexParams(3),
                     renderMode = "EMISSIVE",
-                    size = _sizeMid,
+                    size = _size3,
                     transf = { 0.1, 0, 0, 0,  0, 0, 0.1, 0,  0, -1, 0, 0,  1.24, _yShiftA, zed(3), 1, },
                     type = "NAME",
                     verticalAlignment = "CENTER",
@@ -134,8 +150,24 @@ local utils = {
                     nLines = 1,
                     params = getRegexParams(4),
                     renderMode = "EMISSIVE",
-                    size = _sizeLeft,
+                    size = _size1,
                     transf = { 0.1, 0, 0, 0,  0, 0, 0.1, 0,  0, -1, 0, 0,  0.26, _yShiftA, zed(4), 1, },
+                    type = "NAME",
+                    verticalAlignment = "CENTER",
+                },
+                {
+                    alignment = "LEFT",
+                    alpha = 1,
+                    alphaMode = "CUTOUT",
+                    childId = "",
+                    color = { 1, 0.541, 0, },
+                    filter = "CUSTOM",
+                    fitting = "CUT",
+                    nLines = 1,
+                    params = getRegexParams(5),
+                    renderMode = "EMISSIVE",
+                    size = _size2,
+                    transf = { 0.1, 0, 0, 0,  0, 0, 0.1, 0,  0, -1, 0, 0,  1.00, _yShiftA, zed(5), 1, },
                     type = "NAME",
                     verticalAlignment = "CENTER",
                 },
@@ -150,7 +182,7 @@ local utils = {
                     nLines = 1,
                     params = getRegexParams(6),
                     renderMode = "EMISSIVE",
-                    size = _sizeMid,
+                    size = _size3,
                     transf = { 0.1, 0, 0, 0,  0, 0, 0.1, 0,  0, -1, 0, 0,  1.24, _yShiftA, zed(6), 1, },
                     type = "NAME",
                     verticalAlignment = "CENTER",
@@ -167,7 +199,7 @@ local utils = {
                     nLines = 1,
                     params = getRegexParams(constants.nameTags.track),
                     renderMode = "EMISSIVE",
-                    size = _sizeMid,
+                    size = _size3,
                     transf = { -0.1, 0, 0, 0,  0, 0, 0.1, 0,  0, 1, 0, 0,  1.54, _yShiftB, 2.8, 1, },
                     type = "NAME",
                     verticalAlignment = "CENTER",
@@ -199,8 +231,24 @@ local utils = {
                     nLines = 1,
                     params = getRegexParams(1),
                     renderMode = "EMISSIVE",
-                    size = _sizeLeft,
+                    size = _size1,
                     transf = { -0.1, 0, 0, 0,  0, 0, 0.1, 0,  0, 1, 0, 0,  1.54, _yShiftB, zed(1), 1, },
+                    type = "NAME",
+                    verticalAlignment = "CENTER",
+                },
+                {
+                    alignment = "LEFT",
+                    alpha = 1,
+                    alphaMode = "CUTOUT",
+                    childId = "",
+                    color = { 1, 0.541, 0, },
+                    filter = "CUSTOM",
+                    fitting = "CUT",
+                    nLines = 1,
+                    params = getRegexParams(2),
+                    renderMode = "EMISSIVE",
+                    size = _size2,
+                    transf = { -0.1, 0, 0, 0,  0, 0, 0.1, 0,  0, 1, 0, 0,  0.805, _yShiftB, zed(2), 1, },
                     type = "NAME",
                     verticalAlignment = "CENTER",
                 },
@@ -215,7 +263,7 @@ local utils = {
                     nLines = 1,
                     params = getRegexParams(3),
                     renderMode = "EMISSIVE",
-                    size = _sizeRight,
+                    size = _size3,
                     transf = { -0.1, 0, 0, 0,  0, 0, 0.1, 0,  0, 1, 0, 0,  0.55, _yShiftB, zed(3), 1, },
                     type = "NAME",
                     verticalAlignment = "CENTER",
@@ -231,8 +279,24 @@ local utils = {
                     nLines = 1,
                     params = getRegexParams(4),
                     renderMode = "EMISSIVE",
-                    size = _sizeLeft,
+                    size = _size1,
                     transf = { -0.1, 0, 0, 0,  0, 0, 0.1, 0,  0, 1, 0, 0,  1.54, _yShiftB, zed(4), 1, },
+                    type = "NAME",
+                    verticalAlignment = "CENTER",
+                },
+                {
+                    alignment = "LEFT",
+                    alpha = 1,
+                    alphaMode = "CUTOUT",
+                    childId = "",
+                    color = { 1, 0.541, 0, },
+                    filter = "CUSTOM",
+                    fitting = "CUT",
+                    nLines = 1,
+                    params = getRegexParams(5),
+                    renderMode = "EMISSIVE",
+                    size = _size2,
+                    transf = { -0.1, 0, 0, 0,  0, 0, 0.1, 0,  0, 1, 0, 0,  0.805, _yShiftB, zed(5), 1, },
                     type = "NAME",
                     verticalAlignment = "CENTER",
                 },
@@ -247,7 +311,7 @@ local utils = {
                     nLines = 1,
                     params = getRegexParams(6),
                     renderMode = "EMISSIVE",
-                    size = _sizeRight,
+                    size = _size3,
                     transf = { -0.1, 0, 0, 0,  0, 0, 0.1, 0,  0, 1, 0, 0,  0.55, _yShiftB, zed(6), 1, },
                     type = "NAME",
                     verticalAlignment = "CENTER",
@@ -262,9 +326,9 @@ local utils = {
             return _zed0 + math.floor((counter - 1) / 3) * _dZed
         end
 
-        local _sizeLeft = {10, 1}
-        local _sizeMid = {3, 1}
-        local _sizeRight = { 3, 1, }
+        local _size1 = {7.2, 1}
+        local _size2 = {3.0, 0.667}
+        local _size3 = {3, 1}
         local _yShiftA = -0.12
         local _yShiftB = 0.12
 
