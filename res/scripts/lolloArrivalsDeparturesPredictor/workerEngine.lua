@@ -280,8 +280,8 @@ utils.getNewSignConName = function(formattedPredictions, config, clockString)
     return result .. '@'
 end
 
-local function getHereStartEndIndexes(line, stationGroupId, stationIndexBase0, terminalIndexBase0)
-    -- logger.print('getHereStartEndIndexes starting, line =') logger.debugPrint(line)
+local function getHereStartEndIndexesOLD(line, stationGroupId, stationIndexBase0, terminalIndexBase0)
+    -- logger.print('getHereStartEndIndexesOLD starting, line =') logger.debugPrint(line)
     local lineStops = line.stops
     local hereIndexBase1 = 1
     for stopIndex, stop in ipairs(lineStops) do
@@ -352,7 +352,70 @@ local function getHereStartEndIndexes(line, stationGroupId, stationIndexBase0, t
     return hereIndexBase1, startIndexBase1, endIndexBase1
 end
 
-local function getMyLineData(vehicleIds, nStops, lineId, lineWaitingTime, buffer)
+local function getHereNextIndexes(line, stationGroupId, stationIndexBase0, terminalIndexBase0)
+    -- logger.print('getHereNextIndexes starting, line =') logger.debugPrint(line)
+    local stops = line.stops
+    local nStops = #line.stops
+
+    local hereIndex = 0
+    for stopIndex, stop in ipairs(stops) do
+        if stop.stationGroup == stationGroupId and stop.station == stationIndexBase0 and stop.terminal == terminalIndexBase0 then
+            hereIndex = stopIndex
+            break
+        end
+    end
+    if hereIndex == 0 then
+        logger.warn('cannot find hereIndexBase1')
+        hereIndex = 1
+    end
+
+    local nextIndex = hereIndex + 1
+    if nextIndex > nStops then
+        nextIndex = 1
+    end
+
+    return hereIndex, nextIndex
+end
+
+local getLineStartEndIndexes = function(line)
+    -- returns indexes in base 1
+    -- logger.print('getLineStartEndIndexes starting, line =') logger.debugPrint(line)
+    local stops = line.stops
+    local nStops = #line.stops
+
+    local nStationVisitsAtStationGroupIds = {}
+    for _, stop in ipairs(stops) do
+        nStationVisitsAtStationGroupIds[stop.stationGroup] = (nStationVisitsAtStationGroupIds[stop.stationGroup] or 0) + 1
+    end
+
+    local startIndex = 1
+    local endIndex = math.ceil(nStops / 2 + 0.1)
+    -- the first stop occurs only once, so chances are, it was chosen with a criterion
+    -- if the last stop occurs more than once, try and find another stop nearby that occurs only once.
+    if nStationVisitsAtStationGroupIds[stops[startIndex].stationGroup] == 1 then
+        local deltaI = 0
+        local _fetchNextDelta = function()
+            -- + 1, -1, +2, -2, +3. -3 and so on
+            if deltaI > 0 then deltaI = -deltaI else deltaI = -deltaI + 1 end
+        end
+        while nStationVisitsAtStationGroupIds[stops[endIndex + deltaI].stationGroup] > 1 do
+            _fetchNextDelta()
+            if endIndex + deltaI > nStops or endIndex + deltaI < 2 then _fetchNextDelta() end
+            if endIndex + deltaI > nStops or endIndex + deltaI < 2 then deltaI = 0 break end
+        end
+        endIndex = endIndex + deltaI
+    end
+
+    -- just in case
+    if endIndex == startIndex and endIndex < nStops then
+        endIndex = endIndex + 1
+    end
+
+    -- logger.print('startIndexBase1, endIndexBase1 =', startIndexBase1, endIndexBase1)
+    return startIndex, endIndex
+end
+
+local function getMyLineData(vehicleIds, line, lineId, lineWaitingTime, buffer)
     -- Here, I average the times across all the trains on this line.
     -- If the trains are wildly different, which is stupid, this could be less accurate;
     -- otherwise, it will be pretty accurate.
@@ -365,6 +428,9 @@ local function getMyLineData(vehicleIds, nStops, lineId, lineWaitingTime, buffer
         name = utils.getTextBetweenBrackets(name.name)
     end
 
+    local startIndex, endIndex = getLineStartEndIndexes(line)
+
+    local nStops = #line.stops
     if nStops < 1 or #vehicleIds < 1 then return {} end
 
     -- UG TODO the new API hasn't got this yet, only a dumb fixed waitingTime == 180 seconds
@@ -457,7 +523,14 @@ local function getMyLineData(vehicleIds, nStops, lineId, lineWaitingTime, buffer
         period = period + averages[index].lsd
     end
 
-    buffer[lineId] = {averages = averages, name = name, period = period, vehicles = vehicles}
+    buffer[lineId] = {
+        averages = averages,
+        endIndex = endIndex,
+        name = name,
+        period = period,
+        startIndex = startIndex,
+        vehicles = vehicles
+    }
     return buffer[lineId]
 end
 
@@ -498,6 +571,19 @@ local function getLastDepartureTime(vehicle, time)
     return result
 end
 
+local getRemainingTimeToPrevious = function(averages, stopIndex, hereIndex, nStops)
+    local result = 0
+
+    local nextStopIndex = stopIndex + 1
+    while nextStopIndex ~= hereIndex do
+        result = result + averages[nextStopIndex].lsd
+        nextStopIndex = nextStopIndex + 1
+        if nextStopIndex > nStops then nextStopIndex = nextStopIndex - nStops end
+    end
+
+    return result
+end
+
 local function getNextPredictions(stationGroupId, stationGroup, stationId, station, nEntries, time, onlyTerminalId, predictionsBufferHelpers, lineBuffer, problemLineIds)
     logger.print('getNextPredictions starting')
     logger.print('stationId =') logger.debugPrint(stationId)
@@ -533,19 +619,22 @@ local function getNextPredictions(stationGroupId, stationGroup, stationId, stati
                     -- logger.print('There are', #vehicleIds, 'vehicles')
                     if #vehicleIds > 0 then
                         local nStops = #line.stops
-                        local hereIndex, startIndex, endIndex = getHereStartEndIndexes(line, stationGroupId, stationIndexInStationGroupBase0, terminalIndexBase0)
-                        logger.print('hereIndex, startIndex, endIndex, nStops =', hereIndex, startIndex, endIndex, nStops)
+                        local hereIndex, nextIndex = getHereNextIndexes(line, stationGroupId, stationIndexInStationGroupBase0, terminalIndexBase0)
+                        -- local hereIndex, startIndex, endIndex = getHereStartEndIndexesOLD(line, stationGroupId, stationIndexInStationGroupBase0, terminalIndexBase0)
+                        -- logger.print('hereIndex, startIndex, endIndex, nStops =', hereIndex, startIndex, endIndex, nStops)
+                        logger.print('hereIndex, nextIndex, nStops =', hereIndex, nextIndex, nStops)
                         if nStops < 2 --[[ or problemLineIds[lineId] ]] then
                             predictions[#predictions+1] = {
                                 terminalId = terminalId,
-                                originStationGroupId = line.stops[startIndex].stationGroup,
-                                destinationStationGroupId = line.stops[endIndex].stationGroup,
+                                originStationGroupId = nil, --line.stops[1].stationGroup,
+                                destinationStationGroupId = nil, --line.stops[1].stationGroup,
+                                nextStationGroupId = nil,
                                 arrivalTime = time + 3600, -- add a dummy hour
                                 departureTime = time + 3600,
                                 isProblem = true,
                             }
                         else
-                            local myLineData = getMyLineData(vehicleIds, nStops, lineId, line.waitingTime, lineBuffer)
+                            local myLineData = getMyLineData(vehicleIds, line, lineId, line.waitingTime, lineBuffer)
                             logger.print('myLineData.averages =') logger.debugPrint(myLineData.averages)
 
                             for _, vehicleId in pairs(vehicleIds) do
@@ -616,41 +705,38 @@ local function getNextPredictions(stationGroupId, stationGroup, stationId, stati
                                         sectionTimes tend to be similar but they don't account for the time spent standing
                                     ]]
                                     -- logger.print('vehicle.stopIndex =', vehicle.stopIndex)
-                                    local nextStopIndex = vehicle.stopIndex + 1
-                                    -- local nStopsAway = hereIndex - nextStopIndex
-                                    -- if nStopsAway < 0 then nStopsAway = nStopsAway + nStops end
-                                    -- logger.print('nStopsAway =', nStopsAway or 'NIL')
 
                                     local lastDepartureTime = getLastDepartureTime(vehicle, time)
                                     logger.print('lastDepartureTime =', lastDepartureTime)
-                                    -- local remainingTime = myLineData.averages[hereIndex].lsd
-                                    local remainingTime = 0
-                                    while nextStopIndex ~= hereIndex do
-                                        remainingTime = remainingTime + myLineData.averages[nextStopIndex].lsd
-                                        nextStopIndex = nextStopIndex + 1
-                                        if nextStopIndex > nStops then nextStopIndex = nextStopIndex - nStops end
-                                    end
+                                    local remainingTimeToPrevious = getRemainingTimeToPrevious(myLineData.averages, vehicle.stopIndex, hereIndex, nStops)
+
+                                    local originIndex = (hereIndex > myLineData.startIndex and hereIndex <= myLineData.endIndex)
+                                        and myLineData.startIndex
+                                        or myLineData.endIndex
+                                    local destIndex = (hereIndex >= myLineData.startIndex and hereIndex < myLineData.endIndex)
+                                        and myLineData.endIndex
+                                        or myLineData.startIndex
 
                                     predictions[#predictions+1] = {
                                         terminalId = terminalId,
-                                        originStationGroupId = line.stops[startIndex].stationGroup,
-                                        destinationStationGroupId = line.stops[endIndex].stationGroup,
-                                        arrivalTime = lastDepartureTime + remainingTime + myLineData.averages[hereIndex].st,
-                                        departureTime = lastDepartureTime + remainingTime + myLineData.averages[hereIndex].lsd,
+                                        originStationGroupId = line.stops[originIndex].stationGroup,
+                                        destinationStationGroupId = line.stops[destIndex].stationGroup,
+                                        nextStationGroupId = line.stops[nextIndex].stationGroup,
+                                        arrivalTime = lastDepartureTime + remainingTimeToPrevious + myLineData.averages[hereIndex].st,
+                                        departureTime = lastDepartureTime + remainingTimeToPrevious + myLineData.averages[hereIndex].lsd,
                                         lineName = myLineData.name,
-                                        -- nStopsAway = nStopsAway
                                     }
 
                                     logger.print('myLineData.period =', myLineData.period)
                                     if #vehicleIds == 1 then -- fill up the display a bit
                                         predictions[#predictions+1] = {
                                             terminalId = terminalId,
-                                            originStationGroupId = line.stops[startIndex].stationGroup,
-                                            destinationStationGroupId = line.stops[endIndex].stationGroup,
+                                            originStationGroupId = line.stops[originIndex].stationGroup,
+                                            destinationStationGroupId = line.stops[destIndex].stationGroup,
+                                            nextStationGroupId = line.stops[nextIndex].stationGroup,
                                             arrivalTime = predictions[#predictions].arrivalTime + myLineData.period,
                                             departureTime = predictions[#predictions].departureTime + myLineData.period,
                                             lineName = myLineData.name,
-                                            -- nStopsAway = nStopsAway
                                         }
                                     end
                                 end
