@@ -357,12 +357,14 @@ utils.getStreetPlatformDisplayLabelList = function()
     end
 
     local _size1 = {8.9, 1}
-    local _size2 = {2.1, 0.667}
-    local _size3 = {3, 1}
+    local _size2 = {2.4, 0.667}
+    local _size3 = {1.9, 1}
     local _yShiftA = -0.12
     local _yShiftB = 0.12
-	local _y2A = 1.14
-	local _y2B = 0.65
+	local _x2A = 1.14
+	local _x2B = 0.65
+	local _x3A = 1.36
+	local _x3B = 0.44
 
     return {
         labels = {
@@ -411,7 +413,7 @@ utils.getStreetPlatformDisplayLabelList = function()
                 params = getRegexParams(2),
                 renderMode = "EMISSIVE",
                 size = _size2,
-                transf = { 0.1, 0, 0, 0,  0, 0, 0.1, 0,  0, -1, 0, 0,  _y2A, _yShiftA, zed(2), 1, },
+                transf = { 0.1, 0, 0, 0,  0, 0, 0.1, 0,  0, -1, 0, 0,  _x2A, _yShiftA, zed(2), 1, },
                 type = "NAME",
                 verticalAlignment = "CENTER",
             },
@@ -427,7 +429,7 @@ utils.getStreetPlatformDisplayLabelList = function()
                 params = getRegexParams(3),
                 renderMode = "EMISSIVE",
                 size = _size3,
-                transf = { 0.1, 0, 0, 0,  0, 0, 0.1, 0,  0, -1, 0, 0,  1.24, _yShiftA, zed(3), 1, },
+                transf = { 0.1, 0, 0, 0,  0, 0, 0.1, 0,  0, -1, 0, 0,  _x3A, _yShiftA, zed(3), 1, },
                 type = "NAME",
                 verticalAlignment = "CENTER",
             },
@@ -459,7 +461,7 @@ utils.getStreetPlatformDisplayLabelList = function()
                 params = getRegexParams(5),
                 renderMode = "EMISSIVE",
                 size = _size2,
-                transf = { 0.1, 0, 0, 0,  0, 0, 0.1, 0,  0, -1, 0, 0,  _y2A, _yShiftA, zed(5), 1, },
+                transf = { 0.1, 0, 0, 0,  0, 0, 0.1, 0,  0, -1, 0, 0,  _x2A, _yShiftA, zed(5), 1, },
                 type = "NAME",
                 verticalAlignment = "CENTER",
             },
@@ -475,7 +477,7 @@ utils.getStreetPlatformDisplayLabelList = function()
                 params = getRegexParams(6),
                 renderMode = "EMISSIVE",
                 size = _size3,
-                transf = { 0.1, 0, 0, 0,  0, 0, 0.1, 0,  0, -1, 0, 0,  1.24, _yShiftA, zed(6), 1, },
+                transf = { 0.1, 0, 0, 0,  0, 0, 0.1, 0,  0, -1, 0, 0,  _x3A, _yShiftA, zed(6), 1, },
                 type = "NAME",
                 verticalAlignment = "CENTER",
             },
@@ -524,7 +526,7 @@ utils.getStreetPlatformDisplayLabelList = function()
                 params = getRegexParams(2),
                 renderMode = "EMISSIVE",
                 size = _size2,
-                transf = { -0.1, 0, 0, 0,  0, 0, 0.1, 0,  0, 1, 0, 0,  _y2B, _yShiftB, zed(2), 1, },
+                transf = { -0.1, 0, 0, 0,  0, 0, 0.1, 0,  0, 1, 0, 0,  _x2B, _yShiftB, zed(2), 1, },
                 type = "NAME",
                 verticalAlignment = "CENTER",
             },
@@ -540,7 +542,7 @@ utils.getStreetPlatformDisplayLabelList = function()
                 params = getRegexParams(3),
                 renderMode = "EMISSIVE",
                 size = _size3,
-                transf = { -0.1, 0, 0, 0,  0, 0, 0.1, 0,  0, 1, 0, 0,  0.55, _yShiftB, zed(3), 1, },
+                transf = { -0.1, 0, 0, 0,  0, 0, 0.1, 0,  0, 1, 0, 0,  _x3B, _yShiftB, zed(3), 1, },
                 type = "NAME",
                 verticalAlignment = "CENTER",
             },
@@ -572,7 +574,7 @@ utils.getStreetPlatformDisplayLabelList = function()
                 params = getRegexParams(5),
                 renderMode = "EMISSIVE",
                 size = _size2,
-                transf = { -0.1, 0, 0, 0,  0, 0, 0.1, 0,  0, 1, 0, 0,  _y2B, _yShiftB, zed(5), 1, },
+                transf = { -0.1, 0, 0, 0,  0, 0, 0.1, 0,  0, 1, 0, 0,  _x2B, _yShiftB, zed(5), 1, },
                 type = "NAME",
                 verticalAlignment = "CENTER",
             },
@@ -588,7 +590,7 @@ utils.getStreetPlatformDisplayLabelList = function()
                 params = getRegexParams(6),
                 renderMode = "EMISSIVE",
                 size = _size3,
-                transf = { -0.1, 0, 0, 0,  0, 0, 0.1, 0,  0, 1, 0, 0,  0.55, _yShiftB, zed(6), 1, },
+                transf = { -0.1, 0, 0, 0,  0, 0, 0.1, 0,  0, 1, 0, 0,  _x3B, _yShiftB, zed(6), 1, },
                 type = "NAME",
                 verticalAlignment = "CENTER",
             },

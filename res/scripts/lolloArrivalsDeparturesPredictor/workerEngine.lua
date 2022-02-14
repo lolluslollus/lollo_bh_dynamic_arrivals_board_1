@@ -244,7 +244,6 @@ utils.getNewSignConName = function(formattedPredictions, config, clockString)
             result = result .. '@_' .. i .. '_@' .. prediction.lineName
             i = i + 1
             result = result .. '@_' .. i .. '_@' .. (config.absoluteArrivalTime and prediction.departureTimeString or prediction.etdMinutesString)
-            -- result = result .. '@_' .. i .. '_@' .. (config.absoluteArrivalTime and prediction.arrivalTimeString or prediction.etaMinutesString)
             i = i + 1
         end
         if config.clock and clockString then
