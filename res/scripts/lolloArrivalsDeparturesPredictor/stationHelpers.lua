@@ -538,7 +538,7 @@ local utils = {
         logger.print('resultsIndexed before adding train stations =') logger.debugPrint(_resultsIndexed)
         -- this may be a little redundant but train stations can be really huge
         -- and we never know how far our panels are meant to be located.
-        arrayUtils.concatKeysValues(_resultsIndexed, _getNearbyTrainStationGroupsIndexed(transf, 2 * searchRadius, isOnlyPassengers))
+        arrayUtils.concatKeysValues(_resultsIndexed, _getNearbyTrainStationGroupsIndexed(transf, 1.5 * searchRadius, isOnlyPassengers))
         logger.print('resultsIndexed after adding train stations =') logger.debugPrint(_resultsIndexed)
         local results = {}
         for _, value in pairs(_resultsIndexed) do
