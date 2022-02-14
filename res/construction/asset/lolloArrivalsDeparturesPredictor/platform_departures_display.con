@@ -38,6 +38,7 @@ end
 function data()
     return {
         type = 'ASSET_TRACK',
+        -- type = 'ASSET_DEFAULT',
         description = {
             name = _('PlatformDeparturesDisplayName'),
             description = _('PlatformDeparturesDisplayDesc'),
@@ -49,6 +50,13 @@ function data()
         order = 13,
         skipCollision = true,
         autoRemovable = false,
+        -- snapping = {
+        --     rail = true, -- LOLLO NOTE you can also use this, sticking to the Y offset but reducing the Z offset.
+        -- however, the construction mover will give an unpleasant jolt when doing the first Z adjustment.
+        -- nothing much, but why make it less pleasant?
+        --     road = false,
+        --     water = false,
+        -- },
         params = _getParams(),
         updateFn = function(params)
             local result = {
@@ -61,7 +69,7 @@ function data()
             local _style = _styles[params[_getParamName('style')] + 1]
             local _transf = _align == 0
                 and { 1, 0, 0, 0,  0, 1, 0, 0,  0, 0, 1, 0,  0, 0, 0, 1 }
-                or { 1, 0, 0, 0,  0, 1, 0, 0,  0, 0, 1, 0,  0, -3.7, 1.6, 1 }
+                or { 1, 0, 0, 0,  0, 1, 0, 0,  0, 0, 1, 0,  0, -3.7, 1.7, 1 }
             result.models[#result.models + 1] = {
                 id = _getMdl(_style),
                 transf = _transf

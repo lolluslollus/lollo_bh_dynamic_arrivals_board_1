@@ -349,7 +349,7 @@ utils.getPlatformDisplayLabelList = function()
 end
 utils.getStreetPlatformDisplayLabelList = function()
     -- these are similar to the train displays,
-    -- but they have no track number and less space for the line name.
+    -- but they have no track number, less space for the line name and for the time (which will always be ETA).
 	local _zed0 = 2.67
     local _dZed = -0.1
     local function zed(counter) -- 3 items per row
