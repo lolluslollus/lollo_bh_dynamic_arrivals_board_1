@@ -31,4 +31,61 @@ for i = 1, 25, 1 do
 end
 
 
+local testString = 'abdcbjhkl()dddd'
+local str1 = string.gsub(testString, '[^(]*%(', '')
+local str2 = string.gsub(str1, '%)[^)]*', '')
+
+local function getMatches(testStr)
+    local results = {}
+    for mat in string.gmatch(testStr, '%([^()]*%)') do
+        -- print(w)
+        table.insert(results, mat)
+    end
+    return results
+end
+
+local function getTextBetweenBrackets(str, isOnlyBetweenBrackets)
+    if not(str) then return '' end
+
+    local result = ''
+    local isFound = false
+    for match in string.gmatch(str, '%([^()]*%)') do
+        result = result .. string.sub(match, 2, match:len() - 1)
+        isFound = true
+    end
+
+    if not(isFound) and not(isOnlyBetweenBrackets) then
+        return str
+    end
+    return result
+end
+
+local aaaa = getMatches('abcdd()sss')
+local aaab = getMatches('abcdd(a)sss')
+local aaabb = getMatches('abcdd(aba)sss')
+local aaac = getMatches('abcdd(sss')
+local aaad = getMatches('abcdd)sss')
+local aaae = getMatches('abcdd(()))sss')
+local aaaf = getMatches('abcdd(()sss')
+
+local baaa = getTextBetweenBrackets('abcdd()sss')
+local baab = getTextBetweenBrackets('abcdd(a)sss')
+local baabb = getTextBetweenBrackets('abcdd(aba)sss')
+local baac = getTextBetweenBrackets('abcdd(sss')
+local baad = getTextBetweenBrackets('abcdd)sss')
+local baae = getTextBetweenBrackets('abcdd(()))sss')
+local baaf = getTextBetweenBrackets('abcdd(()sss')
+local baag = getTextBetweenBrackets('abcdd(aba)(pup)sss')
+local baah = getTextBetweenBrackets('abcdd(aba)s(pop)ss')
+
+local caaa = getTextBetweenBrackets('abcdd()sss', true)
+local caab = getTextBetweenBrackets('abcdd(a)sss', true)
+local caabb = getTextBetweenBrackets('abcdd(aba)sss', true)
+local caac = getTextBetweenBrackets('abcdd(sss', true)
+local caad = getTextBetweenBrackets('abcdd)sss', true)
+local caae = getTextBetweenBrackets('abcdd(()))sss', true)
+local caaf = getTextBetweenBrackets('abcdd(()sss', true)
+local caag = getTextBetweenBrackets('abcdd(aba)(pup)sss', true)
+local caah = getTextBetweenBrackets('abcdd(aba)s(pop)ss', true)
+
 local dummy = 123

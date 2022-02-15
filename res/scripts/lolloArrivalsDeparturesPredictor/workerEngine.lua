@@ -60,7 +60,26 @@ local utils = {
     formatClockStringHHMM = function(clock_time)
         return string.format('%02d:%02d', (clock_time / 60 / 60) % 24, (clock_time / 60) % 60)
     end,
-    getTextBetweenBrackets = function(str)
+    getTextBetweenBrackets = function(str, isOnlyBetweenBrackets)
+        -- call this with isOnlyBetweenBrackets == true to fully match lennardo's mod
+        -- set it false or leave it empty to always display something
+        if not(str) then return '' end
+
+        local result = ''
+        local isFound = false
+        for match in string.gmatch(str, '%([^()]*%)') do
+            result = result .. string.sub(match, 2, match:len() - 1)
+            isFound = true
+        end
+
+        if not(isFound) and not(isOnlyBetweenBrackets) then
+            return str
+        end
+        return result
+    end,
+    getTextBetweenBracketsOLD = function(str)
+        -- if str contains brackets with something between, return the bit inside the brackets,
+        -- otherwise return the whole str
         if not(str) then return nil end
 
         local str1 = string.gsub(str, '[^(]*%(', '')
