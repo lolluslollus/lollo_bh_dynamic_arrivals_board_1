@@ -24,6 +24,7 @@ function data()
             ["Align2Platform"] = "Align to Platform",
             ["ArrivalsAllCaps"] = "ARRIVALS",
             ["Auto"] = "Auto",
+            ["ColourScheme"] = "Colour Scheme",
             ["displays"] = "displays",
             ["DynamicDisplaysOff"] = "Dynamic Displays OFF",
             ["DynamicDisplaysOn"] = "Dynamic Displays ON",
@@ -51,7 +52,7 @@ function data()
             ["No"] = "No",
             ["Origin"] = "Origin",
             ["Passengers"] = "Passengers",
-            ["PlatformShort"] = "↑", -- ↑ ↓ Plat
+            ["PlatformShort"] = "↑↓", -- ↑ ↓ Plat = ─ ┼ ═
             ["SorryNoService"] = "Sorry no service",
             ["SorryTrouble"] = "We are sorry",
             ["SorryTroubleShort"] = "!",

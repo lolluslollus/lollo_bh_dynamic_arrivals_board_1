@@ -3,7 +3,7 @@ local constructionConfigs = require('lolloArrivalsDeparturesPredictor.constructi
 local constructionHelpers = require('lolloArrivalsDeparturesPredictor.constructionHelpers')
 
 local _styles = { 'station_board', 'station_board_hanging', 'station_board_floating', 'station_wide_board', 'station_wide_board_hanging', 'station_wide_board_floating' }
-
+local _colourSchemes = { 'orange_on_black', 'white_on_blue', 'white_on_blue_black', }
 local _paramPrefix = constructionConfigs.getParamPrefixFromCon()
 
 local function _getParamName(name)
@@ -11,8 +11,15 @@ local function _getParamName(name)
     return _paramPrefix .. name
 end
 
-local function _getMdl(style)
-    return 'lolloArrivalsDeparturesPredictor/' .. style .. '.mdl'
+local function _getMdl(params)
+    local _style = _styles[params[_getParamName('style')] + 1]
+    local _colourSchemeParamValue = params[_getParamName('colourScheme')] + 1
+
+    local colourSchemeSuffix = ''
+    if _colourSchemeParamValue == 2 then colourSchemeSuffix = '_' .. _colourSchemes[2]
+    elseif _colourSchemeParamValue == 3 then colourSchemeSuffix = '_' .. _colourSchemes[3]
+    end
+    return 'lolloArrivalsDeparturesPredictor/' .. _style .. colourSchemeSuffix .. '.mdl'
 end
 
 local function _getParams()
@@ -23,6 +30,12 @@ local function _getParams()
             uiType = 'ICON_BUTTON',
             values = constructionHelpers.getIcons(_styles),
             defaultIndex = 3
+        },
+        {
+            key = _getParamName('colourScheme'),
+            name = _('ColourScheme'),
+            uiType = 'ICON_BUTTON',
+            values = constructionHelpers.getIcons(_colourSchemes)
         },
     }
 
@@ -51,9 +64,8 @@ function data()
                 terrainAlignmentLists = constructionHelpers.getDummyTerrainAlignmentLists(),
             }
 
-            local _style = _styles[params[_getParamName('style')] + 1]
             result.models[#result.models + 1] = {
-                id = _getMdl(_style),
+                id = _getMdl(params),
                 transf = constants.idTransf,
             }
             -- result.models[#result.models + 1] = {
