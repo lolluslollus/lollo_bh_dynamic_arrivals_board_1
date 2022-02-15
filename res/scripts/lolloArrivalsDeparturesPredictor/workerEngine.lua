@@ -67,14 +67,14 @@ local utils = {
 
         local result = ''
         local isFound = false
-        -- %( means the '(' character (here, % works like \ in regex)
-        -- ( and the ) that comes later delimit what gmatch will pick up.
+        -- %( means the '(' character (here, % works like \ with regex)
+        -- ( and the ) that comes later delimit what gmatch will pick up (like with regex).
         --     If you leave them out, the opening and closing brackets
         --     will be picked up in the matches,
         --     together with the things between them.
         --     If you use them, the opening and closing brackets will be discarded.
-        -- [^()] means "anything except brackets", like in regexp
-        -- * means "repeated as many times as you like", referred to the previous element.
+        -- [^()] means "anything except brackets", like in regex
+        -- * means "repeated 0 to N times", referred to the previous element (like with regexp).
         -- see above, it ends the part gmatch will pick up
         -- %) means the ')' character (like above)
         for match in string.gmatch(str, '%(([^()]*)%)') do
