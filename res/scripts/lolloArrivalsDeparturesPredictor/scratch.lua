@@ -44,13 +44,16 @@ local function getMatches(testStr)
     return results
 end
 
-local function getTextBetweenBrackets(str, isOnlyBetweenBrackets)
+local getTextBetweenBrackets = function(str, isOnlyBetweenBrackets)
+    -- call this with isOnlyBetweenBrackets == true to fully match lennardo's mod
+    -- set it false or leave it empty to always display something
     if not(str) then return '' end
 
     local result = ''
     local isFound = false
-    for match in string.gmatch(str, '%([^()]*%)') do
-        result = result .. string.sub(match, 2, match:len() - 1)
+    for match in string.gmatch(str, '%(([^()]*)%)') do
+        -- result = result .. string.sub(match, 2, match:len() - 1)
+        result = result .. match
         isFound = true
     end
 

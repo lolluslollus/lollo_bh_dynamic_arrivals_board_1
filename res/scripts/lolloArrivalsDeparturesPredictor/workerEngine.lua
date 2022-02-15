@@ -67,8 +67,18 @@ local utils = {
 
         local result = ''
         local isFound = false
-        for match in string.gmatch(str, '%([^()]*%)') do
-            result = result .. string.sub(match, 2, match:len() - 1)
+        -- %( means the '(' character (here, % works like \ in regex)
+        -- ( and the ) that comes later delimit what gmatch will pick up.
+        --     If you leave them out, the opening and closing brackets
+        --     will be picked up in the matches,
+        --     together with the things between them.
+        --     If you use them, the opening and closing brackets will be discarded.
+        -- [^()] means "anything except brackets", like in regexp
+        -- * means "repeated as many times as you like", referred to the previous element.
+        -- see above, it ends the part gmatch will pick up
+        -- %) means the ')' character (like above)
+        for match in string.gmatch(str, '%(([^()]*)%)') do
+            result = result .. match
             isFound = true
         end
 
