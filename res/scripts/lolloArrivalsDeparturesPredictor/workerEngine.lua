@@ -611,10 +611,10 @@ local function getLastDepartureTime(vehicle, time)
     return result
 end
 
-local getRemainingTimeToPrevious = function(averages, stopIndex, hereIndex, nStops)
+local getRemainingTimeToPreviousStop = function(averages, lastStopIndex, hereIndex, nStops)
     local result = 0
 
-    local nextStopIndex = stopIndex + 1
+    local nextStopIndex = lastStopIndex + 1
     while nextStopIndex ~= hereIndex do
         result = result + averages[nextStopIndex].lsd
         nextStopIndex = nextStopIndex + 1
@@ -705,7 +705,7 @@ local function getNextPredictions(stationGroupId, stationGroup, stationId, stati
 
                                         Here is another example with two vehicles on the same line:
                                         line = 86608,
-                                        stopIndex = 5,
+                                        stopIndex = 5, -- ie lastStopIndex
                                         lineStopDepartures = {
                                         [1] = 19082400,
                                         [2] = 19228400,
@@ -724,7 +724,7 @@ local function getNextPredictions(stationGroupId, stationGroup, stationId, stati
                                         [6] = 93.200004577637,
                                         },
                                         line = 86608,
-                                        stopIndex = 2,
+                                        stopIndex = 2, -- ie lastStopIndex
                                         lineStopDepartures = {
                                             [1] = 19769400,
                                             [2] = 19904000,
@@ -748,7 +748,7 @@ local function getNextPredictions(stationGroupId, stationGroup, stationId, stati
 
                                     local lastDepartureTime = getLastDepartureTime(vehicle, time)
                                     logger.print('lastDepartureTime =', lastDepartureTime)
-                                    local remainingTimeToPrevious = getRemainingTimeToPrevious(myLineData.averages, vehicle.stopIndex, hereIndex, nStops)
+                                    local remainingTimeToPreviousStop = getRemainingTimeToPreviousStop(myLineData.averages, vehicle.stopIndex, hereIndex, nStops)
 
                                     local originIndex = (hereIndex > myLineData.startIndex and hereIndex <= myLineData.endIndex)
                                         and myLineData.startIndex
@@ -762,8 +762,8 @@ local function getNextPredictions(stationGroupId, stationGroup, stationId, stati
                                         originStationGroupId = line.stops[originIndex].stationGroup,
                                         destinationStationGroupId = line.stops[destIndex].stationGroup,
                                         nextStationGroupId = line.stops[nextIndex].stationGroup,
-                                        arrivalTime = lastDepartureTime + remainingTimeToPrevious + myLineData.averages[hereIndex].st,
-                                        departureTime = lastDepartureTime + remainingTimeToPrevious + myLineData.averages[hereIndex].lsd,
+                                        arrivalTime = lastDepartureTime + remainingTimeToPreviousStop + myLineData.averages[hereIndex].st,
+                                        departureTime = lastDepartureTime + remainingTimeToPreviousStop + myLineData.averages[hereIndex].lsd,
                                         lineName = myLineData.name,
                                     }
 
