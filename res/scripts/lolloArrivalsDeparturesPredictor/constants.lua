@@ -2,7 +2,16 @@ local constants = {
     refreshPeriodMsec = 5000, -- refresh every 5 seconds
     searchRadius4NearbyStation2JoinMetres = 100,
 
-    guesstimatedStationWaitingTimeMsec = 30000,
+    colours = {
+        white = { 1, 1, 1, },
+        yellow = { 1, 0.75, 0, },
+        orange = { 1, 0.541, 0, },
+        orangeRed = { 1, 0.3, 0, },
+        red = { 1, 0.1, 0.0, },
+        green = { 0, 1, 0.1, },
+        cyan = { 0, 0.5, 1.0, },
+        black = { 0, 0, 0, },
+    },
 
     eventId = '__lollo_departures_arrivals_predictor__',
     events = {

@@ -12,11 +12,10 @@ function data()
 						{
 							materials = {
 								"lolloArrivalsDeparturesPredictor/rough_iron.mtl",
-								"lolloArrivalsDeparturesPredictor/glass_dark.mtl",
-								"lolloArrivalsDeparturesPredictor/glass_dark.mtl",
-								"lolloArrivalsDeparturesPredictor/rough_alu_opaque.mtl",
+								"lolloArrivalsDeparturesPredictor/glass_blue.mtl",
+								"lolloArrivalsDeparturesPredictor/glass_blue.mtl",
 							},
-							mesh = "lolloArrivalsDeparturesPredictor/platform_display_2_lod0.msh",
+							mesh = "lolloArrivalsDeparturesPredictor/platform_display_2_floating_lod0.msh",
 							transf = constants.idTransf,
 						},
 					},
@@ -29,7 +28,7 @@ function data()
 			},
 		},
 		metadata = {
-			labelList = modelHelpers.getStreetPlatformDisplayLabelList(constants.colours.white, constants.colours.orange, constants.colours.orange, constants.colours.orange),
+			labelList = modelHelpers.getPlatformDisplayLabelList(constants.colours.white, constants.colours.white, constants.colours.red, constants.colours.white),
 		},
 		version = 1,
 	}

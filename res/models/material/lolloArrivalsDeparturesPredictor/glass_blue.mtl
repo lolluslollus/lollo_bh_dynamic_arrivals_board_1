@@ -7,7 +7,7 @@ function data()
                 -- albedoScale = { 999, 999, 999, }, -- light grey
                 -- albedoScale = { 0, 0.2, 10, }, -- blue
                 -- albedoScale = { 0, 2.0, 0.8, }, -- green
-                albedoScale = { 0.1, 0.1, 0.1, }, -- black
+                albedoScale = { 0, 0.2, 10, }, -- blue
             },
             fade_out_range = {
                 fadeOutEndDist = 20000,
