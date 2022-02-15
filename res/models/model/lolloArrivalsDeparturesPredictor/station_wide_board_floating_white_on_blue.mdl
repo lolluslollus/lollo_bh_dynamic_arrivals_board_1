@@ -11,13 +11,11 @@ function data()
 					children = {
 						{
 							materials = {
-								"railroad/power_pole_us.mtl",
-								"railroad/power_pole_us_alpha.mtl",
 								"lolloArrivalsDeparturesPredictor/rough_alu_opaque.mtl",
-								"lolloArrivalsDeparturesPredictor/glass_dark.mtl",
-								"lolloArrivalsDeparturesPredictor/glass_dark.mtl",
+								"lolloArrivalsDeparturesPredictor/glass_blue.mtl",
+								"lolloArrivalsDeparturesPredictor/glass_blue.mtl",
 							},
-							mesh = "lolloArrivalsDeparturesPredictor/station_display_wide_lod0.msh",
+							mesh = "lolloArrivalsDeparturesPredictor/station_display_wide_floating_lod0.msh",
 							transf = constants.idTransf,
 						},
 					},
@@ -31,8 +29,8 @@ function data()
 		},
 		metadata = {
 			labelList = modelHelpers.getStationWideDisplayLabelList(
-				constants.colours.white, constants.colours.orange, constants.colours.orange,
-				constants.colours.orange, constants.colours.orange, constants.colours.white
+				constants.colours.white, constants.colours.white, constants.colours.red,
+				constants.colours.yellow, constants.colours.white, constants.colours.white
 			),
 		},
 		version = 1,
