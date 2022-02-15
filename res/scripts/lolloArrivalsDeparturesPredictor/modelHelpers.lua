@@ -45,7 +45,8 @@ local function getRegexParams(counter)
         -- expr = "@1([^@]+)@", -- works best
         -- expr = "@" .. counter .. "([^@]+)@",
         expr = "@_" .. counter .. "_@([^@]+)@",
-        -- expr = "@_" .. counter .. "_@([^@]*)@",
+        -- expr = "@_" .. counter .. "_@([^@]*)@", -- this also takes empty strings coz * is o to N (+ is 1 to N),
+        -- but for practical purposes empty strings will produce the same as with the regexp above: nil
         replace="\\1", -- works
     }
 end
