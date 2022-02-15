@@ -12,6 +12,7 @@ function data()
 						{
 							materials = {
 								"lolloArrivalsDeparturesPredictor/rough_iron.mtl",
+								"lolloArrivalsDeparturesPredictor/glass_blue.mtl",
 								"lolloArrivalsDeparturesPredictor/glass_dark.mtl",
 								"lolloArrivalsDeparturesPredictor/rough_alu_opaque.mtl",
 							},

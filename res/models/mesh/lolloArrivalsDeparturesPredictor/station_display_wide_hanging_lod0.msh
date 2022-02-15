@@ -1,26 +1,26 @@
 function data()
 return {
 	matConfigs = {
-		{ 0, 0, }, 
+		{ 0, 0, 0, }, 
 	},
 	subMeshes = {
 		{
 			indices = {
 				normal = {
 					count = 600,
-					offset = 2944,
+					offset = 1864,
 				},
 				position = {
 					count = 600,
-					offset = 2344,
+					offset = 3064,
 				},
 				tangent = {
 					count = 600,
-					offset = 3544,
+					offset = 2464,
 				},
 				uv0 = {
 					count = 600,
-					offset = 1744,
+					offset = 3664,
 				},
 			},
 			materials = {
@@ -30,46 +30,68 @@ return {
 			indices = {
 				normal = {
 					count = 24,
-					offset = 4192,
+					offset = 4264,
 				},
 				position = {
 					count = 24,
-					offset = 4168,
+					offset = 4312,
 				},
 				tangent = {
 					count = 24,
-					offset = 4216,
+					offset = 4288,
 				},
 				uv0 = {
 					count = 24,
-					offset = 4144,
+					offset = 4336,
 				},
 			},
 			materials = {
 				"lolloArrivalsDeparturesPredictor/display.mtl", 
 			},
+		}, {
+			indices = {
+				normal = {
+					count = 48,
+					offset = 4360,
+				},
+				position = {
+					count = 48,
+					offset = 4456,
+				},
+				tangent = {
+					count = 48,
+					offset = 4408,
+				},
+				uv0 = {
+					count = 48,
+					offset = 4504,
+				},
+			},
+			materials = {
+				"lolloArrivalsDeparturesPredictor/display2.mtl", 
+			},
 		}, 
 	},
 	vertexAttr = {
 		normal = {
-			count = 264,
+			count = 288,
 			numComp = 3,
-			offset = 1096,
+			offset = 0,
 		},
 		position = {
-			count = 384,
+			count = 432,
 			numComp = 3,
-			offset = 712,
+			offset = 672,
 		},
 		tangent = {
 			count = 384,
 			numComp = 4,
-			offset = 1360,
+			offset = 288,
 		},
 		uv0 = {
-			count = 712,
+			count = 760,
 			numComp = 2,
-			offset = 0,
+			offset = 1104,
 		},
 	},
 }

@@ -14,6 +14,7 @@ function data()
 								"railroad/power_pole_us.mtl",
 								"railroad/power_pole_us_alpha.mtl",
 								"lolloArrivalsDeparturesPredictor/rough_alu_opaque.mtl",
+								"lolloArrivalsDeparturesPredictor/glass_blue.mtl",
 								"lolloArrivalsDeparturesPredictor/glass_dark.mtl",
 							},
 							mesh = "lolloArrivalsDeparturesPredictor/station_display_wide_lod0.msh",

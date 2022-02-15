@@ -12,6 +12,7 @@ function data()
 						{
 							materials = {
 								"lolloArrivalsDeparturesPredictor/rough_iron.mtl",
+								"lolloArrivalsDeparturesPredictor/glass_blue.mtl",
 								"lolloArrivalsDeparturesPredictor/glass_dark.mtl",
 							},
 							mesh = "lolloArrivalsDeparturesPredictor/platform_display_2_floating_lod0.msh",
