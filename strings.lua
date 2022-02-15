@@ -51,7 +51,7 @@ function data()
             ["No"] = "No",
             ["Origin"] = "Origin",
             ["Passengers"] = "Passengers",
-            ["PlatformShort"] = "Plat",
+            ["PlatformShort"] = "↑", -- ↑ ↓ Plat
             ["SorryNoService"] = "Sorry no service",
             ["SorryTrouble"] = "We are sorry",
             ["SorryTroubleShort"] = "!",
