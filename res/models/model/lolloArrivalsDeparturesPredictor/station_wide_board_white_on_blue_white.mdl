@@ -11,17 +11,18 @@ function data()
 					children = {
 						{
 							materials = {
-								"lolloArrivalsDeparturesPredictor/rough_iron.mtl",
-								"lolloArrivalsDeparturesPredictor/glass_blue.mtl",
-								"lolloArrivalsDeparturesPredictor/glass_dark.mtl",
+								"railroad/power_pole_us.mtl",
+								"railroad/power_pole_us_alpha.mtl",
 								"lolloArrivalsDeparturesPredictor/rough_alu_opaque.mtl",
+								"lolloArrivalsDeparturesPredictor/glass_blue.mtl",
+								"lolloArrivalsDeparturesPredictor/glass_light.mtl",
 							},
-							mesh = "lolloArrivalsDeparturesPredictor/platform_display_2_lod0.msh",
+							mesh = "lolloArrivalsDeparturesPredictor/station_display_wide_lod0.msh",
 							transf = constants.idTransf,
 						},
 					},
 					name = "RootNode",
-					transf = { 0, 1, 0, 0,  -1, 0, 0, 0,  0, 0, 1, 0,  0, 0, 0, 1, },
+					transf = constants.idTransf,
 				},
 				static = false,
 				visibleFrom = 0,
@@ -29,9 +30,9 @@ function data()
 			},
 		},
 		metadata = {
-			labelList = modelHelpers.getStreetPlatformDisplayLabelList(
-				constants.colours.white, constants.colours.white,
-				constants.colours.yellow, constants.colours.white
+			labelList = modelHelpers.getStationWideDisplayLabelList(
+				constants.colours.blue, constants.colours.white, constants.colours.red,
+				constants.colours.yellow, constants.colours.white, constants.colours.blue
 			),
 		},
 		version = 1,

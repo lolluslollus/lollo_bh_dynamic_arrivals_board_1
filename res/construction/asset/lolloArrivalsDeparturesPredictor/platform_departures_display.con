@@ -3,7 +3,7 @@ local constructionConfigs = require('lolloArrivalsDeparturesPredictor.constructi
 local constructionHelpers = require('lolloArrivalsDeparturesPredictor.constructionHelpers')
 
 local _styles = { 'platform_departures_board', 'platform_departures_board_floating', }
-local _colourSchemes = { 'orange_on_black', 'white_on_blue', 'white_on_blue_black', }
+local _colourSchemes = { 'orange_on_black', 'white_on_blue', 'white_on_blue_black', 'white_on_blue_white', }
 local _paramPrefix = constructionConfigs.getParamPrefixFromCon()
 
 local function _getParamName(name)
@@ -16,9 +16,7 @@ local function _getMdl(params)
     local _colourSchemeParamValue = params[_getParamName('colourScheme')] + 1
 
     local colourSchemeSuffix = ''
-    if _colourSchemeParamValue == 2 then colourSchemeSuffix = '_' .. _colourSchemes[2]
-    elseif _colourSchemeParamValue == 3 then colourSchemeSuffix = '_' .. _colourSchemes[3]
-    end
+    if _colourSchemeParamValue > 1 then colourSchemeSuffix = '_' .. _colourSchemes[_colourSchemeParamValue] end
     return 'lolloArrivalsDeparturesPredictor/' .. _style .. colourSchemeSuffix .. '.mdl'
 end
 

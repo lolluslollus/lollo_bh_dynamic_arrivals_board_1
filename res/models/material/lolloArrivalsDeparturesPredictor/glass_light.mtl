@@ -1,0 +1,50 @@
+function data()
+    return {
+        order = 0,
+        params = {
+            albedo_scale = {
+                -- albedoScale = { 0.1, 0.1, 0.1, }, -- black
+                -- albedoScale = { 999, 999, 999, }, -- light grey
+                -- albedoScale = { 0, 0.2, 10, }, -- blue
+                -- albedoScale = { 0, 2.0, 0.8, }, -- green
+                albedoScale = { 999, 999, 999, }, -- light grey
+            },
+            fade_out_range = {
+                fadeOutEndDist = 20000,
+                fadeOutStartDist = 10000,
+            },
+            map_albedo = {
+                fileName = "model/lolloArrivalsDeparturesPredictor/glass_albedo_bc3_no_premul_alpha.dds",
+                type = "TWOD",
+                wrapS = "REPEAT",
+                wrapT = "REPEAT",
+            },
+            map_metal_gloss_ao = {
+                fileName = "model/lolloArrivalsDeparturesPredictor/glass_metal_gloss_ao_bc3.dds",
+                type = "TWOD",
+                wrapS = "REPEAT",
+                wrapT = "REPEAT",
+            },
+            map_normal = {
+                fileName = "model/lolloArrivalsDeparturesPredictor/glass_normal_bc5u.dds",
+                redGreen = true,
+                type = "TWOD",
+                wrapS = "REPEAT",
+                wrapT = "REPEAT",
+            },
+            normal_scale = {
+                normalScale = 1,
+            },
+            polygon_offset = {
+                factor = 0,
+                forceDepthWrite = true,
+                units = 0,
+            },
+            two_sided = {
+                flipNormal = false,
+                twoSided = false,
+            },
+        },
+        type = "PHYSICAL_NRML_MAP",
+    }
+    end
