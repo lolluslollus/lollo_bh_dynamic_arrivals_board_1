@@ -97,7 +97,7 @@ utils.getPlatformDisplayLabelList = function(colour4Header, colour4Col1, colour4
             {
                 alignment = "LEFT",
                 alpha = 1,
-                alphaMode = "CUTOUT",
+                alphaMode = "NONE",
                 childId = "",
                 color = colour4Header,
                 filter = "CUSTOM",
@@ -113,7 +113,7 @@ utils.getPlatformDisplayLabelList = function(colour4Header, colour4Col1, colour4
             {
                 alignment = "RIGHT",
                 alpha = 1,
-                alphaMode = "CUTOUT",
+                alphaMode = "NONE",
                 childId = "",
                 color = colour4Header,
                 filter = "CUSTOM",
@@ -129,7 +129,7 @@ utils.getPlatformDisplayLabelList = function(colour4Header, colour4Col1, colour4
             {
                 alignment = "LEFT",
                 alpha = 1,
-                alphaMode = "CUTOUT",
+                alphaMode = "NONE",
                 childId = "",
                 color = colour4Col1,
                 filter = "CUSTOM",
@@ -145,7 +145,7 @@ utils.getPlatformDisplayLabelList = function(colour4Header, colour4Col1, colour4
             {
                 alignment = "LEFT",
                 alpha = 1,
-                alphaMode = "CUTOUT",
+                alphaMode = "NONE",
                 childId = "",
                 color = colour4Col2,
                 filter = "CUSTOM",
@@ -161,7 +161,7 @@ utils.getPlatformDisplayLabelList = function(colour4Header, colour4Col1, colour4
             {
                 alignment = "RIGHT",
                 alpha = 1,
-                alphaMode = "CUTOUT",
+                alphaMode = "NONE",
                 childId = "",
                 color = colour4Col3,
                 filter = "CUSTOM",
@@ -177,7 +177,7 @@ utils.getPlatformDisplayLabelList = function(colour4Header, colour4Col1, colour4
             {
                 alignment = "LEFT",
                 alpha = 1,
-                alphaMode = "CUTOUT",
+                alphaMode = "NONE",
                 childId = "",
                 color = colour4Col1,
                 filter = "CUSTOM",
@@ -193,7 +193,7 @@ utils.getPlatformDisplayLabelList = function(colour4Header, colour4Col1, colour4
             {
                 alignment = "LEFT",
                 alpha = 1,
-                alphaMode = "CUTOUT",
+                alphaMode = "NONE",
                 childId = "",
                 color = colour4Col2,
                 filter = "CUSTOM",
@@ -209,7 +209,7 @@ utils.getPlatformDisplayLabelList = function(colour4Header, colour4Col1, colour4
             {
                 alignment = "RIGHT",
                 alpha = 1,
-                alphaMode = "CUTOUT",
+                alphaMode = "NONE",
                 childId = "",
                 color = colour4Col3,
                 filter = "CUSTOM",
@@ -226,7 +226,7 @@ utils.getPlatformDisplayLabelList = function(colour4Header, colour4Col1, colour4
             {
                 alignment = "LEFT",
                 alpha = 1,
-                alphaMode = "CUTOUT",
+                alphaMode = "NONE",
                 childId = "",
                 color = colour4Header,
                 filter = "CUSTOM",
@@ -242,7 +242,7 @@ utils.getPlatformDisplayLabelList = function(colour4Header, colour4Col1, colour4
             {
                 alignment = "RIGHT",
                 alpha = 1,
-                alphaMode = "CUTOUT",
+                alphaMode = "NONE",
                 childId = "",
                 color = colour4Header,
                 filter = "CUSTOM",
@@ -258,7 +258,7 @@ utils.getPlatformDisplayLabelList = function(colour4Header, colour4Col1, colour4
             {
                 alignment = "LEFT",
                 alpha = 1,
-                alphaMode = "CUTOUT",
+                alphaMode = "NONE",
                 childId = "",
                 color = colour4Col1,
                 filter = "CUSTOM",
@@ -274,7 +274,7 @@ utils.getPlatformDisplayLabelList = function(colour4Header, colour4Col1, colour4
             {
                 alignment = "LEFT",
                 alpha = 1,
-                alphaMode = "CUTOUT",
+                alphaMode = "NONE",
                 childId = "",
                 color = colour4Col2,
                 filter = "CUSTOM",
@@ -290,7 +290,7 @@ utils.getPlatformDisplayLabelList = function(colour4Header, colour4Col1, colour4
             {
                 alignment = "RIGHT",
                 alpha = 1,
-                alphaMode = "CUTOUT",
+                alphaMode = "NONE",
                 childId = "",
                 color = colour4Col3,
                 filter = "CUSTOM",
@@ -306,7 +306,7 @@ utils.getPlatformDisplayLabelList = function(colour4Header, colour4Col1, colour4
             {
                 alignment = "LEFT",
                 alpha = 1,
-                alphaMode = "CUTOUT",
+                alphaMode = "NONE",
                 childId = "",
                 color = colour4Col1,
                 filter = "CUSTOM",
@@ -322,7 +322,7 @@ utils.getPlatformDisplayLabelList = function(colour4Header, colour4Col1, colour4
             {
                 alignment = "LEFT",
                 alpha = 1,
-                alphaMode = "CUTOUT",
+                alphaMode = "NONE",
                 childId = "",
                 color = colour4Col2,
                 filter = "CUSTOM",
@@ -338,7 +338,7 @@ utils.getPlatformDisplayLabelList = function(colour4Header, colour4Col1, colour4
             {
                 alignment = "RIGHT",
                 alpha = 1,
-                alphaMode = "CUTOUT",
+                alphaMode = "NONE",
                 childId = "",
                 color = colour4Col3,
                 filter = "CUSTOM",
@@ -379,7 +379,7 @@ utils.getStreetPlatformDisplayLabelList = function(colour4Header, colour4Col1, c
             {
                 alignment = "LEFT",
                 alpha = 1,
-                alphaMode = "CUTOUT",
+                alphaMode = "NONE",
                 childId = "",
                 color = colour4Header,
                 filter = "CUSTOM",
@@ -395,7 +395,7 @@ utils.getStreetPlatformDisplayLabelList = function(colour4Header, colour4Col1, c
             {
                 alignment = "LEFT",
                 alpha = 1,
-                alphaMode = "CUTOUT",
+                alphaMode = "NONE",
                 childId = "",
                 color = colour4Col1,
                 filter = "CUSTOM",
@@ -411,7 +411,7 @@ utils.getStreetPlatformDisplayLabelList = function(colour4Header, colour4Col1, c
             {
                 alignment = "LEFT",
                 alpha = 1,
-                alphaMode = "CUTOUT",
+                alphaMode = "NONE",
                 childId = "",
                 color = colour4Col2,
                 filter = "CUSTOM",
@@ -427,7 +427,7 @@ utils.getStreetPlatformDisplayLabelList = function(colour4Header, colour4Col1, c
             {
                 alignment = "RIGHT",
                 alpha = 1,
-                alphaMode = "CUTOUT",
+                alphaMode = "NONE",
                 childId = "",
                 color = colour4Col3,
                 filter = "CUSTOM",
@@ -443,7 +443,7 @@ utils.getStreetPlatformDisplayLabelList = function(colour4Header, colour4Col1, c
             {
                 alignment = "LEFT",
                 alpha = 1,
-                alphaMode = "CUTOUT",
+                alphaMode = "NONE",
                 childId = "",
                 color = colour4Col1,
                 filter = "CUSTOM",
@@ -459,7 +459,7 @@ utils.getStreetPlatformDisplayLabelList = function(colour4Header, colour4Col1, c
             {
                 alignment = "LEFT",
                 alpha = 1,
-                alphaMode = "CUTOUT",
+                alphaMode = "NONE",
                 childId = "",
                 color = colour4Col2,
                 filter = "CUSTOM",
@@ -475,7 +475,7 @@ utils.getStreetPlatformDisplayLabelList = function(colour4Header, colour4Col1, c
             {
                 alignment = "RIGHT",
                 alpha = 1,
-                alphaMode = "CUTOUT",
+                alphaMode = "NONE",
                 childId = "",
                 color = colour4Col3,
                 filter = "CUSTOM",
@@ -492,7 +492,7 @@ utils.getStreetPlatformDisplayLabelList = function(colour4Header, colour4Col1, c
             {
                 alignment = "RIGHT",
                 alpha = 1,
-                alphaMode = "CUTOUT",
+                alphaMode = "NONE",
                 childId = "",
                 color = colour4Header,
                 filter = "CUSTOM",
@@ -508,7 +508,7 @@ utils.getStreetPlatformDisplayLabelList = function(colour4Header, colour4Col1, c
             {
                 alignment = "LEFT",
                 alpha = 1,
-                alphaMode = "CUTOUT",
+                alphaMode = "NONE",
                 childId = "",
                 color = colour4Col1,
                 filter = "CUSTOM",
@@ -524,7 +524,7 @@ utils.getStreetPlatformDisplayLabelList = function(colour4Header, colour4Col1, c
             {
                 alignment = "LEFT",
                 alpha = 1,
-                alphaMode = "CUTOUT",
+                alphaMode = "NONE",
                 childId = "",
                 color = colour4Col2,
                 filter = "CUSTOM",
@@ -540,7 +540,7 @@ utils.getStreetPlatformDisplayLabelList = function(colour4Header, colour4Col1, c
             {
                 alignment = "RIGHT",
                 alpha = 1,
-                alphaMode = "CUTOUT",
+                alphaMode = "NONE",
                 childId = "",
                 color = colour4Col3,
                 filter = "CUSTOM",
@@ -556,7 +556,7 @@ utils.getStreetPlatformDisplayLabelList = function(colour4Header, colour4Col1, c
             {
                 alignment = "LEFT",
                 alpha = 1,
-                alphaMode = "CUTOUT",
+                alphaMode = "NONE",
                 childId = "",
                 color = colour4Col1,
                 filter = "CUSTOM",
@@ -572,7 +572,7 @@ utils.getStreetPlatformDisplayLabelList = function(colour4Header, colour4Col1, c
             {
                 alignment = "LEFT",
                 alpha = 1,
-                alphaMode = "CUTOUT",
+                alphaMode = "NONE",
                 childId = "",
                 color = colour4Col2,
                 filter = "CUSTOM",
@@ -588,7 +588,7 @@ utils.getStreetPlatformDisplayLabelList = function(colour4Header, colour4Col1, c
             {
                 alignment = "RIGHT",
                 alpha = 1,
-                alphaMode = "CUTOUT",
+                alphaMode = "NONE",
                 childId = "",
                 color = colour4Col3,
                 filter = "CUSTOM",
@@ -620,7 +620,7 @@ utils.getStationDisplayLabelList = function(colour4Header, colour4Col1, colour4C
             -- {
             -- 	alignment = "LEFT",
             -- 	alpha = 1,
-            -- 	alphaMode = "CUTOUT",
+            -- 	alphaMode = "NONE",
             -- 	childId = "",
             -- 	color = _colours.white,
             -- 	filter = "CUSTOM", -- 'NONE', 'NUMBER', 'CUSTOM'
@@ -650,7 +650,7 @@ utils.getStationDisplayLabelList = function(colour4Header, colour4Col1, colour4C
             {
                 alignment = "LEFT",
                 alpha = 1,
-                alphaMode = "CUTOUT",
+                alphaMode = "NONE",
                 childId = "",
                 color = colour4Header,
                 filter = "CUSTOM",
@@ -666,7 +666,7 @@ utils.getStationDisplayLabelList = function(colour4Header, colour4Col1, colour4C
             {
                 alignment = "RIGHT",
                 alpha = 1,
-                alphaMode = "CUTOUT",
+                alphaMode = "NONE",
                 childId = "",
                 color = colour4Header,
                 filter = "CUSTOM",
@@ -684,7 +684,7 @@ utils.getStationDisplayLabelList = function(colour4Header, colour4Col1, colour4C
             {
                 alignment = "LEFT",
                 alpha = 1,
-                alphaMode = "CUTOUT",
+                alphaMode = "NONE",
                 childId = "",
                 color = colour4Col1,
                 filter = "CUSTOM",
@@ -700,7 +700,7 @@ utils.getStationDisplayLabelList = function(colour4Header, colour4Col1, colour4C
             {
                 alignment = "RIGHT",
                 alpha = 1,
-                alphaMode = "CUTOUT",
+                alphaMode = "NONE",
                 childId = "",
                 color = colour4Col3,
                 filter = "CUSTOM",
@@ -716,7 +716,7 @@ utils.getStationDisplayLabelList = function(colour4Header, colour4Col1, colour4C
             {
                 alignment = "RIGHT",
                 alpha = 1,
-                alphaMode = "CUTOUT",
+                alphaMode = "NONE",
                 childId = "",
                 color = colour4Col4,
                 filter = "CUSTOM",
@@ -732,7 +732,7 @@ utils.getStationDisplayLabelList = function(colour4Header, colour4Col1, colour4C
             {
                 alignment = "LEFT",
                 alpha = 1,
-                alphaMode = "CUTOUT",
+                alphaMode = "NONE",
                 childId = "",
                 color = colour4Col1,
                 filter = "CUSTOM",
@@ -748,7 +748,7 @@ utils.getStationDisplayLabelList = function(colour4Header, colour4Col1, colour4C
             {
                 alignment = "RIGHT",
                 alpha = 1,
-                alphaMode = "CUTOUT",
+                alphaMode = "NONE",
                 childId = "",
                 color = colour4Col3,
                 filter = "CUSTOM",
@@ -764,7 +764,7 @@ utils.getStationDisplayLabelList = function(colour4Header, colour4Col1, colour4C
             {
                 alignment = "RIGHT",
                 alpha = 1,
-                alphaMode = "CUTOUT",
+                alphaMode = "NONE",
                 childId = "",
                 color = colour4Col4,
                 filter = "CUSTOM",
@@ -780,7 +780,7 @@ utils.getStationDisplayLabelList = function(colour4Header, colour4Col1, colour4C
             {
                 alignment = "LEFT",
                 alpha = 1,
-                alphaMode = "CUTOUT",
+                alphaMode = "NONE",
                 childId = "",
                 color = colour4Col1,
                 filter = "CUSTOM",
@@ -796,7 +796,7 @@ utils.getStationDisplayLabelList = function(colour4Header, colour4Col1, colour4C
             {
                 alignment = "RIGHT",
                 alpha = 1,
-                alphaMode = "CUTOUT",
+                alphaMode = "NONE",
                 childId = "",
                 color = colour4Col3,
                 filter = "CUSTOM",
@@ -812,7 +812,7 @@ utils.getStationDisplayLabelList = function(colour4Header, colour4Col1, colour4C
             {
                 alignment = "RIGHT",
                 alpha = 1,
-                alphaMode = "CUTOUT",
+                alphaMode = "NONE",
                 childId = "",
                 color = colour4Col4,
                 filter = "CUSTOM",
@@ -828,7 +828,7 @@ utils.getStationDisplayLabelList = function(colour4Header, colour4Col1, colour4C
             {
                 alignment = "LEFT",
                 alpha = 1,
-                alphaMode = "CUTOUT",
+                alphaMode = "NONE",
                 childId = "",
                 color = colour4Col1,
                 filter = "CUSTOM",
@@ -844,7 +844,7 @@ utils.getStationDisplayLabelList = function(colour4Header, colour4Col1, colour4C
             {
                 alignment = "RIGHT",
                 alpha = 1,
-                alphaMode = "CUTOUT",
+                alphaMode = "NONE",
                 childId = "",
                 color = colour4Col3,
                 filter = "CUSTOM",
@@ -860,7 +860,7 @@ utils.getStationDisplayLabelList = function(colour4Header, colour4Col1, colour4C
             {
                 alignment = "RIGHT",
                 alpha = 1,
-                alphaMode = "CUTOUT",
+                alphaMode = "NONE",
                 childId = "",
                 color = colour4Col4,
                 filter = "CUSTOM",
@@ -876,7 +876,7 @@ utils.getStationDisplayLabelList = function(colour4Header, colour4Col1, colour4C
             {
                 alignment = "LEFT",
                 alpha = 1,
-                alphaMode = "CUTOUT",
+                alphaMode = "NONE",
                 childId = "",
                 color = colour4Col1,
                 filter = "CUSTOM",
@@ -892,7 +892,7 @@ utils.getStationDisplayLabelList = function(colour4Header, colour4Col1, colour4C
             {
                 alignment = "RIGHT",
                 alpha = 1,
-                alphaMode = "CUTOUT",
+                alphaMode = "NONE",
                 childId = "",
                 color = colour4Col3,
                 filter = "CUSTOM",
@@ -908,7 +908,7 @@ utils.getStationDisplayLabelList = function(colour4Header, colour4Col1, colour4C
             {
                 alignment = "RIGHT",
                 alpha = 1,
-                alphaMode = "CUTOUT",
+                alphaMode = "NONE",
                 childId = "",
                 color = colour4Col4,
                 filter = "CUSTOM",
@@ -924,7 +924,7 @@ utils.getStationDisplayLabelList = function(colour4Header, colour4Col1, colour4C
             {
                 alignment = "LEFT",
                 alpha = 1,
-                alphaMode = "CUTOUT",
+                alphaMode = "NONE",
                 childId = "",
                 color = colour4Col1,
                 filter = "CUSTOM",
@@ -940,7 +940,7 @@ utils.getStationDisplayLabelList = function(colour4Header, colour4Col1, colour4C
             {
                 alignment = "RIGHT",
                 alpha = 1,
-                alphaMode = "CUTOUT",
+                alphaMode = "NONE",
                 childId = "",
                 color = colour4Col3,
                 filter = "CUSTOM",
@@ -956,7 +956,7 @@ utils.getStationDisplayLabelList = function(colour4Header, colour4Col1, colour4C
             {
                 alignment = "RIGHT",
                 alpha = 1,
-                alphaMode = "CUTOUT",
+                alphaMode = "NONE",
                 childId = "",
                 color = colour4Col4,
                 filter = "CUSTOM",
@@ -972,7 +972,7 @@ utils.getStationDisplayLabelList = function(colour4Header, colour4Col1, colour4C
             {
                 alignment = "LEFT",
                 alpha = 1,
-                alphaMode = "CUTOUT",
+                alphaMode = "NONE",
                 childId = "",
                 color = colour4Col1,
                 filter = "CUSTOM",
@@ -988,7 +988,7 @@ utils.getStationDisplayLabelList = function(colour4Header, colour4Col1, colour4C
             {
                 alignment = "RIGHT",
                 alpha = 1,
-                alphaMode = "CUTOUT",
+                alphaMode = "NONE",
                 childId = "",
                 color = colour4Col3,
                 filter = "CUSTOM",
@@ -1004,7 +1004,7 @@ utils.getStationDisplayLabelList = function(colour4Header, colour4Col1, colour4C
             {
                 alignment = "RIGHT",
                 alpha = 1,
-                alphaMode = "CUTOUT",
+                alphaMode = "NONE",
                 childId = "",
                 color = colour4Col4,
                 filter = "CUSTOM",
@@ -1020,7 +1020,7 @@ utils.getStationDisplayLabelList = function(colour4Header, colour4Col1, colour4C
             {
                 alignment = "LEFT",
                 alpha = 1,
-                alphaMode = "CUTOUT",
+                alphaMode = "NONE",
                 childId = "",
                 color = colour4Col1,
                 filter = "CUSTOM",
@@ -1036,7 +1036,7 @@ utils.getStationDisplayLabelList = function(colour4Header, colour4Col1, colour4C
             {
                 alignment = "RIGHT",
                 alpha = 1,
-                alphaMode = "CUTOUT",
+                alphaMode = "NONE",
                 childId = "",
                 color = colour4Col3,
                 filter = "CUSTOM",
@@ -1052,7 +1052,7 @@ utils.getStationDisplayLabelList = function(colour4Header, colour4Col1, colour4C
             {
                 alignment = "RIGHT",
                 alpha = 1,
-                alphaMode = "CUTOUT",
+                alphaMode = "NONE",
                 childId = "",
                 color = colour4Col4,
                 filter = "CUSTOM",
@@ -1068,7 +1068,7 @@ utils.getStationDisplayLabelList = function(colour4Header, colour4Col1, colour4C
             {
                 alignment = "LEFT",
                 alpha = 1,
-                alphaMode = "CUTOUT",
+                alphaMode = "NONE",
                 childId = "",
                 color = colour4Col1,
                 filter = "CUSTOM",
@@ -1084,7 +1084,7 @@ utils.getStationDisplayLabelList = function(colour4Header, colour4Col1, colour4C
             {
                 alignment = "RIGHT",
                 alpha = 1,
-                alphaMode = "CUTOUT",
+                alphaMode = "NONE",
                 childId = "",
                 color = colour4Col3,
                 filter = "CUSTOM",
@@ -1100,7 +1100,7 @@ utils.getStationDisplayLabelList = function(colour4Header, colour4Col1, colour4C
             {
                 alignment = "RIGHT",
                 alpha = 1,
-                alphaMode = "CUTOUT",
+                alphaMode = "NONE",
                 childId = "",
                 color = colour4Col4,
                 filter = "CUSTOM",
@@ -1116,7 +1116,7 @@ utils.getStationDisplayLabelList = function(colour4Header, colour4Col1, colour4C
             -- {
             -- 	alignment = "CENTER",
             -- 	alpha = 1,
-            -- 	alphaMode = "CUTOUT",
+            -- 	alphaMode = "NONE",
             -- 	childId = "",
             -- 	color = _colours.white,
             -- 	filter = "CUSTOM",
@@ -1132,7 +1132,7 @@ utils.getStationDisplayLabelList = function(colour4Header, colour4Col1, colour4C
             {
                 alignment = "CENTER",
                 alpha = 1,
-                alphaMode = "CUTOUT",
+                alphaMode = "NONE",
                 childId = "",
                 color = colour4Footer,
                 -- filter = "CUSTOM",
@@ -1171,7 +1171,7 @@ utils.getStationWideDisplayLabelList = function(colour4Header, colour4Col1, colo
             -- {
             -- 	alignment = "LEFT",
             -- 	alpha = 1,
-            -- 	alphaMode = "CUTOUT",
+            -- 	alphaMode = "NONE", -- "BLEND" a little worse, "CUTOUT" amd "NONE" a little neater
             -- 	childId = "",
             -- 	color = _colours.white,
             -- 	filter = "CUSTOM", -- 'NONE', 'NUMBER', 'CUSTOM'
@@ -1201,7 +1201,7 @@ utils.getStationWideDisplayLabelList = function(colour4Header, colour4Col1, colo
             {
                 alignment = "LEFT",
                 alpha = 1,
-                alphaMode = "CUTOUT",
+                alphaMode = "NONE",
                 childId = "",
                 color = colour4Header,
                 filter = "CUSTOM",
@@ -1217,7 +1217,7 @@ utils.getStationWideDisplayLabelList = function(colour4Header, colour4Col1, colo
             {
                 alignment = "RIGHT",
                 alpha = 1,
-                alphaMode = "CUTOUT",
+                alphaMode = "NONE",
                 childId = "",
                 color = colour4Header,
                 filter = "CUSTOM",
@@ -1235,7 +1235,7 @@ utils.getStationWideDisplayLabelList = function(colour4Header, colour4Col1, colo
             {
                 alignment = "LEFT",
                 alpha = 1,
-                alphaMode = "CUTOUT",
+                alphaMode = "NONE",
                 childId = "",
                 color = colour4Col1,
                 filter = "CUSTOM",
@@ -1251,7 +1251,7 @@ utils.getStationWideDisplayLabelList = function(colour4Header, colour4Col1, colo
             {
                 alignment = "LEFT",
                 alpha = 1,
-                alphaMode = "CUTOUT",
+                alphaMode = "NONE",
                 childId = "",
                 color = colour4Col2,
                 filter = "CUSTOM",
@@ -1267,7 +1267,7 @@ utils.getStationWideDisplayLabelList = function(colour4Header, colour4Col1, colo
             {
                 alignment = "RIGHT",
                 alpha = 1,
-                alphaMode = "CUTOUT",
+                alphaMode = "NONE",
                 childId = "",
                 color = colour4Col3,
                 filter = "CUSTOM",
@@ -1282,7 +1282,7 @@ utils.getStationWideDisplayLabelList = function(colour4Header, colour4Col1, colo
             },                {
                 alignment = "RIGHT",
                 alpha = 1,
-                alphaMode = "CUTOUT",
+                alphaMode = "NONE",
                 childId = "",
                 color = colour4Col4,
                 filter = "CUSTOM",
@@ -1298,7 +1298,7 @@ utils.getStationWideDisplayLabelList = function(colour4Header, colour4Col1, colo
             {
                 alignment = "LEFT",
                 alpha = 1,
-                alphaMode = "CUTOUT",
+                alphaMode = "NONE",
                 childId = "",
                 color = colour4Col1,
                 filter = "CUSTOM",
@@ -1314,7 +1314,7 @@ utils.getStationWideDisplayLabelList = function(colour4Header, colour4Col1, colo
             {
                 alignment = "LEFT",
                 alpha = 1,
-                alphaMode = "CUTOUT",
+                alphaMode = "NONE",
                 childId = "",
                 color = colour4Col2,
                 filter = "CUSTOM",
@@ -1330,7 +1330,7 @@ utils.getStationWideDisplayLabelList = function(colour4Header, colour4Col1, colo
             {
                 alignment = "RIGHT",
                 alpha = 1,
-                alphaMode = "CUTOUT",
+                alphaMode = "NONE",
                 childId = "",
                 color = colour4Col3,
                 filter = "CUSTOM",
@@ -1346,7 +1346,7 @@ utils.getStationWideDisplayLabelList = function(colour4Header, colour4Col1, colo
             {
                 alignment = "RIGHT",
                 alpha = 1,
-                alphaMode = "CUTOUT",
+                alphaMode = "NONE",
                 childId = "",
                 color = colour4Col4,
                 filter = "CUSTOM",
@@ -1362,7 +1362,7 @@ utils.getStationWideDisplayLabelList = function(colour4Header, colour4Col1, colo
             {
                 alignment = "LEFT",
                 alpha = 1,
-                alphaMode = "CUTOUT",
+                alphaMode = "NONE",
                 childId = "",
                 color = colour4Col1,
                 filter = "CUSTOM",
@@ -1378,7 +1378,7 @@ utils.getStationWideDisplayLabelList = function(colour4Header, colour4Col1, colo
             {
                 alignment = "LEFT",
                 alpha = 1,
-                alphaMode = "CUTOUT",
+                alphaMode = "NONE",
                 childId = "",
                 color = colour4Col2,
                 filter = "CUSTOM",
@@ -1394,7 +1394,7 @@ utils.getStationWideDisplayLabelList = function(colour4Header, colour4Col1, colo
             {
                 alignment = "RIGHT",
                 alpha = 1,
-                alphaMode = "CUTOUT",
+                alphaMode = "NONE",
                 childId = "",
                 color = colour4Col3,
                 filter = "CUSTOM",
@@ -1410,7 +1410,7 @@ utils.getStationWideDisplayLabelList = function(colour4Header, colour4Col1, colo
             {
                 alignment = "RIGHT",
                 alpha = 1,
-                alphaMode = "CUTOUT",
+                alphaMode = "NONE",
                 childId = "",
                 color = colour4Col4,
                 filter = "CUSTOM",
@@ -1426,7 +1426,7 @@ utils.getStationWideDisplayLabelList = function(colour4Header, colour4Col1, colo
             {
                 alignment = "LEFT",
                 alpha = 1,
-                alphaMode = "CUTOUT",
+                alphaMode = "NONE",
                 childId = "",
                 color = colour4Col1,
                 filter = "CUSTOM",
@@ -1442,7 +1442,7 @@ utils.getStationWideDisplayLabelList = function(colour4Header, colour4Col1, colo
             {
                 alignment = "LEFT",
                 alpha = 1,
-                alphaMode = "CUTOUT",
+                alphaMode = "NONE",
                 childId = "",
                 color = colour4Col2,
                 filter = "CUSTOM",
@@ -1458,7 +1458,7 @@ utils.getStationWideDisplayLabelList = function(colour4Header, colour4Col1, colo
             {
                 alignment = "RIGHT",
                 alpha = 1,
-                alphaMode = "CUTOUT",
+                alphaMode = "NONE",
                 childId = "",
                 color = colour4Col3,
                 filter = "CUSTOM",
@@ -1474,7 +1474,7 @@ utils.getStationWideDisplayLabelList = function(colour4Header, colour4Col1, colo
             {
                 alignment = "RIGHT",
                 alpha = 1,
-                alphaMode = "CUTOUT",
+                alphaMode = "NONE",
                 childId = "",
                 color = colour4Col4,
                 filter = "CUSTOM",
@@ -1490,7 +1490,7 @@ utils.getStationWideDisplayLabelList = function(colour4Header, colour4Col1, colo
             {
                 alignment = "LEFT",
                 alpha = 1,
-                alphaMode = "CUTOUT",
+                alphaMode = "NONE",
                 childId = "",
                 color = colour4Col1,
                 filter = "CUSTOM",
@@ -1506,7 +1506,7 @@ utils.getStationWideDisplayLabelList = function(colour4Header, colour4Col1, colo
             {
                 alignment = "LEFT",
                 alpha = 1,
-                alphaMode = "CUTOUT",
+                alphaMode = "NONE",
                 childId = "",
                 color = colour4Col2,
                 filter = "CUSTOM",
@@ -1522,7 +1522,7 @@ utils.getStationWideDisplayLabelList = function(colour4Header, colour4Col1, colo
             {
                 alignment = "RIGHT",
                 alpha = 1,
-                alphaMode = "CUTOUT",
+                alphaMode = "NONE",
                 childId = "",
                 color = colour4Col3,
                 filter = "CUSTOM",
@@ -1538,7 +1538,7 @@ utils.getStationWideDisplayLabelList = function(colour4Header, colour4Col1, colo
             {
                 alignment = "RIGHT",
                 alpha = 1,
-                alphaMode = "CUTOUT",
+                alphaMode = "NONE",
                 childId = "",
                 color = colour4Col4,
                 filter = "CUSTOM",
@@ -1554,7 +1554,7 @@ utils.getStationWideDisplayLabelList = function(colour4Header, colour4Col1, colo
             {
                 alignment = "LEFT",
                 alpha = 1,
-                alphaMode = "CUTOUT",
+                alphaMode = "NONE",
                 childId = "",
                 color = colour4Col1,
                 filter = "CUSTOM",
@@ -1570,7 +1570,7 @@ utils.getStationWideDisplayLabelList = function(colour4Header, colour4Col1, colo
             {
                 alignment = "LEFT",
                 alpha = 1,
-                alphaMode = "CUTOUT",
+                alphaMode = "NONE",
                 childId = "",
                 color = colour4Col2,
                 filter = "CUSTOM",
@@ -1586,7 +1586,7 @@ utils.getStationWideDisplayLabelList = function(colour4Header, colour4Col1, colo
             {
                 alignment = "RIGHT",
                 alpha = 1,
-                alphaMode = "CUTOUT",
+                alphaMode = "NONE",
                 childId = "",
                 color = colour4Col3,
                 filter = "CUSTOM",
@@ -1602,7 +1602,7 @@ utils.getStationWideDisplayLabelList = function(colour4Header, colour4Col1, colo
             {
                 alignment = "RIGHT",
                 alpha = 1,
-                alphaMode = "CUTOUT",
+                alphaMode = "NONE",
                 childId = "",
                 color = colour4Col4,
                 filter = "CUSTOM",
@@ -1618,7 +1618,7 @@ utils.getStationWideDisplayLabelList = function(colour4Header, colour4Col1, colo
             {
                 alignment = "LEFT",
                 alpha = 1,
-                alphaMode = "CUTOUT",
+                alphaMode = "NONE",
                 childId = "",
                 color = colour4Col1,
                 filter = "CUSTOM",
@@ -1634,7 +1634,7 @@ utils.getStationWideDisplayLabelList = function(colour4Header, colour4Col1, colo
             {
                 alignment = "LEFT",
                 alpha = 1,
-                alphaMode = "CUTOUT",
+                alphaMode = "NONE",
                 childId = "",
                 color = colour4Col2,
                 filter = "CUSTOM",
@@ -1650,7 +1650,7 @@ utils.getStationWideDisplayLabelList = function(colour4Header, colour4Col1, colo
             {
                 alignment = "RIGHT",
                 alpha = 1,
-                alphaMode = "CUTOUT",
+                alphaMode = "NONE",
                 childId = "",
                 color = colour4Col3,
                 filter = "CUSTOM",
@@ -1666,7 +1666,7 @@ utils.getStationWideDisplayLabelList = function(colour4Header, colour4Col1, colo
             {
                 alignment = "RIGHT",
                 alpha = 1,
-                alphaMode = "CUTOUT",
+                alphaMode = "NONE",
                 childId = "",
                 color = colour4Col4,
                 filter = "CUSTOM",
@@ -1682,7 +1682,7 @@ utils.getStationWideDisplayLabelList = function(colour4Header, colour4Col1, colo
             {
                 alignment = "LEFT",
                 alpha = 1,
-                alphaMode = "CUTOUT",
+                alphaMode = "NONE",
                 childId = "",
                 color = colour4Col1,
                 filter = "CUSTOM",
@@ -1698,7 +1698,7 @@ utils.getStationWideDisplayLabelList = function(colour4Header, colour4Col1, colo
             {
                 alignment = "LEFT",
                 alpha = 1,
-                alphaMode = "CUTOUT",
+                alphaMode = "NONE",
                 childId = "",
                 color = colour4Col2,
                 filter = "CUSTOM",
@@ -1714,7 +1714,7 @@ utils.getStationWideDisplayLabelList = function(colour4Header, colour4Col1, colo
             {
                 alignment = "RIGHT",
                 alpha = 1,
-                alphaMode = "CUTOUT",
+                alphaMode = "NONE",
                 childId = "",
                 color = colour4Col3,
                 filter = "CUSTOM",
@@ -1730,7 +1730,7 @@ utils.getStationWideDisplayLabelList = function(colour4Header, colour4Col1, colo
             {
                 alignment = "RIGHT",
                 alpha = 1,
-                alphaMode = "CUTOUT",
+                alphaMode = "NONE",
                 childId = "",
                 color = colour4Col4,
                 filter = "CUSTOM",
@@ -1746,7 +1746,7 @@ utils.getStationWideDisplayLabelList = function(colour4Header, colour4Col1, colo
             {
                 alignment = "LEFT",
                 alpha = 1,
-                alphaMode = "CUTOUT",
+                alphaMode = "NONE",
                 childId = "",
                 color = colour4Col1,
                 filter = "CUSTOM",
@@ -1762,7 +1762,7 @@ utils.getStationWideDisplayLabelList = function(colour4Header, colour4Col1, colo
             {
                 alignment = "LEFT",
                 alpha = 1,
-                alphaMode = "CUTOUT",
+                alphaMode = "NONE",
                 childId = "",
                 color = colour4Col2,
                 filter = "CUSTOM",
@@ -1778,7 +1778,7 @@ utils.getStationWideDisplayLabelList = function(colour4Header, colour4Col1, colo
             {
                 alignment = "RIGHT",
                 alpha = 1,
-                alphaMode = "CUTOUT",
+                alphaMode = "NONE",
                 childId = "",
                 color = colour4Col3,
                 filter = "CUSTOM",
@@ -1794,7 +1794,7 @@ utils.getStationWideDisplayLabelList = function(colour4Header, colour4Col1, colo
             {
                 alignment = "RIGHT",
                 alpha = 1,
-                alphaMode = "CUTOUT",
+                alphaMode = "NONE",
                 childId = "",
                 color = colour4Col4,
                 filter = "CUSTOM",
@@ -1810,7 +1810,7 @@ utils.getStationWideDisplayLabelList = function(colour4Header, colour4Col1, colo
             -- {
             -- 	alignment = "CENTER",
             -- 	alpha = 1,
-            -- 	alphaMode = "CUTOUT",
+            -- 	alphaMode = "NONE",
             -- 	childId = "",
             -- 	color = _colours.white,
             -- 	filter = "CUSTOM",
@@ -1826,7 +1826,7 @@ utils.getStationWideDisplayLabelList = function(colour4Header, colour4Col1, colo
             {
                 alignment = "CENTER",
                 alpha = 1,
-                alphaMode = "CUTOUT",
+                alphaMode = "NONE",
                 childId = "",
                 color = colour4Footer,
                 -- filter = "CUSTOM",
