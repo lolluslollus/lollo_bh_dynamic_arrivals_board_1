@@ -15,7 +15,7 @@ function data()
                     - Once you attached a display to a station, it will be tied to it forever. If you bulldoze the station, its displays will disappear automatically, as soon as you unpause the game.
                     - Accuracy improves over time.
                     - Accuracy goes down when you add or remove vehicles, it picks up again after a bit.
-                    - Rearrange these at any time with the construction mover.
+                    - Rearrange these at any time with https://steamcommunity.com/sharedfiles/filedetails/?id=2748222965.
 
                     A big thank you goes out to Mr F from UG, this mod would have never worked without his help.
                     Another big thank you goes out to badgerrhax for the idea.
