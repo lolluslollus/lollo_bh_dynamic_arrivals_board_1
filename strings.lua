@@ -10,8 +10,8 @@ function data()
                     I have been thinking long and hard whether to publish this mod or not, since I copied the idea from badgerrhax. However, this is my own code and my own models, so I do. If you don't like it, don't use it.
 
                     NOTES:
-                    - These things can be performance-intensive, so you can switch them on and off from the bottom bar.
-                    - If you think they are not working, check your bottom bar, unpause the game and wait a little.
+                    - These things can be performance-intensive, so you can switch them on and off from the bottom bar (toggle the orange icon).
+                    - If you think they are not working, check your bottom bar (toggle the orange icon), unpause the game and wait a little.
                     - Once you attached a display to a station, it will be tied to it forever. If you bulldoze the station, its displays will disappear automatically, as soon as you unpause the game.
                     - Accuracy improves over time.
                     - Accuracy goes down when you add or remove vehicles, it picks up again after a bit.
