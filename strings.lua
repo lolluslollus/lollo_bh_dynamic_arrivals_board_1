@@ -5,7 +5,7 @@ function data()
                 [[
                     Displays for incoming and outgoing vehicles.
                     Turn the updates on or off with the bottom bar. When turned on, they update every 5 seconds.
-                    If you add a pair of brackets to your line names, the displays will show the stuff between the brackets, same as https://steamcommunity.com/sharedfiles/filedetails/?id=2528202101. The only difference is: if you add no brackets, the whole line name will be displayed. You can play with this, here some examples: "(IC 335) London - Rosenheim" will show as "IC 335". "Schnellzug (Flieg)ender( Kartof)fel" will show as "Flieg Kartof". Anything plus () will show no name at all.
+                    If you add a pair of brackets to your line names, the displays will show the stuff between the brackets, same as https://steamcommunity.com/sharedfiles/filedetails/?id=2528202101. The only difference is: if you add no brackets, the whole line name will be displayed. You can play with this, here some examples: "(IC 335) London - Rosenheim" will show as "IC 335". "Schnellzug (Flieg)ende( Kartof)fel" will show as "Flieg Kartof". Anything plus () will show no name at all.
 
                     I have been thinking long and hard whether to publish this mod or not, since I copied the idea from badgerrhax. However, this is my own code and my own models, so I do. If you don't like it, don't use it.
 
