@@ -347,6 +347,7 @@ utils.getPositionsMiddle = function(pos0, pos1)
 end
 
 utils.getParallelSideways = function(posTanX2, sideShift)
+    -- the result will be identical to the original but shifted sideways
     local result = {
         {
             {},
@@ -365,6 +366,30 @@ utils.getParallelSideways = function(posTanX2, sideShift)
 
     result[1][1] = { oldPos1[1] + math.sin(ro) * sideShift, oldPos1[2] - math.cos(ro) * sideShift, oldPos1[3] }
     result[2][1] = { oldPos2[1] + math.sin(ro) * sideShift, oldPos2[2] - math.cos(ro) * sideShift, oldPos2[3] }
+
+    return result
+end
+
+utils.getParallelSidewaysWithRotZ = function(posTanX2, sideShift)
+    -- the result will be parallel to the original at its ends but stretched or compressed due to the shift.
+    local _rot90Transf = { 0, 1, 0, 0, -1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, }
+
+    local oldPos1 = posTanX2[1][1]
+    local oldPos2 = posTanX2[2][1]
+
+    local tan1RotatedAndNormalised = utils.getVectorNormalised(utils.getVec123Transformed(posTanX2[1][2], _rot90Transf), sideShift)
+    local tan2RotatedAndNormalised = utils.getVectorNormalised(utils.getVec123Transformed(posTanX2[2][2], _rot90Transf), sideShift)
+
+    local result = {
+        {
+            { oldPos1[1] + tan1RotatedAndNormalised[1], oldPos1[2] + tan1RotatedAndNormalised[2], oldPos1[3] },
+            posTanX2[1][2]
+        },
+        {
+            { oldPos2[1] + tan2RotatedAndNormalised[1], oldPos2[2] + tan2RotatedAndNormalised[2], oldPos2[3] },
+            posTanX2[2][2]
+        },
+    }
 
     return result
 end
