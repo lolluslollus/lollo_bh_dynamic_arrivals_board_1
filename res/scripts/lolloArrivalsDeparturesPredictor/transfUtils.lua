@@ -370,15 +370,18 @@ utils.getParallelSideways = function(posTanX2, sideShift)
     return result
 end
 
-utils.getParallelSidewaysWithRotZ = function(posTanX2, sideShift)
+utils.getParallelSidewaysWithRotZ = function(posTanX2, sideShiftOnXYPlane)
     -- the result will be parallel to the original at its ends but stretched or compressed due to the shift.
     local _rot90Transf = { 0, 1, 0, 0, -1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, }
 
     local oldPos1 = posTanX2[1][1]
     local oldPos2 = posTanX2[2][1]
+    -- we reset Z coz we rotate around the Z axis and we want to obtain a distance on the XY plane
+    local oldTan1 = {posTanX2[1][2][1], posTanX2[1][2][2], 0}
+    local oldTan2 = {posTanX2[2][2][1], posTanX2[2][2][2], 0}
 
-    local tan1RotatedAndNormalised = utils.getVectorNormalised(utils.getVec123Transformed(posTanX2[1][2], _rot90Transf), sideShift)
-    local tan2RotatedAndNormalised = utils.getVectorNormalised(utils.getVec123Transformed(posTanX2[2][2], _rot90Transf), sideShift)
+    local tan1RotatedAndNormalised = utils.getVectorNormalised(utils.getVec123Transformed(oldTan1, _rot90Transf), sideShiftOnXYPlane)
+    local tan2RotatedAndNormalised = utils.getVectorNormalised(utils.getVec123Transformed(oldTan2, _rot90Transf), sideShiftOnXYPlane)
 
     local result = {
         {
