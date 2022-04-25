@@ -177,70 +177,87 @@ local utils = {
         return nil
     end,
 }
-utils.getFormattedPredictions = function(predictions, time, fallbackTerminalIdIfAny)
-    -- logger.print('getFormattedPredictions starting, predictions =') logger.debugPrint(predictions)
+utils.getFormattedPredictions = function(maxEntries, allRawPredictions, time, fallbackTerminalIdIfAny)
+    -- logger.print('getFormattedPredictions starting, allRawPredictions =') logger.debugPrint(allRawPredictions)
+
     local results = {}
 
-    if predictions then
-        for _, rawEntry in ipairs(predictions) do
-            local fmtEntry = {
-                lineName = rawEntry.lineName or '-',
+    if allRawPredictions then
+        local culledRawPredictions = {}
+
+        for _, pre in ipairs(allRawPredictions) do
+            if not(fallbackTerminalIdIfAny) or fallbackTerminalIdIfAny == pre.terminalId then
+                culledRawPredictions[#culledRawPredictions+1] = pre
+            end
+        end
+
+        table.sort(culledRawPredictions, function(a, b) return a.arrivalTime < b.arrivalTime end)
+
+        for i = #culledRawPredictions, 1, -1 do
+            if i > maxEntries then
+                table.remove(culledRawPredictions, i)
+            end
+        end
+
+        for _, rawPred in ipairs(culledRawPredictions) do
+            local fmtPred = {
+                lineName = rawPred.lineName or '-',
                 originString = '-',
                 destinationString = '-',
                 etaMinutesString = _texts.due,
                 etdMinutesString = _texts.due,
                 arrivalTimeString = _texts.due,
                 departureTimeString = _texts.due,
-                arrivalTerminal = (rawEntry.terminalId or '-'), -- the terminal id has base 1
+                arrivalTerminal = (rawPred.terminalId or '-'), -- the terminal id has base 1
             }
 
-            if rawEntry.isProblem then
-                fmtEntry.destinationString = _texts.sorryTrouble
+            if rawPred.isProblem then
+                fmtPred.destinationString = _texts.sorryTrouble
                 -- sanitize away the characters that we use in the regex in the model
-                fmtEntry.destinationString:gsub('_', ' ')
-                fmtEntry.destinationString:gsub('@', ' ')
-                fmtEntry.originString = _texts.sorryTrouble
+                fmtPred.destinationString:gsub('_', ' ')
+                fmtPred.destinationString:gsub('@', ' ')
+                fmtPred.originString = _texts.sorryTrouble
                 -- sanitize away the characters that we use in the regex in the model
-                fmtEntry.originString:gsub('_', ' ')
-                fmtEntry.originString:gsub('@', ' ')
-                fmtEntry.arrivalTimeString = _texts.sorryTroubleShort
-                fmtEntry.departureTimeString = _texts.sorryTroubleShort
-                fmtEntry.etaMinutesString = _texts.sorryTroubleShort
-                fmtEntry.etdMinutesString = _texts.sorryTroubleShort
+                fmtPred.originString:gsub('_', ' ')
+                fmtPred.originString:gsub('@', ' ')
+                fmtPred.arrivalTimeString = _texts.sorryTroubleShort
+                fmtPred.departureTimeString = _texts.sorryTroubleShort
+                fmtPred.etaMinutesString = _texts.sorryTroubleShort
+                fmtPred.etdMinutesString = _texts.sorryTroubleShort
             else
-                if edgeUtils.isValidAndExistingId(rawEntry.destinationStationGroupId) then
-                    local destinationStationGroupName = api.engine.getComponent(rawEntry.destinationStationGroupId, api.type.ComponentType.NAME)
+                if edgeUtils.isValidAndExistingId(rawPred.destinationStationGroupId) then
+                    local destinationStationGroupName = api.engine.getComponent(rawPred.destinationStationGroupId, api.type.ComponentType.NAME)
                     if destinationStationGroupName and destinationStationGroupName.name then
-                        fmtEntry.destinationString = destinationStationGroupName.name
+                        fmtPred.destinationString = destinationStationGroupName.name
                         -- sanitize away the characters that we use in the regex in the model
-                        fmtEntry.destinationString:gsub('_', ' ')
-                        fmtEntry.destinationString:gsub('@', ' ')
+                        fmtPred.destinationString:gsub('_', ' ')
+                        fmtPred.destinationString:gsub('@', ' ')
                     end
                 end
-                if edgeUtils.isValidAndExistingId(rawEntry.originStationGroupId) then
-                    local originStationGroupName = api.engine.getComponent(rawEntry.originStationGroupId, api.type.ComponentType.NAME)
+                if edgeUtils.isValidAndExistingId(rawPred.originStationGroupId) then
+                    local originStationGroupName = api.engine.getComponent(rawPred.originStationGroupId, api.type.ComponentType.NAME)
                     if originStationGroupName and originStationGroupName.name then
                         -- fmtEntry.originString = _texts.fromSpace .. originStationGroupName.name
-                        fmtEntry.originString = originStationGroupName.name
+                        fmtPred.originString = originStationGroupName.name
                         -- sanitize away the characters that we use in the regex in the model
-                        fmtEntry.originString:gsub('_', ' ')
-                        fmtEntry.originString:gsub('@', ' ')
+                        fmtPred.originString:gsub('_', ' ')
+                        fmtPred.originString:gsub('@', ' ')
                     end
                 end
 
-                local expectedMinutesToArrival = math.floor((rawEntry.arrivalTime - time) / 60000)
+                local expectedMinutesToArrival = math.floor((rawPred.arrivalTime - time) / 60000)
                 if expectedMinutesToArrival > 0 then
-                    fmtEntry.arrivalTimeString = utils.formatClockStringHHMM(rawEntry.arrivalTime / 1000)
-                    fmtEntry.etaMinutesString = expectedMinutesToArrival .. _texts.minutesShort
+                    fmtPred.arrivalTimeString = utils.formatClockStringHHMM(rawPred.arrivalTime / 1000)
+                    fmtPred.etaMinutesString = expectedMinutesToArrival .. _texts.minutesShort
                 end
-                local expectedMinutesToDeparture = math.floor((rawEntry.departureTime - time) / 60000)
+                local expectedMinutesToDeparture = math.floor((rawPred.departureTime - time) / 60000)
                 if expectedMinutesToDeparture > 0 then
-                    fmtEntry.departureTimeString = utils.formatClockStringHHMM(rawEntry.departureTime / 1000)
-                    fmtEntry.etdMinutesString = expectedMinutesToDeparture .. _texts.minutesShort
+                    fmtPred.departureTimeString = utils.formatClockStringHHMM(rawPred.departureTime / 1000)
+                    fmtPred.etdMinutesString = expectedMinutesToDeparture .. _texts.minutesShort
                 end
             end
 
-            results[#results+1] = fmtEntry
+            results[#results+1] = fmtPred
         end
     end
     while #results < 1 do
@@ -624,7 +641,7 @@ local getRemainingTimeToPrecedingStop = function(averages, lastStopIndex, hereIn
     return result
 end
 
-local function getNextPredictions(stationGroupId, stationGroup, stationId, station, nEntries, time, onlyTerminalId, predictionsBufferHelpers, lineBuffer, problemLineIds)
+local function getNextPredictions(stationGroupId, stationGroup, stationId, station, nEntries, time, predictionsBufferHelpers, lineBuffer, problemLineIds)
     logger.print('getNextPredictions starting')
     logger.print('stationId =') logger.debugPrint(stationId)
     local predictions = {}
@@ -634,151 +651,250 @@ local function getNextPredictions(stationGroupId, stationGroup, stationId, stati
     local stationIndexInStationGroupBase0 = utils.getStationIndexInStationGroupBase0(stationId, stationGroup)
     if not(stationIndexInStationGroupBase0) then return predictions end
 
-    local predictionsBuffer = predictionsBufferHelpers.get(stationId, onlyTerminalId)
+    local predictionsBuffer = predictionsBufferHelpers.get(stationId)
     if predictionsBuffer then
-        logger.print('time = ', time, 'using buffer for stationId =', stationId, 'and onlyTerminalId =', onlyTerminalId or 'NIL')
+        logger.print('time = ', time, 'using buffer for stationId =', stationId)
         return predictionsBuffer
     else
-        logger.print('time = ', time, 'NOT using buffer for stationId =', stationId, 'and onlyTerminalId =', onlyTerminalId or 'NIL')
+        logger.print('time = ', time, 'NOT using buffer for stationId =', stationId)
     end
 
     -- logger.print('stationGroupId =', stationGroupId)
     -- logger.print('stationId =', stationId)
     -- logger.print('station.terminals =') logger.debugPrint(station.terminals)
-    local terminalIndexBase0 = 0
+    local terminalIds = {}
     for terminalId, _ in pairs(station.terminals) do
-        -- this works coz the table indexes have base 1
-        if not(onlyTerminalId) or (terminalId == onlyTerminalId) then
-            logger.print('terminalId =', terminalId or 'NIL')
-            local lineIds = api.engine.system.lineSystem.getLineStopsForTerminal(stationId, terminalIndexBase0)
-            for _, lineId in pairs(lineIds) do
-                logger.print('lineId =', lineId or 'NIL')
-                local line = api.engine.getComponent(lineId, api.type.ComponentType.LINE)
-                if line then
-                    local vehicleIds = api.engine.system.transportVehicleSystem.getLineVehicles(lineId)
-                    -- logger.print('There are', #vehicleIds, 'vehicles')
-                    if #vehicleIds > 0 then
-                        local nStops = #line.stops
-                        local hereIndex, nextIndex = getHereNextIndexes(line, stationGroupId, stationIndexInStationGroupBase0, terminalIndexBase0)
-                        -- local hereIndex, startIndex, endIndex = getHereStartEndIndexesOLD(line, stationGroupId, stationIndexInStationGroupBase0, terminalIndexBase0)
-                        -- logger.print('hereIndex, startIndex, endIndex, nStops =', hereIndex, startIndex, endIndex, nStops)
-                        logger.print('hereIndex, nextIndex, nStops =', hereIndex, nextIndex, nStops)
-                        if nStops < 2 --[[ or problemLineIds[lineId] ]] then
-                            predictions[#predictions+1] = {
-                                terminalId = terminalId,
-                                originStationGroupId = nil, --line.stops[1].stationGroup,
-                                destinationStationGroupId = nil, --line.stops[1].stationGroup,
-                                nextStationGroupId = nil,
-                                arrivalTime = time + 3600, -- add a dummy hour
-                                departureTime = time + 3600,
-                                isProblem = true,
-                            }
-                        else
-                            local myLineData = getMyLineData(vehicleIds, line, lineId, line.waitingTime, lineBuffer)
-                            logger.print('myLineData.averages =') logger.debugPrint(myLineData.averages)
+        terminalIds[#terminalIds+1] = terminalId
+    end
+    logger.print('terminalIds =') logger.debugPrint(terminalIds)
 
-                            for _, vehicleId in pairs(vehicleIds) do
-                                logger.print('vehicleId =', vehicleId or 'NIL')
-                                local vehicle = myLineData.vehicles[vehicleId]
-                                if not(vehicle) then
-                                    logger.warn('vehicle with id ' .. (vehicleId or 'NIL') .. ' not found but it should be there')
-                                else
-                                    --[[
-                                        vehicle has:
-                                        stopIndex = 1, -- last stop index or next stop index in base 0
-                                        lineStopDepartures = { -- last recorded departure times, they can be 0 if not yet recorded
+    local terminalIndexBase0 = 0
+    for _, terminalId in pairs(terminalIds) do
+        logger.print('terminalId =', terminalId or 'NIL')
+        -- this does not account for alternative terminals
+        -- neither does api.engine.system.lineSystem.getLineStopsForStation(stationId)
+        -- neither does api.engine.system.lineSystem.getLineStops(stationGroupId)
+        -- neither does api.engine.system.lineSystem.getTerminal2lineStops()
+        local lineIds = api.engine.system.lineSystem.getLineStopsForTerminal(stationId, terminalIndexBase0)
+        for _, lineId in pairs(lineIds) do
+            logger.print('lineId =', lineId or 'NIL')
+            local line = api.engine.getComponent(lineId, api.type.ComponentType.LINE)
+            if line then
+                --[[
+                    line = {
+                        stops = {
+                            [1] = {
+                                stationGroup = 25608,
+                                station = 0,
+                                terminal = 0,
+                                alternativeTerminals = {
+                                },
+                                loadMode = 0,
+                                minWaitingTime = 0,
+                                maxWaitingTime = 180,
+                                waypoints = {
+                                },
+                                stopConfig = {
+                                    load = {
+                                    },
+                                    unload = {
+                                    },
+                                    maxLoad = {
+                                    },
+                                },
+                            },
+                            [2] = {
+                                stationGroup = 25616,
+                                station = 0,
+                                terminal = 1,
+                                alternativeTerminals = { NEW with spring 2022 update
+                                    [1] = {
+                                    station = 0,
+                                    terminal = 0,
+                                    },
+                                },
+                                loadMode = 0,
+                                minWaitingTime = 0,
+                                maxWaitingTime = 180,
+                                waypoints = {
+                                },
+                                stopConfig = {
+                                    load = {
+                                    },
+                                    unload = {
+                                    },
+                                    maxLoad = {
+                                    },
+                                },
+                            },
+                        },
+                        waitingTime = 180,
+                        vehicleInfo = {
+                            transportModes = {
+                                [1] = 0,
+                                [2] = 0,
+                                [3] = 0,
+                                [4] = 0,
+                                [5] = 0,
+                                [6] = 0,
+                                [7] = 0,
+                                [8] = 0,
+                                [9] = 1,
+                                [10] = 0,
+                                [11] = 0,
+                                [12] = 0,
+                                [13] = 0,
+                                [14] = 0,
+                                [15] = 0,
+                                [16] = 0,
+                                },
+                                defaultPrice = 73.583236694336,
+                            },
+                        }
+                ]]
+                local vehicleIds = api.engine.system.transportVehicleSystem.getLineVehicles(lineId)
+                -- logger.print('There are', #vehicleIds, 'vehicles')
+                if #vehicleIds > 0 then
+                    local nStops = #line.stops
+                    local hereIndex, nextIndex = getHereNextIndexes(line, stationGroupId, stationIndexInStationGroupBase0, terminalIndexBase0)
+                    -- local hereIndex, startIndex, endIndex = getHereStartEndIndexesOLD(line, stationGroupId, stationIndexInStationGroupBase0, terminalIndexBase0)
+                    -- logger.print('hereIndex, startIndex, endIndex, nStops =', hereIndex, startIndex, endIndex, nStops)
+                    logger.print('hereIndex, nextIndex, nStops =', hereIndex, nextIndex, nStops)
+                    if nStops < 2 --[[ or problemLineIds[lineId] ]] then
+                        predictions[#predictions+1] = {
+                            terminalId = terminalId,
+                            originStationGroupId = nil, --line.stops[1].stationGroup,
+                            destinationStationGroupId = nil, --line.stops[1].stationGroup,
+                            nextStationGroupId = nil,
+                            arrivalTime = time + 3600, -- add a dummy hour
+                            departureTime = time + 3600,
+                            isProblem = true,
+                        }
+                    else
+                        local myLineData = getMyLineData(vehicleIds, line, lineId, line.waitingTime, lineBuffer)
+                        logger.print('myLineData.averages =') logger.debugPrint(myLineData.averages)
+
+                        for _, vehicleId in pairs(vehicleIds) do
+                            logger.print('vehicleId =', vehicleId or 'NIL')
+                            local vehicle = myLineData.vehicles[vehicleId]
+                            if not(vehicle) then
+                                logger.warn('vehicle with id ' .. (vehicleId or 'NIL') .. ' not found but it should be there')
+                            else
+                                --[[
+                                    vehicle has:
+                                    state = 1, -- at terminal, en route, going to depot, in depot
+                                    userStopped = false, -- boolean
+                                    depot = 25611, -- depot id
+                                    sellOnArrival = false, --boolean
+                                    noPath = false, -- boolean NEW with spring 2022 update
+
+                                    stopIndex = 1, -- last stop index or next stop index in base 0
+                                    arrivalStationTerminal = { -- NEW with spring 2022 update
+                                        station = -1, -- -1 if arrivalStationTerminalLocked is false, otherwise a ???
+                                        terminal = -1, -- -1 if arrivalStationTerminalLocked is false, otherwise a terminal counter in base 0
+                                    },
+                                    arrivalStationTerminalLocked = false, -- NEW with spring 2022 update
+                                    lineStopDepartures = { -- last recorded departure times, they can be 0 if not yet recorded
                                         [1] = 4591600,
                                         [2] = 4498000,
-                                        },
-                                        lastLineStopDeparture = 0, -- seems inaccurate
-                                        sectionTimes = { -- take a while to calculate when starting a new line
+                                    },
+                                    lastLineStopDeparture = 0, -- seems inaccurate
+                                    sectionTimes = { -- take a while to calculate when starting a new line
                                         [1] = 0, -- time it took to complete a segment, starting from stop 1
                                         [2] = 86.600006103516, -- time it took to complete a segment, starting from stop 2
-                                        },
-                                        timeUntilLoad = -5.5633368492126, -- seems useless
-                                        timeUntilCloseDoors = -0.19238702952862, -- seems useless
-                                        timeUntilDeparture = -0.026386171579361, -- seems useless
-                                        doorsTime = 4590600000, -- last departure time, seems OK
-                                        and it is quicker than checking the max across lineStopDepartures
-                                        we add 1000 so we match it to the highest lineStopDeparture, but it varies with some unknown factor.
-                                        Sometimes, two vehicles A and B on the same line may have A the highest lineStopDeparture and B the highest doorsTime.
+                                    },
+                                    timeUntilLoad = -5.5633368492126, -- seems useless
+                                    timeUntilCloseDoors = -0.19238702952862, -- seems useless
+                                    timeUntilDeparture = -0.026386171579361, -- seems useless
+                                    doorsOpen = false, -- boolean NEW with spring 2022 update
+                                    doorsTime = 4590600000, -- last departure time, seems OK
+                                    and it is quicker than checking the max across lineStopDepartures
+                                    we add 1000 so we match it to the highest lineStopDeparture, but it varies with some unknown factor.
+                                    Sometimes, two vehicles A and B on the same line may have A the highest lineStopDeparture and B the highest doorsTime.
 
-                                        Here is another example with two vehicles on the same line:
-                                        line = 86608,
-                                        stopIndex = 5, -- ie lastStopIndex
-                                        lineStopDepartures = {
+                                    Here is another example with two vehicles on the same line:
+                                    line = 86608,
+                                    stopIndex = 5, -- last stop index or next stop index in base 0
+                                    lineStopDepartures = {
                                         [1] = 19082400,
                                         [2] = 19228400,
                                         [3] = 19590000,
                                         [4] = 19710800,
                                         [5] = 19844000,
                                         [6] = 18969400,
-                                        },
-                                        lastLineStopDeparture = 0,
-                                        sectionTimes = {
+                                    },
+                                    lastLineStopDeparture = 0,
+                                    sectionTimes = {
                                         [1] = 127.00000762939, -- 146 counting the time spent standing
                                         [2] = 354.00003051758, -- 362 counting the time spent standing
                                         [3] = 111.00000762939, -- 120 counting the time spent standing
                                         [4] = 123.40000915527, -- 133 counting the time spent standing
                                         [5] = 0,
                                         [6] = 93.200004577637,
-                                        },
-                                        line = 86608,
-                                        stopIndex = 2, -- ie lastStopIndex
-                                        lineStopDepartures = {
-                                            [1] = 19769400,
-                                            [2] = 19904000,
-                                            [3] = 19068800,
-                                            [4] = 19199800,
-                                            [5] = 19330400,
-                                            [6] = 19669800,
-                                        },
-                                        lastLineStopDeparture = 0,
-                                        sectionTimes = {
-                                            [1] = 126.60000610352, -- 135 counting the time spent standing
-                                            [2] = 0,
-                                            [3] = 111.00000762939,
-                                            [4] = 123.40000915527,
-                                            [5] = 332.20001220703,
-                                            [6] = 93.200004577637,
-                                        },
-                                        sectionTimes tend to be similar but they don't account for the time spent standing
-                                    ]]
-                                    -- logger.print('vehicle.stopIndex =', vehicle.stopIndex)
+                                    },
+                                    line = 86608,
+                                    stopIndex = 2, -- last stop index or next stop index in base 0
+                                    lineStopDepartures = {
+                                        [1] = 19769400,
+                                        [2] = 19904000,
+                                        [3] = 19068800,
+                                        [4] = 19199800,
+                                        [5] = 19330400,
+                                        [6] = 19669800,
+                                    },
+                                    lastLineStopDeparture = 0,
+                                    sectionTimes = {
+                                        [1] = 126.60000610352, -- 135 counting the time spent standing
+                                        [2] = 0,
+                                        [3] = 111.00000762939,
+                                        [4] = 123.40000915527,
+                                        [5] = 332.20001220703,
+                                        [6] = 93.200004577637,
+                                    },
+                                    sectionTimes tend to be similar but they don't account for the time spent standing
+                                ]]
+                                -- logger.print('vehicle.stopIndex =', vehicle.stopIndex)
 
-                                    local lastDepartureTime = getLastDepartureTime(vehicle, time)
-                                    logger.print('lastDepartureTime =', lastDepartureTime)
-                                    local remainingTimeToPrecedingStop = getRemainingTimeToPrecedingStop(myLineData.averages, vehicle.stopIndex, hereIndex, nStops)
+                                local lastDepartureTime = getLastDepartureTime(vehicle, time)
+                                logger.print('lastDepartureTime =', lastDepartureTime)
+                                local remainingTimeToPrecedingStop = getRemainingTimeToPrecedingStop(myLineData.averages, vehicle.stopIndex, hereIndex, nStops)
 
-                                    local originIndex = (hereIndex > myLineData.startIndex and hereIndex <= myLineData.endIndex)
-                                        and myLineData.startIndex
-                                        or myLineData.endIndex
-                                    local destIndex = (hereIndex >= myLineData.startIndex and hereIndex < myLineData.endIndex)
-                                        and myLineData.endIndex
-                                        or myLineData.startIndex
+                                local originIndex = (hereIndex > myLineData.startIndex and hereIndex <= myLineData.endIndex)
+                                    and myLineData.startIndex
+                                    or myLineData.endIndex
+                                local destIndex = (hereIndex >= myLineData.startIndex and hereIndex < myLineData.endIndex)
+                                    and myLineData.endIndex
+                                    or myLineData.startIndex
+                                logger.print('vehicle.stopIndex =', vehicle.stopIndex)
+                                logger.print('vehicle.arrivalStationTerminalLocked =', vehicle.arrivalStationTerminalLocked)
+                                logger.print('vehicle.arrivalStationTerminal.terminal =', vehicle.arrivalStationTerminal.terminal)
+                                local actualTerminalId = (vehicle.arrivalStationTerminalLocked and vehicle.stopIndex + 1 == hereIndex)
+                                    and terminalIds[vehicle.arrivalStationTerminal.terminal + 1]
+                                    or terminalId
+                                logger.print('terminalId =', terminalId)
+                                logger.print('actualTerminalId =', actualTerminalId)
 
+                                predictions[#predictions+1] = {
+                                    terminalId = actualTerminalId,
+                                    originStationGroupId = line.stops[originIndex].stationGroup,
+                                    destinationStationGroupId = line.stops[destIndex].stationGroup,
+                                    nextStationGroupId = line.stops[nextIndex].stationGroup,
+                                    arrivalTime = lastDepartureTime + remainingTimeToPrecedingStop + myLineData.averages[hereIndex].st,
+                                    departureTime = lastDepartureTime + remainingTimeToPrecedingStop + myLineData.averages[hereIndex].lsd,
+                                    lineName = myLineData.name,
+                                }
+
+                                logger.print('myLineData.period =', myLineData.period)
+                                if #vehicleIds == 1 then -- fill up the display a bit
                                     predictions[#predictions+1] = {
-                                        terminalId = terminalId,
+                                        terminalId = actualTerminalId,
                                         originStationGroupId = line.stops[originIndex].stationGroup,
                                         destinationStationGroupId = line.stops[destIndex].stationGroup,
                                         nextStationGroupId = line.stops[nextIndex].stationGroup,
-                                        arrivalTime = lastDepartureTime + remainingTimeToPrecedingStop + myLineData.averages[hereIndex].st,
-                                        departureTime = lastDepartureTime + remainingTimeToPrecedingStop + myLineData.averages[hereIndex].lsd,
+                                        arrivalTime = predictions[#predictions].arrivalTime + myLineData.period,
+                                        departureTime = predictions[#predictions].departureTime + myLineData.period,
                                         lineName = myLineData.name,
                                     }
-
-                                    logger.print('myLineData.period =', myLineData.period)
-                                    if #vehicleIds == 1 then -- fill up the display a bit
-                                        predictions[#predictions+1] = {
-                                            terminalId = terminalId,
-                                            originStationGroupId = line.stops[originIndex].stationGroup,
-                                            destinationStationGroupId = line.stops[destIndex].stationGroup,
-                                            nextStationGroupId = line.stops[nextIndex].stationGroup,
-                                            arrivalTime = predictions[#predictions].arrivalTime + myLineData.period,
-                                            departureTime = predictions[#predictions].departureTime + myLineData.period,
-                                            lineName = myLineData.name,
-                                        }
-                                    end
                                 end
                             end
                         end
@@ -789,14 +905,7 @@ local function getNextPredictions(stationGroupId, stationGroup, stationId, stati
         terminalIndexBase0 = terminalIndexBase0 + 1
     end
 
-    -- table.sort(predictions, function(a, b) return a.arrivalTime < b.arrivalTime end)
-    -- for i = #predictions, 1, -1 do
-    --     if i > (nEntries or 0) then
-    --         table.remove(predictions, i)
-    --     end
-    -- end
-
-    predictionsBufferHelpers.set(stationId, onlyTerminalId, predictions)
+    predictionsBufferHelpers.set(stationId, predictions)
     return predictions
 end
 
@@ -943,26 +1052,13 @@ local function update()
             local linesBuffer = {}
             local predictionsBuffer = {
                 byStation = {},
-                byStationTerminal = {}
             }
             local predictionsBufferHelpers = {
-                get = function(stationId, onlyTerminalId)
-                    if onlyTerminalId then
-                        if predictionsBuffer.byStationTerminal[stationId] then
-                            return predictionsBuffer.byStationTerminal[stationId][onlyTerminalId]
-                        end
-                    else
-                        return predictionsBuffer.byStation[stationId]
-                    end
-                    return nil
+                get = function(stationId)
+                    return predictionsBuffer.byStation[stationId]
                 end,
-                set = function(stationId, onlyTerminalId, data)
-                    if onlyTerminalId then
-                        if not(predictionsBuffer.byStationTerminal[stationId]) then predictionsBuffer.byStationTerminal[stationId] = {} end
-                        predictionsBuffer.byStationTerminal[stationId][onlyTerminalId] = data
-                    else
-                        predictionsBuffer.byStation[stationId] = data
-                    end
+                set = function(stationId, data)
+                    predictionsBuffer.byStation[stationId] = data
                 end,
             }
 
@@ -1013,7 +1109,6 @@ local function update()
                                     local chosenTerminalId, chosenStationId = utils.getTerminalAndStationId(config, signCon, signState, _getParamName, stationIds)
                                     logger.print('chosenTerminalId =', chosenTerminalId, 'chosenStationId =', chosenStationId)
                                     for _, stationId in pairs(stationIds) do
-                                        -- this works coz the table indexes have base 1
                                         if not(chosenStationId) or chosenStationId == stationId then
                                             if edgeUtils.isValidAndExistingId(stationId) then
                                                 local station = api.engine.getComponent(stationId, api.type.ComponentType.STATION)
@@ -1024,7 +1119,6 @@ local function update()
                                                     station,
                                                     config.maxEntries,
                                                     _time,
-                                                    chosenTerminalId, -- nil if config.singleTerminal == falsy
                                                     predictionsBufferHelpers,
                                                     linesBuffer,
                                                     _problemLineIds
@@ -1038,16 +1132,7 @@ local function update()
                                             end
                                         end
                                     end
-                                    if rawPredictions then
-                                        table.sort(rawPredictions, function(a, b) return a.arrivalTime < b.arrivalTime end)
-                                        for i = #rawPredictions, 1, -1 do
-                                            if i > (config.maxEntries or 0) then
-                                                table.remove(rawPredictions, i)
-                                            end
-                                        end
-                                    end
-                                    -- logger.print('rawPredictions =') logger.debugPrint(rawPredictions)
-                                    formattedPredictions = utils.getFormattedPredictions(rawPredictions or {}, _time, chosenTerminalId)
+                                    formattedPredictions = utils.getFormattedPredictions(config.maxEntries, rawPredictions or {}, _time, chosenTerminalId)
                                 end
                             end
                         end
