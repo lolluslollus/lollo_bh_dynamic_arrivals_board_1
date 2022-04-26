@@ -861,8 +861,8 @@ local function getNextPredictions(stationGroupId, stationGroup, nEntries, time, 
                                                 and myLineData.endIndex
                                                 or myLineData.startIndex
                                             logger.print('vehicle.arrivalStationTerminalLocked =', vehicle.arrivalStationTerminalLocked)
-                                            logger.print('vehicle.arrivalStationTerminal.station =', vehicle.arrivalStationTerminal.station)
-                                            logger.print('vehicle.arrivalStationTerminal.terminal =', vehicle.arrivalStationTerminal.terminal)
+                                            logger.print('vehicle.arrivalStationTerminal.station =', vehicle.arrivalStationTerminal and vehicle.arrivalStationTerminal.station or 'NIL')
+                                            logger.print('vehicle.arrivalStationTerminal.terminal =', vehicle.arrivalStationTerminal and vehicle.arrivalStationTerminal.terminal or 'NIL')
                                             local actualStationId = (vehicle.arrivalStationTerminalLocked and vehicle.stopIndex + 1 == hereIndex)
                                                 and stationIds[vehicle.arrivalStationTerminal.station + 1]
                                                 or stationId
