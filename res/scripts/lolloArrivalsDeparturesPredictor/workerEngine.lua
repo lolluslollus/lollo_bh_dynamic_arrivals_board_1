@@ -168,7 +168,7 @@ local utils = {
     end,
 }
 utils.getFormattedPredictions = function(maxEntries, allRawPredictions, time, stationIdIfAny, terminalIdIfAny)
-    -- logger.print('getFormattedPredictions starting, allRawPredictions =') logger.debugPrint(allRawPredictions)
+    logger.print('getFormattedPredictions starting, allRawPredictions =') logger.debugPrint(allRawPredictions)
 
     local results = {}
 
@@ -266,7 +266,7 @@ utils.getFormattedPredictions = function(maxEntries, allRawPredictions, time, st
         }
     end
 
-    -- logger.print('getFormattedPredictions about to return results =') logger.debugPrint(results)
+    logger.print('getFormattedPredictions about to return results =') logger.debugPrint(results)
     return results
 end
 
@@ -635,8 +635,7 @@ local getRemainingTimeToPrecedingStop = function(averages, lastStopIndex, hereIn
 end
 
 local function getNextPredictions(stationGroupId, stationGroup, nEntries, time, predictionsBufferHelpers, lineBuffer, problemLineIds)
-    logger.print('getNextPredictions starting')
-    logger.print('stationGroupId =') logger.debugPrint(stationGroupId)
+    logger.print('getNextPredictions starting, stationGroupId =', stationGroupId or 'NIL')
     local predictions = {}
 
     if not(stationGroupId) or not(stationGroup) or not(stationGroup.stations) or not(nEntries) or nEntries < 1 then return predictions end
