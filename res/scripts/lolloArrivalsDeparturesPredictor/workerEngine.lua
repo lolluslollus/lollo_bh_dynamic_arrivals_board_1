@@ -669,8 +669,17 @@ local function getNextPredictions(stationGroupId, stationGroup, nEntries, time, 
                     -- neither does api.engine.system.lineSystem.getLineStopsForStation(stationId)
                     -- neither does api.engine.system.lineSystem.getLineStops(stationGroupId)
                     -- neither does api.engine.system.lineSystem.getTerminal2lineStops()
-                    local lineIds = api.engine.system.lineSystem.getLineStopsForTerminal(stationId, terminalIndexBase0)
-                    for _, lineId in pairs(lineIds) do
+                    local lineIdsWithDoubles = api.engine.system.lineSystem.getLineStopsForTerminal(stationId, terminalIndexBase0)
+                    -- If a line visits a station twice, the result may be:
+                    -- {
+                    --     [1] = 25494,
+                    --     [2] = 25494,
+                    -- }
+                    local lineIdsIndexed = {}
+                    for _, lineId in pairs(lineIdsWithDoubles) do
+                        lineIdsIndexed[lineId] = true
+                    end
+                    for lineId, _ in pairs(lineIdsIndexed) do
                         logger.print('lineId =', lineId or 'NIL')
                         local line = api.engine.getComponent(lineId, api.type.ComponentType.LINE)
                         if line then
@@ -750,6 +759,7 @@ local function getNextPredictions(stationGroupId, stationGroup, nEntries, time, 
                             -- logger.print('There are', #vehicleIds, 'vehicles')
                             if #vehicleIds > 0 then
                                 local nStops = #line.stops
+                                -- LOLLO TODO what if a line visits the same station twice or thrice?
                                 local hereIndex, nextIndex = getHereNextIndexes(line, stationGroupId, stationIndexInStationGroupBase0, terminalIndexBase0)
                                 -- local hereIndex, startIndex, endIndex = getHereStartEndIndexesOLD(line, stationGroupId, stationIndexInStationGroupBase0, terminalIndexBase0)
                                 -- logger.print('hereIndex, startIndex, endIndex, nStops =', hereIndex, startIndex, endIndex, nStops)
@@ -856,15 +866,19 @@ local function getNextPredictions(stationGroupId, stationGroup, nEntries, time, 
                                             local originIndex = (hereIndex > myLineData.startIndex and hereIndex <= myLineData.endIndex)
                                                 and myLineData.startIndex
                                                 or myLineData.endIndex
+                                            logger.print('originIndex =', originIndex)
                                             local destIndex = (hereIndex >= myLineData.startIndex and hereIndex < myLineData.endIndex)
                                                 and myLineData.endIndex
                                                 or myLineData.startIndex
+                                            logger.print('destIndex =', destIndex)
                                             logger.print('vehicle.arrivalStationTerminalLocked =', vehicle.arrivalStationTerminalLocked)
                                             logger.print('vehicle.arrivalStationTerminal.station =', vehicle.arrivalStationTerminal and vehicle.arrivalStationTerminal.station or 'NIL')
                                             logger.print('vehicle.arrivalStationTerminal.terminal =', vehicle.arrivalStationTerminal and vehicle.arrivalStationTerminal.terminal or 'NIL')
                                             local actualStationId = (vehicle.arrivalStationTerminalLocked and vehicle.stopIndex + 1 == hereIndex)
                                                 and stationIds[vehicle.arrivalStationTerminal.station + 1]
                                                 or stationId
+                                            logger.print('stationId =', stationId)
+                                            logger.print('actualStationId =', actualStationId)
                                             local actualTerminalId = (vehicle.arrivalStationTerminalLocked and vehicle.stopIndex + 1 == hereIndex)
                                                 and terminalIds[vehicle.arrivalStationTerminal.terminal + 1]
                                                 or terminalId
