@@ -27,10 +27,10 @@ local _texts = {
 }
 
 local _vehicleStates = {
-    atTerminal = api.type.enum.TransportVehicleState.AT_TERMINAL, -- 2
-    enRoute = api.type.enum.TransportVehicleState.EN_ROUTE, -- 1
-    goingToDepot = api.type.enum.TransportVehicleState.GOING_TO_DEPOT, -- 3
-    inDepot = api.type.enum.TransportVehicleState.IN_DEPOT, -- 0
+    atTerminal = 2, -- api.type.enum.TransportVehicleState.AT_TERMINAL, -- 2
+    enRoute = 1, -- api.type.enum.TransportVehicleState.EN_ROUTE, -- 1
+    goingToDepot = 3, -- api.type.enum.TransportVehicleState.GOING_TO_DEPOT, -- 3
+    inDepot = 0, -- api.type.enum.TransportVehicleState.IN_DEPOT, -- 0
 }
 
 local utils = {
@@ -660,10 +660,7 @@ local getTimeFromLatestToPrecedingStop = function(averages, nextStopIndexBase0, 
 
     local nextStopIndex = nextStopIndexBase0 + 1
     while nextStopIndex ~= hereIndex do
-         -- LOLLO TODO what if the vehicle is loading at nextStopIndex? I added this if...then, check it
-        if (vehicleState ~= _vehicleStates.atTerminal or nextStopIndex ~= nextStopIndexBase0 + 1) then
-            result = result + averages[nextStopIndex].lsd
-        end
+        result = result + averages[nextStopIndex].lsd
         nextStopIndex = nextStopIndex + 1
         if nextStopIndex > nStops then nextStopIndex = 1 end
     end
