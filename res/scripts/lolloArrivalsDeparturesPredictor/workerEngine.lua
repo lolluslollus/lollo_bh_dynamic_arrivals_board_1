@@ -428,7 +428,7 @@ local function getHereNextIndexesOLD(line, stationGroupId, stationIndexBase0, te
 end
 
 local function getHereNextIndexes(nextStopIndexBase0, line, stationGroupId, stationIndexBase0, terminalIndexBase0)
-    logger.print('getHereNextIndexes starting, stops =') logger.debugPrint(line.stops)
+    -- logger.print('getHereNextIndexes starting, stops =') logger.debugPrint(line.stops)
     local stops = line.stops
     local nStops = #line.stops
 
