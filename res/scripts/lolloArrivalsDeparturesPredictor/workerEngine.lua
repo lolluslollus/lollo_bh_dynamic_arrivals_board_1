@@ -402,8 +402,8 @@ local function getHereStartEndIndexesOLD(line, stationGroupId, stationIndexBase0
     return hereIndexBase1, startIndexBase1, endIndexBase1
 end
 
-local function getHereNextIndexes(line, stationGroupId, stationIndexBase0, terminalIndexBase0)
-    -- logger.print('getHereNextIndexes starting, line =') logger.debugPrint(line)
+local function getHereNextIndexesOLD(line, stationGroupId, stationIndexBase0, terminalIndexBase0)
+    -- logger.print('getHereNextIndexesOLD starting, line =') logger.debugPrint(line)
     local stops = line.stops
     local nStops = #line.stops
 
@@ -415,6 +415,40 @@ local function getHereNextIndexes(line, stationGroupId, stationIndexBase0, termi
         end
     end
     if hereIndex == 0 then
+        logger.warn('cannot find hereIndexBase1')
+        hereIndex = 1
+    end
+
+    local nextIndex = hereIndex + 1
+    if nextIndex > nStops then
+        nextIndex = 1
+    end
+
+    return hereIndex, nextIndex
+end
+
+local function getHereNextIndexes(nextStopIndexBase0, line, stationGroupId, stationIndexBase0, terminalIndexBase0)
+    logger.print('getHereNextIndexes starting, stops =') logger.debugPrint(line.stops)
+    local stops = line.stops
+    local nStops = #line.stops
+
+    -- a line might visit the same station and terminal multiple times
+    local counter = 0
+    local stopIndex = nextStopIndexBase0 + 1
+    while not(
+        stops[stopIndex].stationGroup == stationGroupId
+        and stops[stopIndex].station == stationIndexBase0
+        and stops[stopIndex].terminal == terminalIndexBase0
+    ) and counter < (nStops + 1) do
+        counter = counter + 1
+        stopIndex = stopIndex + 1
+        if stopIndex > nStops then
+            stopIndex = 1
+        end
+    end
+    local hereIndex = stopIndex
+
+    if hereIndex == 0 or counter > nStops then
         logger.warn('cannot find hereIndexBase1')
         hereIndex = 1
     end
@@ -621,10 +655,10 @@ local function getLastDepartureTime(vehicle, time)
     return result
 end
 
-local getRemainingTimeToPrecedingStop = function(averages, lastStopIndex, hereIndex, nStops)
+local getRemainingTimeToPrecedingStop = function(averages, nextStopIndexBase0, hereIndex, nStops)
     local result = 0
 
-    local nextStopIndex = lastStopIndex + 1
+    local nextStopIndex = nextStopIndexBase0 + 1
     while nextStopIndex ~= hereIndex do
         result = result + averages[nextStopIndex].lsd
         nextStopIndex = nextStopIndex + 1
@@ -759,17 +793,12 @@ local function getNextPredictions(stationGroupId, stationGroup, nEntries, time, 
                             -- logger.print('There are', #vehicleIds, 'vehicles')
                             if #vehicleIds > 0 then
                                 local nStops = #line.stops
-                                -- LOLLO TODO what if a line visits the same station twice or thrice?
-                                local hereIndex, nextIndex = getHereNextIndexes(line, stationGroupId, stationIndexInStationGroupBase0, terminalIndexBase0)
-                                -- local hereIndex, startIndex, endIndex = getHereStartEndIndexesOLD(line, stationGroupId, stationIndexInStationGroupBase0, terminalIndexBase0)
-                                -- logger.print('hereIndex, startIndex, endIndex, nStops =', hereIndex, startIndex, endIndex, nStops)
-                                logger.print('hereIndex, nextIndex, nStops =', hereIndex, nextIndex, nStops)
                                 if nStops < 2 --[[ or problemLineIds[lineId] ]] then
                                     predictions[#predictions+1] = {
                                         terminalId = terminalId,
                                         originStationGroupId = nil, --line.stops[1].stationGroup,
                                         destinationStationGroupId = nil, --line.stops[1].stationGroup,
-                                        nextStationGroupId = nil,
+                                        -- nextStationGroupId = nil,
                                         arrivalTime = time + 3600, -- add a dummy hour
                                         departureTime = time + 3600,
                                         isProblem = true,
@@ -779,7 +808,7 @@ local function getNextPredictions(stationGroupId, stationGroup, nEntries, time, 
                                     logger.print('myLineData.averages =') logger.debugPrint(myLineData.averages)
 
                                     for _, vehicleId in pairs(vehicleIds) do
-                                        logger.print('vehicleId =', vehicleId or 'NIL')
+                                        logger.print('-- -- vehicleId =', vehicleId or 'NIL')
                                         local vehicle = myLineData.vehicles[vehicleId]
                                         if not(vehicle) then
                                             logger.warn('vehicle with id ' .. (vehicleId or 'NIL') .. ' not found but it should be there')
@@ -792,7 +821,7 @@ local function getNextPredictions(stationGroupId, stationGroup, nEntries, time, 
                                                 sellOnArrival = false, --boolean
                                                 noPath = false, -- boolean NEW with spring 2022 update
 
-                                                stopIndex = 1, -- last stop index or next stop index in base 0
+                                                stopIndex = 1, -- next stop index in base 0
                                                 arrivalStationTerminal = { -- NEW with spring 2022 update
                                                     station = -1, -- -1 if arrivalStationTerminalLocked is false, otherwise a ???
                                                     terminal = -1, -- -1 if arrivalStationTerminalLocked is false, otherwise a terminal counter in base 0
@@ -818,7 +847,7 @@ local function getNextPredictions(stationGroupId, stationGroup, nEntries, time, 
 
                                                 Here is another example with two vehicles on the same line:
                                                 line = 86608,
-                                                stopIndex = 5, -- last stop index or next stop index in base 0
+                                                stopIndex = 5, -- next stop index in base 0
                                                 lineStopDepartures = {
                                                     [1] = 19082400,
                                                     [2] = 19228400,
@@ -837,7 +866,7 @@ local function getNextPredictions(stationGroupId, stationGroup, nEntries, time, 
                                                     [6] = 93.200004577637,
                                                 },
                                                 line = 86608,
-                                                stopIndex = 2, -- last stop index or next stop index in base 0
+                                                stopIndex = 2, -- next stop index in base 0
                                                 lineStopDepartures = {
                                                     [1] = 19769400,
                                                     [2] = 19904000,
@@ -859,9 +888,13 @@ local function getNextPredictions(stationGroupId, stationGroup, nEntries, time, 
                                             ]]
                                             logger.print('vehicle.stopIndex =', vehicle.stopIndex)
 
+                                            local hereIndex, nextIndex = getHereNextIndexes(vehicle.stopIndex, line, stationGroupId, stationIndexInStationGroupBase0, terminalIndexBase0)
+                                            logger.print('hereIndex, nextIndex, nStops =', hereIndex, nextIndex, nStops)
+
                                             local lastDepartureTime = getLastDepartureTime(vehicle, time)
                                             logger.print('lastDepartureTime =', lastDepartureTime)
                                             local remainingTimeToPrecedingStop = getRemainingTimeToPrecedingStop(myLineData.averages, vehicle.stopIndex, hereIndex, nStops)
+                                            logger.print('remainingTimeToPrecedingStop =', remainingTimeToPrecedingStop)
 
                                             local originIndex = (hereIndex > myLineData.startIndex and hereIndex <= myLineData.endIndex)
                                                 and myLineData.startIndex
@@ -890,7 +923,7 @@ local function getNextPredictions(stationGroupId, stationGroup, nEntries, time, 
                                                 terminalId = actualTerminalId,
                                                 originStationGroupId = line.stops[originIndex].stationGroup,
                                                 destinationStationGroupId = line.stops[destIndex].stationGroup,
-                                                nextStationGroupId = line.stops[nextIndex].stationGroup,
+                                                -- nextStationGroupId = line.stops[nextIndex].stationGroup,
                                                 arrivalTime = lastDepartureTime + remainingTimeToPrecedingStop + myLineData.averages[hereIndex].st,
                                                 departureTime = lastDepartureTime + remainingTimeToPrecedingStop + myLineData.averages[hereIndex].lsd,
                                                 lineName = myLineData.name,
@@ -903,7 +936,7 @@ local function getNextPredictions(stationGroupId, stationGroup, nEntries, time, 
                                                     terminalId = actualTerminalId,
                                                     originStationGroupId = line.stops[originIndex].stationGroup,
                                                     destinationStationGroupId = line.stops[destIndex].stationGroup,
-                                                    nextStationGroupId = line.stops[nextIndex].stationGroup,
+                                                    -- nextStationGroupId = line.stops[nextIndex].stationGroup,
                                                     arrivalTime = predictions[#predictions].arrivalTime + myLineData.period,
                                                     departureTime = predictions[#predictions].departureTime + myLineData.period,
                                                     lineName = myLineData.name,
