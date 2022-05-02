@@ -26,6 +26,13 @@ local _texts = {
     to = _('To'),
 }
 
+local _vehicleStates = {
+    atTerminal = api.type.enum.TransportVehicleState.AT_TERMINAL, -- 2
+    enRoute = api.type.enum.TransportVehicleState.EN_ROUTE, -- 1
+    goingToDepot = api.type.enum.TransportVehicleState.GOING_TO_DEPOT, -- 3
+    inDepot = api.type.enum.TransportVehicleState.IN_DEPOT, -- 0
+}
+
 local utils = {
     bulldozeConstruction = function(conId)
         if not(edgeUtils.isValidAndExistingId(conId)) then
@@ -531,13 +538,6 @@ local function getMyLineData(vehicleIds, line, lineId, lineWaitingTime, buffer)
     -- logger.print('nStops =', nStops)
     logger.print('fallbackLegDuration =', fallbackLegDuration)
 
-    local _vehicleStates = {
-        atTerminal = api.type.enum.TransportVehicleState.AT_TERMINAL, -- 2
-        enRoute = api.type.enum.TransportVehicleState.EN_ROUTE, -- 1
-    -- api.type.enum.TransportVehicleState.GOING_TO_DEPOT -- 3
-    -- api.type.enum.TransportVehicleState.IN_DEPOT -- 0
-    }
-
     local averages = {}
     local period = 0
     local vehicles = {}
@@ -655,12 +655,15 @@ local function getLastDepartureTime(vehicle, time)
     return result
 end
 
-local getRemainingTimeToPrecedingStop = function(averages, nextStopIndexBase0, hereIndex, nStops)
+local getTimeFromLatestToPrecedingStop = function(averages, nextStopIndexBase0, vehicleState, hereIndex, nStops)
     local result = 0
 
     local nextStopIndex = nextStopIndexBase0 + 1
     while nextStopIndex ~= hereIndex do
-        result = result + averages[nextStopIndex].lsd
+         -- LOLLO TODO what if the vehicle is loading at nextStopIndex? I added this if...then, check it
+        if (vehicleState ~= _vehicleStates.atTerminal or nextStopIndex ~= nextStopIndexBase0 + 1) then
+            result = result + averages[nextStopIndex].lsd
+        end
         nextStopIndex = nextStopIndex + 1
         if nextStopIndex > nStops then nextStopIndex = 1 end
     end
@@ -812,7 +815,7 @@ local function getNextPredictions(stationGroupId, stationGroup, nEntries, time, 
                                         local vehicle = myLineData.vehicles[vehicleId]
                                         if not(vehicle) then
                                             logger.warn('vehicle with id ' .. (vehicleId or 'NIL') .. ' not found but it should be there')
-                                        else
+                                        elseif (vehicle.state == _vehicleStates.atTerminal or vehicle.state == _vehicleStates.enRoute) then
                                             --[[
                                                 vehicle has:
                                                 state = 1, -- at terminal, en route, going to depot, in depot
@@ -887,13 +890,14 @@ local function getNextPredictions(stationGroupId, stationGroup, nEntries, time, 
                                                 sectionTimes tend to be similar but they don't account for the time spent standing
                                             ]]
                                             logger.print('vehicle.stopIndex =', vehicle.stopIndex)
+                                            logger.print('vehicle.state =', vehicle.state)
 
                                             local hereIndex, nextIndex = getHereNextIndexes(vehicle.stopIndex, line, stationGroupId, stationIndexInStationGroupBase0, terminalIndexBase0)
                                             logger.print('hereIndex, nextIndex, nStops =', hereIndex, nextIndex, nStops)
 
                                             local lastDepartureTime = getLastDepartureTime(vehicle, time)
                                             logger.print('lastDepartureTime =', lastDepartureTime)
-                                            local remainingTimeToPrecedingStop = getRemainingTimeToPrecedingStop(myLineData.averages, vehicle.stopIndex, hereIndex, nStops)
+                                            local remainingTimeToPrecedingStop = getTimeFromLatestToPrecedingStop(myLineData.averages, vehicle.stopIndex, vehicle.state, hereIndex, nStops)
                                             logger.print('remainingTimeToPrecedingStop =', remainingTimeToPrecedingStop)
 
                                             local originIndex = (hereIndex > myLineData.startIndex and hereIndex <= myLineData.endIndex)
