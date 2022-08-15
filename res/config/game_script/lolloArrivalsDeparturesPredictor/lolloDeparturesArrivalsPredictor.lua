@@ -4,6 +4,7 @@ local workerEngine = require("lolloArrivalsDeparturesPredictor.workerEngine")
 local guiEngine = require("lolloArrivalsDeparturesPredictor.guiEngine")
 
 -- LOLLO NOTE you can only update the state from the worker thread
+-- LOLLO NOTE if this script is inside a subdirectory, fine; otherwise, guiInit() might fire before all has been initialised
 stateHelpers.initState()
 
 function data()
