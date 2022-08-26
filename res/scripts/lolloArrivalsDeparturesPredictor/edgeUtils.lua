@@ -80,7 +80,7 @@ end
 --     any2, any1 = any1, any2
 -- end
 
-helper.getNearbyObjectIds = function(transf, searchRadius, componentType, minZ)
+helper.getNearbyObjectIds = function(transf, searchRadius, componentType, minZ, maxZ)
     if type(transf) ~= 'table' then return {} end
 
     if not(componentType) then componentType = api.type.ComponentType.BASE_EDGE end
@@ -89,7 +89,7 @@ helper.getNearbyObjectIds = function(transf, searchRadius, componentType, minZ)
     local _searchRadius = searchRadius or 0.5
     local _box0 = api.type.Box3.new(
         api.type.Vec3f.new(_position[1] - _searchRadius, _position[2] - _searchRadius, minZ or -9999),
-        api.type.Vec3f.new(_position[1] + _searchRadius, _position[2] + _searchRadius, 9999)
+        api.type.Vec3f.new(_position[1] + _searchRadius, _position[2] + _searchRadius, maxZ or 9999)
     )
     local results = {}
     local callbackDefault = function(entity, boundingVolume)
@@ -126,7 +126,7 @@ helper.getNearbyObjectIds = function(transf, searchRadius, componentType, minZ)
     return results
 end
 
-helper.getNearbyObjects = function(transf, searchRadius, componentType, minZ)
+helper.getNearbyObjects = function(transf, searchRadius, componentType, minZ, maxZ)
     if type(transf) ~= 'table' then return {} end
 
     if not(componentType) then componentType = api.type.ComponentType.BASE_EDGE end
@@ -135,7 +135,7 @@ helper.getNearbyObjects = function(transf, searchRadius, componentType, minZ)
     local _searchRadius = searchRadius or 0.5
     local _box0 = api.type.Box3.new(
         api.type.Vec3f.new(_position[1] - _searchRadius, _position[2] - _searchRadius, minZ or -9999),
-        api.type.Vec3f.new(_position[1] + _searchRadius, _position[2] + _searchRadius, 9999)
+        api.type.Vec3f.new(_position[1] + _searchRadius, _position[2] + _searchRadius, maxZ or 9999)
     )
     local results = {}
     local callbackDefault = function(entityId, boundingVolume)
@@ -781,14 +781,14 @@ helper.isXYZSame = function(xyz1, xyz2)
 end
 
 helper.street = {}
-helper.street.getNearestEdgeId = function(transf, minZ)
+helper.street.getNearestEdgeId = function(transf, minZ, maxZ)
     if type(transf) ~= 'table' then return nil end
 
     local _position = transfUtils.getVec123Transformed({0, 0, 0}, transf)
     local _searchRadius = 0.5
     local _box0 = api.type.Box3.new(
         api.type.Vec3f.new(_position[1] - _searchRadius, _position[2] - _searchRadius, minZ or -9999),
-        api.type.Vec3f.new(_position[1] + _searchRadius, _position[2] + _searchRadius, 9999)
+        api.type.Vec3f.new(_position[1] + _searchRadius, _position[2] + _searchRadius, maxZ or 9999)
     )
     local baseEdgeIds = {}
     local callback0 = function(entity, boundingVolume)
@@ -942,7 +942,7 @@ helper.track.getContiguousEdges = function(edgeId, acceptedTrackTypes)
     return results
 end
 
-helper.track.getNearestEdgeIdStrict = function(transf, minZ)
+helper.track.getNearestEdgeIdStrict = function(transf, minZ, maxZ)
     if type(transf) ~= 'table' then return nil end
 
     local _position = transfUtils.getVec123Transformed({0, 0, 0}, transf)
@@ -950,7 +950,7 @@ helper.track.getNearestEdgeIdStrict = function(transf, minZ)
     local _searchRadius = 0.5
     local _box0 = api.type.Box3.new(
         api.type.Vec3f.new(_position[1] - _searchRadius, _position[2] - _searchRadius, minZ or -9999),
-        api.type.Vec3f.new(_position[1] + _searchRadius, _position[2] + _searchRadius, 9999)
+        api.type.Vec3f.new(_position[1] + _searchRadius, _position[2] + _searchRadius, maxZ or 9999)
     )
     local baseEdgeIds = {}
     local callback0 = function(entity, boundingVolume)
