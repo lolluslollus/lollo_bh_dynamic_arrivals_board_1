@@ -72,6 +72,7 @@ end
 -- end
 
 -- useless coz the refs to any1 and any2 are passed by val
+-- and lua has a smarter way to do that
 -- helper.swap = function(any1, any2)
 --     -- local swapTemp = any1
 --     -- any1 = any2
@@ -79,7 +80,7 @@ end
 --     any2, any1 = any1, any2
 -- end
 
-helper.getNearbyObjectIds = function(transf, searchRadius, componentType)
+helper.getNearbyObjectIds = function(transf, searchRadius, componentType, minZ)
     if type(transf) ~= 'table' then return {} end
 
     if not(componentType) then componentType = api.type.ComponentType.BASE_EDGE end
@@ -87,7 +88,7 @@ helper.getNearbyObjectIds = function(transf, searchRadius, componentType)
     local _position = transfUtils.getVec123Transformed({0, 0, 0}, transf)
     local _searchRadius = searchRadius or 0.5
     local _box0 = api.type.Box3.new(
-        api.type.Vec3f.new(_position[1] - _searchRadius, _position[2] - _searchRadius, -9999),
+        api.type.Vec3f.new(_position[1] - _searchRadius, _position[2] - _searchRadius, minZ or -9999),
         api.type.Vec3f.new(_position[1] + _searchRadius, _position[2] + _searchRadius, 9999)
     )
     local results = {}
@@ -125,7 +126,7 @@ helper.getNearbyObjectIds = function(transf, searchRadius, componentType)
     return results
 end
 
-helper.getNearbyObjects = function(transf, searchRadius, componentType)
+helper.getNearbyObjects = function(transf, searchRadius, componentType, minZ)
     if type(transf) ~= 'table' then return {} end
 
     if not(componentType) then componentType = api.type.ComponentType.BASE_EDGE end
@@ -133,7 +134,7 @@ helper.getNearbyObjects = function(transf, searchRadius, componentType)
     local _position = transfUtils.getVec123Transformed({0, 0, 0}, transf)
     local _searchRadius = searchRadius or 0.5
     local _box0 = api.type.Box3.new(
-        api.type.Vec3f.new(_position[1] - _searchRadius, _position[2] - _searchRadius, -9999),
+        api.type.Vec3f.new(_position[1] - _searchRadius, _position[2] - _searchRadius, minZ or -9999),
         api.type.Vec3f.new(_position[1] + _searchRadius, _position[2] + _searchRadius, 9999)
     )
     local results = {}
@@ -197,7 +198,7 @@ helper.getEdgeLength = function(edgeId)
     -- return tn.edges[1].geometry.length
 end
 
-helper.getNodeBetween = function(position0, position1, tangent0, tangent1, shift0To1) --, length)
+helper.getNodeBetween = function(position0, position1, tangent0, tangent1, shift0To1, isExtendedLog) --, length)
     -- these should be identical, but they are not really so, so we average them
     local length0 = helper.getVectorLength({
         x = tangent0.x,
@@ -211,6 +212,12 @@ helper.getNodeBetween = function(position0, position1, tangent0, tangent1, shift
     })
     local length = (length0 + length1) * 0.5
     if type(length) ~= 'number' or length <= 0 then return nil end
+
+    if isExtendedLog then
+        print('length0 =', length0 or 'NIL')
+        print('length1 =', length1 or 'NIL')
+        print('length =', length or 'NIL')
+    end
 
     -- print('getNodeBetween starting, shift0To1 =', shift0To1, 'length =', length)
     -- print('baseEdge =') debugPrint(baseEdge)
@@ -331,7 +338,7 @@ helper.getNodeBetweenByPercentageShift = function(edgeId, shift0To1)
     return helper.getNodeBetween(baseNode0.position, baseNode1.position, baseEdge.tangent0, baseEdge.tangent1, shift0To1)
 end
 
-helper.getNodeBetweenByPosition = function(edgeId, position)
+helper.getNodeBetweenByPosition = function(edgeId, position, isExtendedLog)
     if not(helper.isValidAndExistingId(edgeId)) then return nil end
 
     if position == nil or (position[1] == nil and position.x == nil) or (position[2] == nil and position.y == nil) or (position[3] == nil and position.z == nil)
@@ -355,7 +362,19 @@ helper.getNodeBetweenByPosition = function(edgeId, position)
         z = (position[3] or position.z) - baseNode1.position.z,
     })
 
-    return helper.getNodeBetween(baseNode0.position, baseNode1.position, baseEdge.tangent0, baseEdge.tangent1, length0 / (length0 + length1))
+    if isExtendedLog then
+        print('getNodeBetweenByPosition firing')
+        print('baseNode0.position =') debugPrint(baseNode0.position)
+        print('baseNode1.position =') debugPrint(baseNode1.position)
+        print('baseEdge.tangent0 =') debugPrint(baseEdge.tangent0)
+        print('baseEdge.tangent1 =') debugPrint(baseEdge.tangent1)
+        print('length0 =', length0)
+        print('length1 =', length1)
+        print('length0 / (length0 + length1) =', length0 / (length0 + length1))
+        print('getNodeBetween about to fire')
+    end
+
+    return helper.getNodeBetween(baseNode0.position, baseNode1.position, baseEdge.tangent0, baseEdge.tangent1, length0 / (length0 + length1), isExtendedLog)
 end
 
 helper.getNodeBetweenOLD = function(position0, tangent0, position1, tangent1, betweenPosition)
@@ -762,13 +781,13 @@ helper.isXYZSame = function(xyz1, xyz2)
 end
 
 helper.street = {}
-helper.street.getNearestEdgeId = function(transf)
+helper.street.getNearestEdgeId = function(transf, minZ)
     if type(transf) ~= 'table' then return nil end
 
     local _position = transfUtils.getVec123Transformed({0, 0, 0}, transf)
     local _searchRadius = 0.5
     local _box0 = api.type.Box3.new(
-        api.type.Vec3f.new(_position[1] - _searchRadius, _position[2] - _searchRadius, -9999),
+        api.type.Vec3f.new(_position[1] - _searchRadius, _position[2] - _searchRadius, minZ or -9999),
         api.type.Vec3f.new(_position[1] + _searchRadius, _position[2] + _searchRadius, 9999)
     )
     local baseEdgeIds = {}
@@ -923,13 +942,14 @@ helper.track.getContiguousEdges = function(edgeId, acceptedTrackTypes)
     return results
 end
 
-helper.track.getNearestEdgeIdStrict = function(transf)
+helper.track.getNearestEdgeIdStrict = function(transf, minZ)
     if type(transf) ~= 'table' then return nil end
 
     local _position = transfUtils.getVec123Transformed({0, 0, 0}, transf)
+    -- print('position =') debugPrint(_position)
     local _searchRadius = 0.5
     local _box0 = api.type.Box3.new(
-        api.type.Vec3f.new(_position[1] - _searchRadius, _position[2] - _searchRadius, -9999),
+        api.type.Vec3f.new(_position[1] - _searchRadius, _position[2] - _searchRadius, minZ or -9999),
         api.type.Vec3f.new(_position[1] + _searchRadius, _position[2] + _searchRadius, 9999)
     )
     local baseEdgeIds = {}
@@ -1016,7 +1036,7 @@ helper.track.getNearestEdgeIdStrict = function(transf)
         --         end
         --     end
         -- end
-        print('lolloArrivalsDeparturesPredictor WARNING track.getNearestEdgeIdStrict falling back')
+        print('track.getNearestEdgeIdStrict falling back, could not find an edge covering the position')
         return baseEdgeIds[1] -- fallback
     end
 end
