@@ -577,6 +577,7 @@ utils.getPosTanX2Reversed = function(posTanX2)
     }
 end
 
+--#region very close
 -- "%." .. math.floor(significantFigures) .. "g"
 -- we make the array for performance reasons
 local _isVeryCloseFormatStrings = {
@@ -594,7 +595,6 @@ local _isVeryCloseFormatStrings = {
 -- 1 + 10^(-significantFigures +1) -- 1.01 with 3 significant figures, 1.001 with 4, etc
 -- we make the array for performance reasons
 local _isVeryCloseTesters = {
-    2,
     1.1,
     1.01,
     1.001,
@@ -604,28 +604,82 @@ local _isVeryCloseTesters = {
     1.0000001,
     1.00000001,
     1.000000001,
+    1.0000000001,
 }
-utils.isNumVeryClose = function(num1, num2, significantFigures)
-    if type(num1) ~= 'number' or type(num2) ~= 'number' then return false end
-
-    if not(significantFigures) then significantFigures = 5
-    elseif type(significantFigures) ~= 'number' then return false
-    elseif significantFigures < 1 or significantFigures > 10 then return false
-    end
-
+local _getVeryCloseResult1 = function(num1, num2, significantFigures)
     local _formatString = _isVeryCloseFormatStrings[significantFigures]
-
+    local result = (_formatString):format(num1) == (_formatString):format(num2)
+    return result
+end
+-- in the debugger this is 40 % faster than the one above and it seems more accurate
+local _getVeryCloseResult2 = function(num1, num2, significantFigures)
+    local result
+    local exp1 = math.floor(math.log(math.abs(num1), 10))
+    local exp2 = math.floor(math.log(math.abs(num2), 10))
+    if exp1 ~= exp2 then
+        result = false
+    else
+        local mant1 = math.floor(num1 * 10^(significantFigures -exp1 -1))
+        local mant2 = math.floor(num2 * 10^(significantFigures -exp2 -1))
+        result = mant1 == mant2
+    end
+    return result
+end
+local _isSameSgnNumVeryClose = function (num1, num2, significantFigures)
+    -- local roundingFactor = _roundingFactors[significantFigures]
     -- wrong (less accurate):
     -- local roundedNum1 = math.ceil(num1 * roundingFactor)
     -- local roundedNum2 = math.ceil(num2 * roundingFactor)
     -- better:
     -- local roundedNum1 = math.floor(num1 * roundingFactor + 0.5)
     -- local roundedNum2 = math.floor(num2 * roundingFactor + 0.5)
-    -- return roundedNum1 == roundedNum2
+    -- return math.floor(roundedNum1 / roundingFactor) == math.floor(roundedNum2 / roundingFactor)
     -- but what I really want are the first significant figures, never mind how big the number is
-    return (_formatString):format(num1) == (_formatString):format(num2)
-        or (_formatString):format(num1 * _isVeryCloseTesters[significantFigures]) == (_formatString):format(num2 * _isVeryCloseTesters[significantFigures])
+
+    -- LOLLO TODO decide for one when done testing
+    -- local result1 = _getVeryCloseResult1(num1, num2, significantFigures)
+    -- or _getVeryCloseResult1(num1 * _isVeryCloseTesters[significantFigures], num2 * _isVeryCloseTesters[significantFigures], significantFigures)
+
+    local result2 = _getVeryCloseResult2(num1, num2, significantFigures)
+    or _getVeryCloseResult2(num1 * _isVeryCloseTesters[significantFigures], num2 * _isVeryCloseTesters[significantFigures], significantFigures)
+
+    -- if result1 ~= result2 then
+    --     print('############ WARNING : _isSameSgnNumVeryClose cannot decide between num1 =', num1, 'num2 =', num2, 'significantFigures =', significantFigures)
+    --     print('result1 =', result1 or 'NIL', 'result2 =', result2 or 'NIL')
+    -- end
+
+    return result2
 end
+utils.isNumVeryClose = function(num1, num2, significantFigures)
+    if type(num1) ~= 'number' or type(num2) ~= 'number' then return false end
+
+    if not(significantFigures) then significantFigures = 5
+    elseif type(significantFigures) ~= 'number' then return false
+    elseif significantFigures < 1 then return false
+    elseif significantFigures > 10 then significantFigures = 10
+    end
+
+    if (num1 > 0) == (num2 > 0) then
+        return _isSameSgnNumVeryClose(num1, num2, significantFigures)
+    else
+        local addFactor = 0
+        if math.abs(num1) < math.abs(num2) then
+            addFactor = num1 > 0 and -num1 or num1
+        else
+            addFactor = num2 > 0 and -num2 or num2
+        end
+        addFactor = addFactor + addFactor -- safely away from 0
+
+        return _isSameSgnNumVeryClose(num1 + addFactor, num2 + addFactor, significantFigures)
+    end
+end
+
+utils.isNumsCloserThan = function(num1, num2, comp)
+    if type(num1) ~= 'number' or type(num2) ~= 'number' or type(comp) ~= 'number' then return false end
+
+    return math.abs(num1-num2) < math.abs(comp)
+end
+--#endregion very close
 
 utils.sgn = function(num)
     if tonumber(num) == nil then return nil end

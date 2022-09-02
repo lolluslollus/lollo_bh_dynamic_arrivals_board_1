@@ -214,9 +214,7 @@ helper.getNodeBetween = function(position0, position1, tangent0, tangent1, shift
     if type(length) ~= 'number' or length <= 0 then return nil end
 
     if isExtendedLog then
-        print('length0 =', length0 or 'NIL')
-        print('length1 =', length1 or 'NIL')
-        print('length =', length or 'NIL')
+        print('getNodeBetween: ', 'length0 =', length0 or 'NIL', 'length1 =', length1 or 'NIL', 'length =', length or 'NIL')
     end
 
     -- print('getNodeBetween starting, shift0To1 =', shift0To1, 'length =', length)
@@ -259,7 +257,12 @@ helper.getNodeBetween = function(position0, position1, tangent0, tangent1, shift
 
     local testX = aX + bX * length + cX * length * length + dX * length * length * length
     -- print(testX, 'should be', position1.x)
-    if not(helper.isNumVeryClose(testX, position1.x, 3)) then return nil end
+    if not(helper.isNumVeryClose(testX, position1.x, 3)) then
+        if isExtendedLog then
+            print('getNodeBetween WARNING: Xs are not close enough:', testX, position1.x)
+        end
+        return nil
+    end
 
     local aY = position0.y
     local bY = tangent0.y / length
@@ -268,7 +271,12 @@ helper.getNodeBetween = function(position0, position1, tangent0, tangent1, shift
 
     local testY = aY + bY * length + cY * length * length + dY * length * length * length
     -- print(testY, 'should be', position1.y)
-    if not(helper.isNumVeryClose(testY, position1.y, 3)) then return nil end
+    if not(helper.isNumVeryClose(testY, position1.y, 3)) then
+        if isExtendedLog then
+            print('getNodeBetween WARNING: Ys are not close enough:', testY, position1.y)
+        end
+        return nil
+    end
 
     local aZ = position0.z
     local bZ = tangent0.z / length
@@ -277,7 +285,12 @@ helper.getNodeBetween = function(position0, position1, tangent0, tangent1, shift
 
     local testZ = aZ + bZ * length + cZ * length * length + dZ * length * length * length
     -- print(testZ, 'should be', position1.z)
-    if not(helper.isNumVeryClose(testZ, position1.z, 3)) then return nil end
+    if not(helper.isNumVeryClose(testZ, position1.z, 3)) then
+        if isExtendedLog then
+            print('getNodeBetween WARNING: Zs are not close enough:', testZ, position1.z)
+        end
+        return nil
+    end
 
     local lMid = shift0To1 * length
     local result = {
@@ -768,6 +781,27 @@ helper.isXYZVeryClose = function(xyz1, xyz2, significantFigures)
     return transfUtils.isNumVeryClose(X1, X2, significantFigures)
     and transfUtils.isNumVeryClose(Y1, Y2, significantFigures)
     and transfUtils.isNumVeryClose(Z1, Z2, significantFigures)
+end
+
+helper.isXYZCloserThan = function(xyz1, xyz2, comp)
+    if (type(xyz1) ~= 'table' and type(xyz1) ~= 'userdata')
+    or (type(xyz2) ~= 'table' and type(xyz2) ~= 'userdata')
+    or (type(comp) ~= 'number')
+    then return false end
+
+    local X1 = xyz1.x or xyz1[1]
+    local Y1 = xyz1.y or xyz1[2]
+    local Z1 = xyz1.z or xyz1[3]
+    local X2 = xyz2.x or xyz2[1]
+    local Y2 = xyz2.y or xyz2[2]
+    local Z2 = xyz2.z or xyz2[3]
+
+    if type(X1) ~= 'number' or type(Y1) ~= 'number' or type(Z1) ~= 'number' then return false end
+    if type(X2) ~= 'number' or type(Y2) ~= 'number' or type(Z2) ~= 'number' then return false end
+
+    return transfUtils.isNumsCloserThan(X1, X2, comp)
+    and transfUtils.isNumsCloserThan(Y1, Y2, comp)
+    and transfUtils.isNumsCloserThan(Z1, Z2, comp)
 end
 
 helper.isXYZSame = function(xyz1, xyz2)
