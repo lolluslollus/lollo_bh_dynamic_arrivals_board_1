@@ -345,8 +345,8 @@ utils.getPositionsMiddle = function(pos0, pos1)
     end
 end
 
+-- the result will be identical to the original but shifted sideways
 utils.getParallelSideways = function(posTanX2, sideShift)
-    -- the result will be identical to the original but shifted sideways
     local result = {
         {
             {},
@@ -369,8 +369,8 @@ utils.getParallelSideways = function(posTanX2, sideShift)
     return result
 end
 
+-- the result will be parallel to the original at its ends but stretched or compressed due to the shift.
 utils.getParallelSidewaysWithRotZ = function(posTanX2, sideShiftOnXYPlane)
-    -- the result will be parallel to the original at its ends but stretched or compressed due to the shift.
     local _rot90Transf = { 0, 1, 0, 0, -1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, }
 
     local oldPos1 = posTanX2[1][1]
@@ -382,18 +382,25 @@ utils.getParallelSidewaysWithRotZ = function(posTanX2, sideShiftOnXYPlane)
     local tan1RotatedAndNormalised = utils.getVectorNormalised(utils.getVec123Transformed(oldTan1, _rot90Transf), sideShiftOnXYPlane)
     local tan2RotatedAndNormalised = utils.getVectorNormalised(utils.getVec123Transformed(oldTan2, _rot90Transf), sideShiftOnXYPlane)
 
+    local newPos1 = { oldPos1[1] + tan1RotatedAndNormalised[1], oldPos1[2] + tan1RotatedAndNormalised[2], oldPos1[3] }
+    local newPos2 = { oldPos2[1] + tan2RotatedAndNormalised[1], oldPos2[2] + tan2RotatedAndNormalised[2], oldPos2[3] }
+    local xRatio = (oldPos2[1] ~= oldPos1[1]) and math.abs((newPos2[1] - newPos1[1]) / (oldPos2[1] - oldPos1[1])) or nil
+    local yRatio = (oldPos2[2] ~= oldPos1[2]) and math.abs((newPos2[2] - newPos1[2]) / (oldPos2[2] - oldPos1[2])) or nil
+    if not(xRatio) or not(yRatio) then xRatio, yRatio = 1, 1 end
+    local newTan1 = { posTanX2[1][2][1] * xRatio, posTanX2[1][2][2] * yRatio, posTanX2[1][2][3] }
+    local newTan2 = { posTanX2[2][2][1] * xRatio, posTanX2[2][2][2] * yRatio, posTanX2[2][2][3] }
     local result = {
         {
-            { oldPos1[1] + tan1RotatedAndNormalised[1], oldPos1[2] + tan1RotatedAndNormalised[2], oldPos1[3] },
-            posTanX2[1][2]
+            newPos1,
+            newTan1,
         },
         {
-            { oldPos2[1] + tan2RotatedAndNormalised[1], oldPos2[2] + tan2RotatedAndNormalised[2], oldPos2[3] },
-            posTanX2[2][2]
+            newPos2,
+            newTan2,
         },
     }
 
-    return result
+    return result, xRatio, yRatio
 end
 
 utils.get1MLaneTransf = function(pos1, pos2)
