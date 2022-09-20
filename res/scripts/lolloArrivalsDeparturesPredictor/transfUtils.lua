@@ -287,6 +287,51 @@ utils.getPositionRaisedBy = function(position, raiseBy)
     end
 end
 
+utils.getTransfXShiftedBy = function(transf, shift)
+    -- faster than calling mul()
+    if transf == nil or type(shift) ~= 'number' then return transf end
+
+    return {
+        transf[1], transf[2], transf[3], transf[4],
+        transf[5], transf[6], transf[7], transf[8],
+        transf[9], transf[10], transf[11], transf[12],
+        transf[1] * shift + transf[13],
+        transf[2] * shift + transf[14],
+		transf[3] * shift + transf[15],
+		transf[4] * shift + transf[16],
+    }
+end
+
+utils.getTransfYShiftedBy = function(transf, shift)
+    -- faster than calling mul()
+    if transf == nil or type(shift) ~= 'number' then return transf end
+
+    return {
+        transf[1], transf[2], transf[3], transf[4],
+        transf[5], transf[6], transf[7], transf[8],
+        transf[9], transf[10], transf[11], transf[12],
+        transf[5] * shift + transf[13],
+        transf[6] * shift + transf[14],
+		transf[7] * shift + transf[15],
+		transf[8] * shift + transf[16],
+    }
+end
+
+utils.getTransfZShiftedBy = function(transf, shift)
+    -- faster than calling mul()
+    if transf == nil or type(shift) ~= 'number' then return transf end
+
+    return {
+        transf[1], transf[2], transf[3], transf[4],
+        transf[5], transf[6], transf[7], transf[8],
+        transf[9], transf[10], transf[11], transf[12],
+        transf[9] * shift + transf[13],
+        transf[10] * shift + transf[14],
+		transf[11] * shift + transf[15],
+		transf[12] * shift + transf[16],
+    }
+end
+
 utils.getVectorLength = function(xyz)
     if type(xyz) ~= 'table' and type(xyz) ~= 'userdata' then return nil end
     local x = xyz.x or xyz[1] or 0.0
