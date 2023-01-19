@@ -1,4 +1,5 @@
 local arrayUtils = require('lolloArrivalsDeparturesPredictor.arrayUtils')
+local logger = require('lolloArrivalsDeparturesPredictor.logger')
 local stringUtils = require('lolloArrivalsDeparturesPredictor.stringUtils')
 
 -- LOLLO NOTE config.maxEntries is tied to the construction type,
@@ -55,15 +56,16 @@ local funcs = {
         -- local _currentFilePathAbsolute = debug.getinfo(1, 'S').source
         -- returns the caller file path (one level up in the stack)
         local _currentFilePathAbsolute = debug.getinfo(2, 'S').source
+        logger.print('_currentFilePathAbsolute =') logger.debugPrint(_currentFilePathAbsolute)
         assert(
             stringUtils.stringEndsWith(_currentFilePathAbsolute, '.con'),
             'lolloArrivalsDeparturesPredictor ERROR: getParamPrefixFromCon was called from ' .. (_currentFilePathAbsolute or 'NIL')
         )
-        -- print('_currentFilePathAbsolute =') debugPrint(_currentFilePathAbsolute)
-        ---@diagnostic disable-next-line: undefined-field
-        local _currentFilePathRelative = arrayUtils.getLast(_currentFilePathAbsolute:split('/res/construction/'))
-        -- print('_currentFilePathRelative =') debugPrint(_currentFilePathRelative)
-
+        -- LOLLO TODO the following changed in beta 35126 (remove the initial slash): release it once the beta is stabilised
+        -- local _currentFilePathRelative = arrayUtils.getLast(_currentFilePathAbsolute:split('/res/construction/'))
+        local _currentFilePathRelative = arrayUtils.getLast(_currentFilePathAbsolute:split('res/construction/'))
+        logger.print('_currentFilePathRelative =') logger.debugPrint(_currentFilePathRelative)
+        logger.print('myConstructionConfigs =') logger.debugPrint(myConstructionConfigs)
         return myConstructionConfigs[_currentFilePathRelative].paramPrefix
     end,
 }
