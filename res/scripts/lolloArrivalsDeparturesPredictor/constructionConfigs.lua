@@ -57,13 +57,15 @@ local funcs = {
         -- returns the caller file path (one level up in the stack)
         local _currentFilePathAbsolute = debug.getinfo(2, 'S').source
         logger.print('_currentFilePathAbsolute =') logger.debugPrint(_currentFilePathAbsolute)
+        -- LOLLO NOTE the following changed in beta 35126 (the initial slash was removed): add it back to make a better check in the following
+        if not(stringUtils.stringStartsWith(_currentFilePathAbsolute, '/')) then
+            _currentFilePathAbsolute = '/' .. _currentFilePathAbsolute
+        end
         assert(
             stringUtils.stringEndsWith(_currentFilePathAbsolute, '.con'),
             'lolloArrivalsDeparturesPredictor ERROR: getParamPrefixFromCon was called from ' .. (_currentFilePathAbsolute or 'NIL')
         )
-        -- LOLLO TODO the following changed in beta 35126 (remove the initial slash): release it once the beta is stabilised
-        -- local _currentFilePathRelative = arrayUtils.getLast(_currentFilePathAbsolute:split('/res/construction/'))
-        local _currentFilePathRelative = arrayUtils.getLast(_currentFilePathAbsolute:split('res/construction/'))
+        local _currentFilePathRelative = arrayUtils.getLast(_currentFilePathAbsolute:split('/res/construction/'))
         logger.print('_currentFilePathRelative =') logger.debugPrint(_currentFilePathRelative)
         logger.print('myConstructionConfigs =') logger.debugPrint(myConstructionConfigs)
         return myConstructionConfigs[_currentFilePathRelative].paramPrefix
