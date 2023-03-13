@@ -127,7 +127,7 @@ local _getNearestTerminalsWithStationConUNUSED = function(transf, stationConId, 
         nearestTerminals[stationId] = {terminalId = nil, terminalTag = nil, cargo = station.cargo, distance = 9999}
         for terminalId, terminal in pairs(station) do
             for _, nodeId in pairs(terminal.nodeIds) do
-                local distance = edgeUtils.getPositionsDistance(
+                local distance = transfUtils.getPositionsDistance(
                     api.engine.getComponent(nodeId, api.type.ComponentType.BASE_NODE).position,
                     pos
                 )
@@ -238,7 +238,7 @@ local _getNearestTerminalsWithStationGroup = function(transf, stationGroupId, is
         nearestTerminals[stationId] = {terminalId = nil, terminalTag = nil, cargo = myStationData.cargo, distance = 9999}
         for terminalId, terminal in pairs(myStationData) do
             for _, position in pairs(terminal.positions) do
-                local distance = edgeUtils.getPositionsDistance(
+                local distance = transfUtils.getPositionsDistance(
                     position,
                     _refPosition123
                 )
@@ -475,7 +475,7 @@ local utils = {
                                                         -- isStreet = true
                                                         local baseNode0 = api.engine.getComponent(baseEdge.node0, api.type.ComponentType.BASE_NODE)
                                                         local baseNode1 = api.engine.getComponent(baseEdge.node1, api.type.ComponentType.BASE_NODE)
-                                                        local midPosition = edgeUtils.getPositionsMiddle(baseNode0.position, baseNode1.position)
+                                                        local midPosition = transfUtils.getPositionsMiddle(baseNode0.position, baseNode1.position)
                                                         position.x = position.x + midPosition.x
                                                         position.y = position.y + midPosition.y
                                                         position.z = position.z + midPosition.z

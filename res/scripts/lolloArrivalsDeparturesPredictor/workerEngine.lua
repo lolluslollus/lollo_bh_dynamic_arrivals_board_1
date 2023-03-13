@@ -5,6 +5,7 @@ local constructionConfigs = require('lolloArrivalsDeparturesPredictor.constructi
 local edgeUtils = require('lolloArrivalsDeparturesPredictor.edgeUtils')
 local stateHelpers = require('lolloArrivalsDeparturesPredictor.stateHelpers')
 local stationHelpers = require('lolloArrivalsDeparturesPredictor.stationHelpers')
+local transfUtils = require('lolloArrivalsDeparturesPredictor.transfUtils')
 local transfUtilsUG = require('transf')
 
 local _texts = {
@@ -146,7 +147,7 @@ local utils = {
                 for _, stationId in pairs(stationIds) do
                     local streetsideStationPosition = edgeUtils.getObjectPosition(stationId)
                     if streetsideStationPosition then
-                        local distance = edgeUtils.getPositionsDistance(
+                        local distance = transfUtils.getPositionsDistance(
                             signState.nearestTerminal.refPosition123,
                             streetsideStationPosition
                         )
