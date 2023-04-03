@@ -1,5 +1,6 @@
 local constants = {
     refreshPeriodMsec = 5000, -- refresh every 5 seconds
+    numUpdateSignsCoroutineResumesPerTick = 25,
     searchRadius4NearbyStation2JoinMetres = 100,
 
     colours = {

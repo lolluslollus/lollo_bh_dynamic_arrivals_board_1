@@ -12,21 +12,21 @@ function data()
 
 	return {
 		info = {
-			minorVersion = 13,
-			severityAdd = "WARNING",
-			severityRemove = "WARNING",
-			name = _("ModName"),
-			description = _("ModDesc"),
-			tags = { "Misc", "Script Mod", "Track Asset", },
+			minorVersion = 14,
+			severityAdd = 'NONE',
+			severityRemove = 'WARNING',
+			name = _('ModName'),
+			description = _('ModDesc'),
+			tags = { 'Misc', 'Script Mod', 'Track Asset', },
 			visible = true,
 			authors = {
                 {
-					name = "lollus",
-					role = "CREATOR"
+					name = 'lollus',
+					role = 'CREATOR'
 				},
 				{
-					name = "badgerrhax",
-					role = "CREATOR"
+					name = 'badgerrhax',
+					role = 'CREATOR'
 				},
 			}
 		},

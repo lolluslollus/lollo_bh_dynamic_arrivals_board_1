@@ -34,6 +34,12 @@ local _vehicleStates = {
     inDepot = 0, -- api.type.enum.TransportVehicleState.IN_DEPOT, -- 0
 }
 
+local _mGameTimeMsec = 0
+local _mLastRefreshGraph_gameTime_msec = 0
+local _mLineFrequencies_indexedBy_lineId = {}
+local _mState
+local _mUpdateSignsCoroutine
+
 local utils = {
     bulldozeConstruction = function(conId)
         if not(edgeUtils.isValidAndExistingId(conId)) then
@@ -62,11 +68,11 @@ local utils = {
             end
         )
     end,
-    formatClockString = function(clock_time)
-        return string.format('%02d:%02d:%02d', (clock_time / 60 / 60) % 24, (clock_time / 60) % 60, clock_time % 60)
+    formatClockString = function(clockTimeSec)
+        return string.format('%02d:%02d:%02d', (clockTimeSec / 3600) % 24, (clockTimeSec / 60) % 60, clockTimeSec % 60)
     end,
-    formatClockStringHHMM = function(clock_time)
-        return string.format('%02d:%02d', (clock_time / 60 / 60) % 24, (clock_time / 60) % 60)
+    formatClockStringHHMM = function(clockTimeSec)
+        return string.format('%02d:%02d', (clockTimeSec / 3600) % 24, (clockTimeSec / 60) % 60)
     end,
     getTextBetweenBrackets = function(str, isOnlyBetweenBrackets)
         -- call this with isOnlyBetweenBrackets == true to fully match lennardo's mod
@@ -104,7 +110,7 @@ local utils = {
         local str2 = string.gsub(str1, '%)[^)]*', '')
         return str2
     end,
-    getProblemLineIds = function()
+    getProblemLineIds_indexed = function()
         local results = {}
         local problemLineIds = api.engine.system.lineSystem.getProblemLines(api.engine.util.getPlayer())
         for _, lineId in pairs(problemLineIds) do
@@ -175,7 +181,7 @@ local utils = {
         return terminalParamValue, nil
     end,
 }
-utils.getFormattedPredictions = function(maxEntries, allRawPredictions, time, stationIdIfAny, terminalIdIfAny)
+utils.getFormattedPredictions = function(maxEntries, allRawPredictions, gameTimeMsec, stationIdIfAny, terminalIdIfAny)
     logger.print('getFormattedPredictions starting, allRawPredictions =') logger.debugPrint(allRawPredictions)
 
     local results = {}
@@ -191,7 +197,7 @@ utils.getFormattedPredictions = function(maxEntries, allRawPredictions, time, st
             end
         end
 
-        table.sort(culledRawPredictions, function(a, b) return a.arrivalTime < b.arrivalTime end)
+        table.sort(culledRawPredictions, function(a, b) return a.arrivalTime_msec < b.arrivalTime_msec end)
 
         for i = #culledRawPredictions, 1, -1 do
             if i > maxEntries then
@@ -245,14 +251,14 @@ utils.getFormattedPredictions = function(maxEntries, allRawPredictions, time, st
                     end
                 end
 
-                local expectedMinutesToArrival = math.floor((rawPred.arrivalTime - time) / 60000)
+                local expectedMinutesToArrival = math.floor((rawPred.arrivalTime_msec - gameTimeMsec) / 60000)
                 if expectedMinutesToArrival > 0 then
-                    fmtPred.arrivalTimeString = utils.formatClockStringHHMM(rawPred.arrivalTime / 1000)
+                    fmtPred.arrivalTimeString = utils.formatClockStringHHMM(rawPred.arrivalTime_msec / 1000)
                     fmtPred.etaMinutesString = expectedMinutesToArrival .. _texts.minutesShort
                 end
-                local expectedMinutesToDeparture = math.floor((rawPred.departureTime - time) / 60000)
+                local expectedMinutesToDeparture = math.floor((rawPred.departureTime_msec - gameTimeMsec) / 60000)
                 if expectedMinutesToDeparture > 0 then
-                    fmtPred.departureTimeString = utils.formatClockStringHHMM(rawPred.departureTime / 1000)
+                    fmtPred.departureTimeString = utils.formatClockStringHHMM(rawPred.departureTime_msec / 1000)
                     fmtPred.etdMinutesString = expectedMinutesToDeparture .. _texts.minutesShort
                 end
             end
@@ -277,7 +283,6 @@ utils.getFormattedPredictions = function(maxEntries, allRawPredictions, time, st
     logger.print('getFormattedPredictions about to return results =') logger.debugPrint(results)
     return results
 end
-
 utils.getNewSignConName = function(formattedPredictions, config, clockString, signCon)
     local result = ''
     if config.singleTerminal then
@@ -507,6 +512,23 @@ local getLineStartEndIndexes = function(line)
     return startIndex, endIndex
 end
 
+local function getLineFrequencies_indexedBy_lineId()
+    -- LOLLO NOTE I cannot call game.interface in a coroutine, so I make an indexed table first
+    local _startTickSec = os.clock()
+    local results = {}
+    for _, lineId in pairs(api.engine.system.lineSystem.getLines()) do
+        if edgeUtils.isValidAndExistingId(lineId) then
+            -- UG TODO the new API hasn't got this yet, only a dumb fixed waitingTime == 180 seconds
+            local lineEntity = game.interface.getEntity(lineId)
+            if lineEntity ~= nil then
+                results[lineId] = lineEntity.frequency
+            end
+        end
+    end
+    logger.print('getLineFrequencies_indexedBy_lineId took ' .. (os.clock() - _startTickSec) * 1000 .. ' msec')
+    return results
+end
+
 local function getMyLineData(vehicleIds, line, lineId, lineWaitingTime, buffer)
     -- Here, I average the times across all the trains on this line.
     -- If the trains are wildly different, which is stupid, this could be less accurate;
@@ -525,22 +547,19 @@ local function getMyLineData(vehicleIds, line, lineId, lineWaitingTime, buffer)
     local nStops = #line.stops
     if nStops < 1 or #vehicleIds < 1 then return {} end
 
-    -- UG TODO the new API hasn't got this yet, only a dumb fixed waitingTime == 180 seconds
-    local lineEntity = game.interface.getEntity(lineId)
-        -- logger.print('lineEntity.frequency =', lineEntity.frequency)
-        -- logger.print('lineWaitingTime =', lineWaitingTime)
-    local fallbackLegDuration = (
-        (lineEntity.frequency > 0) -- this is a proper frequency and not a period
-            and (#vehicleIds / lineEntity.frequency) -- the same vehicle calls at any station every this seconds
-            or lineWaitingTime -- should never happen
-        ) / nStops * 1000
+    local lineFrequency = _mLineFrequencies_indexedBy_lineId[lineId] or 0
+    local fallbackLegDuration_msec = (
+        (lineFrequency > 0) -- this is a proper frequency and not a period
+        and (#vehicleIds / lineFrequency) -- the same vehicle calls at any station every this seconds
+        or lineWaitingTime -- should never happen
+    ) / nStops * 1000
     -- logger.print('1 / lineEntity.frequency =', 1 / lineEntity.frequency)
     -- logger.print('#vehicleIds =', #vehicleIds)
     -- logger.print('nStops =', nStops)
-    logger.print('fallbackLegDuration =', fallbackLegDuration)
+    logger.print('fallbackLegDuration_msec =', fallbackLegDuration_msec)
 
     local averages = {}
-    local period = 0
+    local period_msec = 0
     local vehicles = {}
 
     for _, vehicleId in pairs(vehicleIds) do
@@ -551,75 +570,75 @@ local function getMyLineData(vehicleIds, line, lineId, lineWaitingTime, buffer)
         local prevIndex = index - 1
         if prevIndex < 1 then prevIndex = prevIndex + nStops end
 
-        local averageLSD, nVehicles4AverageLSD, averageST, nVehicles4AverageST = 0, #vehicleIds, 0, #vehicleIds
+        local averageLSD_msec, nVehicles4AverageLSD, averageST_msec, nVehicles4AverageST = 0, #vehicleIds, 0, #vehicleIds
         for _, vehicleId in pairs(vehicleIds) do
             local vehicle = vehicles[vehicleId]
-            local lineStopDepartures = vehicle.lineStopDepartures
-            if lineStopDepartures[index] == 0
-            or lineStopDepartures[prevIndex] == 0
-            or lineStopDepartures[index] <= lineStopDepartures[prevIndex]
+            local lineStopDepartures_msec = vehicle.lineStopDepartures
+            if lineStopDepartures_msec[index] == 0
+            or lineStopDepartures_msec[prevIndex] == 0
+            or lineStopDepartures_msec[index] <= lineStopDepartures_msec[prevIndex]
             or (vehicle.state ~= _vehicleStates.atTerminal and vehicle.state ~= _vehicleStates.enRoute)
             then
                 nVehicles4AverageLSD = nVehicles4AverageLSD - 1
             else
                 -- if vehicleId == '198731' then -- one fliegender purupu
                 -- if lineId ~= 86608 then -- fliegender purupu
-                --     print('lineStopDepartures[prevIndex] =', lineStopDepartures[prevIndex])
-                --     print('lineStopDepartures[stopIndex] =', lineStopDepartures[stopIndex])
+                --     print('lineStopDepartures_msec[prevIndex] =', lineStopDepartures_msec[prevIndex])
+                --     print('lineStopDepartures_msec[stopIndex] =', lineStopDepartures_msec[stopIndex])
                 -- end
                 -- LOLLO TODO to respond better to sudden changes,
                 -- you cound use a weighted average
                 -- with more weight for the latest data
-                averageLSD = averageLSD + lineStopDepartures[index] - lineStopDepartures[prevIndex]
+                averageLSD_msec = averageLSD_msec + lineStopDepartures_msec[index] - lineStopDepartures_msec[prevIndex]
             end
-            local sectionTimes = vehicle.sectionTimes
-            if sectionTimes[prevIndex] == 0
+            local sectionTimes_sec = vehicle.sectionTimes
+            if sectionTimes_sec[prevIndex] == 0
             or (vehicle.state ~= _vehicleStates.atTerminal and vehicle.state ~= _vehicleStates.enRoute)
             then
                 nVehicles4AverageST = nVehicles4AverageST - 1
             else
                 -- if vehicleId == '198731' then -- one fliegender purupu
                 -- if lineId == '86608' then -- fliegender purupu
-                --     print('vehicle.sectionTimes[prevIndex] =', sectionTimes[prevIndex])
+                --     print('vehicle.sectionTimes_sec[prevIndex] =', sectionTimes_sec[prevIndex])
                 -- end
-                averageST = averageST + sectionTimes[prevIndex] * 1000
+                averageST_msec = averageST_msec + sectionTimes_sec[prevIndex] * 1000
             end
         end
         -- with every vehicle, there will always be an index like this:
         -- stopIndex = 2,
-        -- lineStopDepartures = {
+        -- lineStopDepartures = { -- msec
         -- [2] = 19904000,
         -- [3] = 19068800,
-        -- sectionTimes = {
+        -- sectionTimes = { -- seconds
         -- [2] = 0,
         -- so I will always fall back at least once, if I have one vehicle only
         if nVehicles4AverageLSD > 0 then
-            averageLSD = averageLSD / nVehicles4AverageLSD
+            averageLSD_msec = averageLSD_msec / nVehicles4AverageLSD
         else
-            averageLSD = fallbackLegDuration -- useful when starting a new line
+            averageLSD_msec = fallbackLegDuration_msec -- useful when starting a new line
         end
         if nVehicles4AverageST > 0 then
-            averageST = averageST / nVehicles4AverageST
+            averageST_msec = averageST_msec / nVehicles4AverageST
         else
-            averageST = fallbackLegDuration -- useful when starting a new line
+            averageST_msec = fallbackLegDuration_msec -- useful when starting a new line
         end
 
-        averages[index] = {lsd = math.ceil(averageLSD), st = math.ceil(averageST)}
-        period = period + averages[index].lsd
+        averages[index] = {lsd_msec = math.ceil(averageLSD_msec), st_msec = math.ceil(averageST_msec)}
+        period_msec = period_msec + averages[index].lsd_msec
     end
 
     buffer[lineId] = {
         averages = averages,
         endIndex = endIndex,
         name = name,
-        period = period,
+        period_msec = period_msec,
         startIndex = startIndex,
         vehicles = vehicles
     }
     return buffer[lineId]
 end
 
-local function getLastDepartureTime(vehicle, time)
+local function getLastDepartureTimeMsec(vehicle, gameTimeMsec)
     -- this is a little slower than doorsTime but more accurate;
     -- it is 0 when a new train leaves the depot
     local result = math.max(table.unpack(vehicle.lineStopDepartures))
@@ -628,22 +647,21 @@ local function getLastDepartureTime(vehicle, time)
     -- useful when starting a new line or a new train
     if result == 0 then
         if vehicle.doorsTime > 0 then
-            -- add one second to match lsd more closely; still less reliable tho.
-            result = math.ceil(vehicle.doorsTime / 1000) + 1000
+            -- add one second to match lsd_msec more closely; still less reliable tho.
+            result = math.ceil(vehicle.doorsTime / 1000) + 1000 -- doorsTime is in microsec
             logger.print('lastDepartureTime == 0, falling back to doorsTime')
-            if result > time then
-                -- logger.print('doorsTime > time, doorsTime = ' .. result .. ', time = ' .. time)
-                result = time
+            if result > gameTimeMsec then
+                result = gameTimeMsec
             end
         else
-            result = time
+            result = gameTimeMsec
             logger.print('lastDepartureTime == 0 AND vehicle.doorsTime == ' .. (vehicle.doorsTime or 'NIL') .. ', a train has just left the depot')
         end
         -- logger.print('vehicle.lineStopDepartures =') logger.debugPrint(vehicle.lineStopDepartures)
         -- logger.print('vehicle.doorsTime =') logger.debugPrint(vehicle.doorsTime)
-        -- logger.print('time =') logger.debugPrint(time)
+        -- logger.print('gameTimeMsec =') logger.debugPrint(gameTimeMsec)
     -- else
-        -- logger.print('lineStopDepartures OK, last departure time = ' .. result .. ', lastDoorsTime would yield ' .. (math.ceil(vehicle.doorsTime / 1000) + 1000))
+        -- logger.print('lineStopDepartures OK, last departure time = ' .. result .. ', lastDoorsTime would be ' .. (math.ceil(vehicle.doorsTime / 1000) + 1000))
     end
 
 --[[
@@ -656,12 +674,12 @@ local function getLastDepartureTime(vehicle, time)
     return result
 end
 
-local getRemainingTimeToPrecedingStop = function(averages, nextStopIndexBase0, hereIndex, nStops)
+local getRemainingTimeToPrecedingStop_msec = function(averages, nextStopIndexBase0, hereIndex, nStops)
     local result = 0
 
     local nextStopIndex = nextStopIndexBase0 + 1
     while nextStopIndex ~= hereIndex do
-        result = result + averages[nextStopIndex].lsd
+        result = result + averages[nextStopIndex].lsd_msec
         nextStopIndex = nextStopIndex + 1
         if nextStopIndex > nStops then nextStopIndex = 1 end
     end
@@ -669,7 +687,7 @@ local getRemainingTimeToPrecedingStop = function(averages, nextStopIndexBase0, h
     return result
 end
 
-local function getNextPredictions(stationGroupId, stationGroup, nEntries, time, predictionsBufferHelpers, lineBuffer, problemLineIds)
+local function getNextPredictions(stationGroupId, stationGroup, nEntries, gameTimeMsec, predictionsBufferHelpers, lineBuffer, problemLineIds_indexed)
     logger.print('getNextPredictions starting, stationGroupId =', stationGroupId or 'NIL')
     local predictions = {}
 
@@ -677,10 +695,10 @@ local function getNextPredictions(stationGroupId, stationGroup, nEntries, time, 
 
     local predictionsBuffer = predictionsBufferHelpers.get(stationGroupId)
     if predictionsBuffer then
-        logger.print('time = ', time, 'using buffer for stationGroupId =', stationGroupId)
+        logger.print('game time msec = ', gameTimeMsec, 'using buffer for stationGroupId =', stationGroupId)
         return predictionsBuffer
     else
-        logger.print('time = ', time, 'NOT using buffer for stationGroupId =', stationGroupId)
+        logger.print('game time msec = ', gameTimeMsec, 'NOT using buffer for stationGroupId =', stationGroupId)
     end
 
     local stationIds = stationGroup.stations
@@ -800,8 +818,8 @@ local function getNextPredictions(stationGroupId, stationGroup, nEntries, time, 
                                         originStationGroupId = nil, --line.stops[1].stationGroup,
                                         destinationStationGroupId = nil, --line.stops[1].stationGroup,
                                         -- nextStationGroupId = nil,
-                                        arrivalTime = time + 3600, -- add a dummy hour
-                                        departureTime = time + 3600,
+                                        arrivalTime_msec = gameTimeMsec + 180000, -- add a dummy 3 minutes
+                                        departureTime_msec = gameTimeMsec + 180000,
                                         isProblem = true,
                                     }
                                 else
@@ -828,12 +846,12 @@ local function getNextPredictions(stationGroupId, stationGroup, nEntries, time, 
                                                     terminal = -1, -- -1 if arrivalStationTerminalLocked is false, otherwise a terminal counter in base 0
                                                 },
                                                 arrivalStationTerminalLocked = false, -- NEW with spring 2022 update
-                                                lineStopDepartures = { -- last recorded departure times, they can be 0 if not yet recorded
+                                                lineStopDepartures = { -- msec, last recorded departure times, they can be 0 if not yet recorded
                                                     [1] = 4591600,
                                                     [2] = 4498000,
                                                 },
                                                 lastLineStopDeparture = 0, -- seems inaccurate
-                                                sectionTimes = { -- take a while to calculate when starting a new line
+                                                sectionTimes = { -- seconds, they take a while to calculate when starting a new line
                                                     [1] = 0, -- time it took to complete a segment, starting from stop 1
                                                     [2] = 86.600006103516, -- time it took to complete a segment, starting from stop 2
                                                 },
@@ -841,7 +859,7 @@ local function getNextPredictions(stationGroupId, stationGroup, nEntries, time, 
                                                 timeUntilCloseDoors = -0.19238702952862, -- seems useless
                                                 timeUntilDeparture = -0.026386171579361, -- seems useless
                                                 doorsOpen = false, -- boolean NEW with spring 2022 update
-                                                doorsTime = 4590600000, -- last departure time, seems OK
+                                                doorsTime = 4590600000, -- microseconds, last departure time, seems OK
                                                 and it is quicker than checking the max across lineStopDepartures
                                                 we add 1000 so we match it to the highest lineStopDeparture, but it varies with some unknown factor.
                                                 Sometimes, two vehicles A and B on the same line may have A the highest lineStopDeparture and B the highest doorsTime.
@@ -849,7 +867,7 @@ local function getNextPredictions(stationGroupId, stationGroup, nEntries, time, 
                                                 Here is another example with two vehicles on the same line:
                                                 line = 86608,
                                                 stopIndex = 5, -- next stop index in base 0
-                                                lineStopDepartures = {
+                                                lineStopDepartures = { -- msec
                                                     [1] = 19082400,
                                                     [2] = 19228400,
                                                     [3] = 19590000,
@@ -858,7 +876,7 @@ local function getNextPredictions(stationGroupId, stationGroup, nEntries, time, 
                                                     [6] = 18969400,
                                                 },
                                                 lastLineStopDeparture = 0,
-                                                sectionTimes = {
+                                                sectionTimes = { -- seconds
                                                     [1] = 127.00000762939, -- 146 counting the time spent standing
                                                     [2] = 354.00003051758, -- 362 counting the time spent standing
                                                     [3] = 111.00000762939, -- 120 counting the time spent standing
@@ -868,7 +886,7 @@ local function getNextPredictions(stationGroupId, stationGroup, nEntries, time, 
                                                 },
                                                 line = 86608,
                                                 stopIndex = 2, -- next stop index in base 0
-                                                lineStopDepartures = {
+                                                lineStopDepartures = { -- msec
                                                     [1] = 19769400,
                                                     [2] = 19904000,
                                                     [3] = 19068800,
@@ -877,7 +895,7 @@ local function getNextPredictions(stationGroupId, stationGroup, nEntries, time, 
                                                     [6] = 19669800,
                                                 },
                                                 lastLineStopDeparture = 0,
-                                                sectionTimes = {
+                                                sectionTimes = { -- seconds
                                                     [1] = 126.60000610352, -- 135 counting the time spent standing
                                                     [2] = 0,
                                                     [3] = 111.00000762939,
@@ -893,10 +911,10 @@ local function getNextPredictions(stationGroupId, stationGroup, nEntries, time, 
                                             local hereIndex, nextIndex = getHereNextIndexes(vehicle.stopIndex, line, stationGroupId, stationIndexInStationGroupBase0, terminalIndexBase0)
                                             logger.print('hereIndex, nextIndex, nStops =', hereIndex, nextIndex, nStops)
 
-                                            local lastDepartureTime = getLastDepartureTime(vehicle, time)
-                                            logger.print('lastDepartureTime =', lastDepartureTime)
-                                            local remainingTimeToPrecedingStop = getRemainingTimeToPrecedingStop(myLineData.averages, vehicle.stopIndex, hereIndex, nStops)
-                                            logger.print('remainingTimeToPrecedingStop =', remainingTimeToPrecedingStop)
+                                            local lastDepartureTime_msec = getLastDepartureTimeMsec(vehicle, gameTimeMsec)
+                                            logger.print('lastDepartureTime_msec =', lastDepartureTime_msec)
+                                            local remainingTimeToPrecedingStop_msec = getRemainingTimeToPrecedingStop_msec(myLineData.averages, vehicle.stopIndex, hereIndex, nStops)
+                                            logger.print('remainingTimeToPrecedingStop_msec =', remainingTimeToPrecedingStop_msec)
 
                                             local originIndex = (hereIndex > myLineData.startIndex and hereIndex <= myLineData.endIndex)
                                                 and myLineData.startIndex
@@ -926,12 +944,12 @@ local function getNextPredictions(stationGroupId, stationGroup, nEntries, time, 
                                                 originStationGroupId = line.stops[originIndex].stationGroup,
                                                 destinationStationGroupId = line.stops[destIndex].stationGroup,
                                                 -- nextStationGroupId = line.stops[nextIndex].stationGroup,
-                                                arrivalTime = lastDepartureTime + remainingTimeToPrecedingStop + myLineData.averages[hereIndex].st,
-                                                departureTime = lastDepartureTime + remainingTimeToPrecedingStop + myLineData.averages[hereIndex].lsd,
+                                                arrivalTime_msec = lastDepartureTime_msec + remainingTimeToPrecedingStop_msec + myLineData.averages[hereIndex].st_msec,
+                                                departureTime_msec = lastDepartureTime_msec + remainingTimeToPrecedingStop_msec + myLineData.averages[hereIndex].lsd_msec,
                                                 lineName = myLineData.name,
                                             }
 
-                                            logger.print('myLineData.period =', myLineData.period)
+                                            logger.print('myLineData.period_msec =', myLineData.period_msec)
                                             if #vehicleIds == 1 then -- fill up the display a bit
                                                 predictions[#predictions+1] = {
                                                     stationId = actualStationId,
@@ -939,8 +957,8 @@ local function getNextPredictions(stationGroupId, stationGroup, nEntries, time, 
                                                     originStationGroupId = line.stops[originIndex].stationGroup,
                                                     destinationStationGroupId = line.stops[destIndex].stationGroup,
                                                     -- nextStationGroupId = line.stops[nextIndex].stationGroup,
-                                                    arrivalTime = predictions[#predictions].arrivalTime + myLineData.period,
-                                                    departureTime = predictions[#predictions].departureTime + myLineData.period,
+                                                    arrivalTime_msec = predictions[#predictions].arrivalTime_msec + myLineData.period_msec,
+                                                    departureTime_msec = predictions[#predictions].departureTime_msec + myLineData.period_msec,
                                                     lineName = myLineData.name,
                                                 }
                                             end
@@ -968,7 +986,7 @@ local function tryUpgradeState(state)
 
     state looked like:
     {
-        world_time = 123456,
+        gameTimeMsec = 123456,
         placed_signs = {
             [80896] = {
                 nearestTerminal = {
@@ -986,7 +1004,7 @@ local function tryUpgradeState(state)
 
     it now looks like:
     {
-        world_time_sec = 123456,
+        gameTimeMsec = 123456,
         placed_signs = {
             [107217] = {
                 nearestTerminal = {
@@ -1016,7 +1034,7 @@ local function tryUpgradeState(state)
 
     logger.print('--- state about to be upgraded, old state =') logger.debugPrint(state)
 
-    state.world_time = nil
+    state.gameTimeMsec = nil
 
     for signConId, signState in pairs(state.placed_signs) do
         if not(edgeUtils.isValidAndExistingId(signConId)) then
@@ -1079,128 +1097,144 @@ local function tryUpgradeState(state)
     return true
 end
 
-local function update()
-    local state = stateHelpers.getState()
-    if not(state.is_on) then return end
+local updateSigns = function()
+    local _startTickSec = os.clock()
+    local _gameTimeSec = math.floor(_mGameTimeMsec / 1000)
 
-    local _time = api.engine.getComponent(api.engine.util.getWorld(), api.type.ComponentType.GAME_TIME).gameTime
-    if not(_time) then logger.err('update() cannot get time') return end
+    local linesBuffer = {}
+    local predictionsBuffer = {
+        byStationGroup = {},
+    }
+    local predictionsBufferHelpers = {
+        get = function(stationGroupId)
+            return predictionsBuffer.byStationGroup[stationGroupId]
+        end,
+        set = function(stationGroupId, data)
+            predictionsBuffer.byStationGroup[stationGroupId] = data
+        end,
+    }
 
-    if math.fmod(_time, constants.refreshPeriodMsec) ~= 0 then
-        -- logger.print('skipping')
-    return end
-    -- logger.print('doing it')
+    local _problemLineIds_indexed = {} -- utils.getProblemLineIds_indexed() -- this is moderately useful and a bit slow
 
-    xpcall(
-        function()
-            local _startTick = os.clock()
+    tryUpgradeState(_mState)
 
-            local _clockTimeSec = math.floor(_time / 1000)
-            -- leave if paused
-            if _clockTimeSec == state.world_time_sec then return end
-
-            state.world_time_sec = _clockTimeSec
-
-            local linesBuffer = {}
-            local predictionsBuffer = {
-                byStationGroup = {},
-            }
-            local predictionsBufferHelpers = {
-                get = function(stationGroupId)
-                    return predictionsBuffer.byStationGroup[stationGroupId]
-                end,
-                set = function(stationGroupId, data)
-                    predictionsBuffer.byStationGroup[stationGroupId] = data
-                end,
-            }
-
-            local _problemLineIds = {} -- utils.getProblemLineIds() -- this is moderately useful and a bit slow
-
-            tryUpgradeState(state)
-
-            for signConId, signState in pairs(state.placed_signs) do
-                -- logger.print('signConId =') logger.debugPrint(signConId)
-                -- logger.print('signState =') logger.debugPrint(signState)
-                if not(edgeUtils.isValidAndExistingId(signConId)) then
-                    -- sign is no more around: clean the state
-                    logger.warn('signConId' .. (signConId or 'NIL') .. ' is no more around ONE')
-                    stateHelpers.removePlacedSign(signConId)
-                else
-                    -- an entity with the id of our sign is still around
-                    local signCon = api.engine.getComponent(signConId, api.type.ComponentType.CONSTRUCTION)
-                    -- logger.print('signCon =') logger.debugPrint(signCon)
-                    if not(signCon) or not(constructionConfigs.get()[signCon.fileName]) then
-                        -- sign is no more around or no more supported: clean the state
-                        logger.warn('signConId' .. (signConId or 'NIL') .. ' is no more around TWO')
+    for signConId, signState in pairs(_mState.placed_signs) do
+        -- logger.print('signConId =') logger.debugPrint(signConId)
+        -- logger.print('signState =') logger.debugPrint(signState)
+        if not(edgeUtils.isValidAndExistingId(signConId)) then
+            -- sign is no more around: clean the state
+            logger.warn('signConId' .. (signConId or 'NIL') .. ' is no more around ONE')
+            stateHelpers.removePlacedSign(signConId)
+        else
+            -- an entity with the id of our sign is still around
+            local signCon = api.engine.getComponent(signConId, api.type.ComponentType.CONSTRUCTION)
+            -- logger.print('signCon =') logger.debugPrint(signCon)
+            if not(signCon) or not(constructionConfigs.get()[signCon.fileName]) then
+                -- sign is no more around or no more supported: clean the state
+                logger.warn('signConId' .. (signConId or 'NIL') .. ' is no more around TWO')
+                stateHelpers.removePlacedSign(signConId)
+            else
+                local formattedPredictions = {}
+                local config = constructionConfigs.get()[signCon.fileName]
+                -- LOLLO NOTE config.maxEntries is tied to the construction type,
+                -- and we buffer:
+                -- make sure sign configs with the same singleTerminal have the same maxEntries
+                if (config.maxEntries or 0) > 0 then
+                    if not(signState) or not(edgeUtils.isValidAndExistingId(signState.stationGroupId)) then
+                        -- station is no more around: bulldoze its signs
+                        logger.warn('signConId' .. (signConId or 'NIL') .. ' is no more around THREE')
                         stateHelpers.removePlacedSign(signConId)
+                        utils.bulldozeConstruction(signConId)
                     else
-                        local formattedPredictions = {}
-                        local config = constructionConfigs.get()[signCon.fileName]
-                        -- LOLLO NOTE config.maxEntries is tied to the construction type,
-                        -- and we buffer:
-                        -- make sure sign configs with the same singleTerminal have the same maxEntries
-                        if (config.maxEntries or 0) > 0 then
-                            if not(signState) or not(edgeUtils.isValidAndExistingId(signState.stationGroupId)) then
-                                -- station is no more around: bulldoze its signs
-                                logger.warn('signConId' .. (signConId or 'NIL') .. ' is no more around THREE')
-                                stateHelpers.removePlacedSign(signConId)
-                                utils.bulldozeConstruction(signConId)
+                        logger.print('signState.stationGroupId =', signState.stationGroupId)
+                        local stationGroup = api.engine.getComponent(signState.stationGroupId, api.type.ComponentType.STATION_GROUP)
+                        if not(stationGroup) or not(stationGroup.stations) then
+                            -- station is no more around: bulldoze its signs
+                            logger.warn('signConId' .. (signConId or 'NIL') .. ' is no more around FOUR')
+                            stateHelpers.removePlacedSign(signConId)
+                            utils.bulldozeConstruction(signConId)
+                        elseif #stationGroup.stations ~= 0 then
+                            local stationIds = stationGroup.stations
+                            local function _getParamName(subfix) return config.paramPrefix .. subfix end
+                            
+                            -- the player may have changed the terminal in the construction params
+                            local chosenTerminalId, chosenStationId = utils.getTerminalAndStationId(config, signCon, signState, _getParamName, stationIds)
+                            logger.print('chosenTerminalId =', chosenTerminalId, 'chosenStationId =', chosenStationId)
+
+                            local rawPredictions = nil
+                            local nextPredictions = getNextPredictions(
+                                signState.stationGroupId,
+                                stationGroup,
+                                config.maxEntries,
+                                _mGameTimeMsec,
+                                predictionsBufferHelpers,
+                                linesBuffer,
+                                _problemLineIds_indexed
+                            )
+
+                            if rawPredictions == nil then
+                                rawPredictions = nextPredictions
                             else
-                                logger.print('signState.stationGroupId =', signState.stationGroupId)
-                                local stationGroup = api.engine.getComponent(signState.stationGroupId, api.type.ComponentType.STATION_GROUP)
-                                if not(stationGroup) or not(stationGroup.stations) then
-                                    -- station is no more around: bulldoze its signs
-                                    logger.warn('signConId' .. (signConId or 'NIL') .. ' is no more around FOUR')
-                                    stateHelpers.removePlacedSign(signConId)
-                                    utils.bulldozeConstruction(signConId)
-                                elseif #stationGroup.stations ~= 0 then
-                                    local stationIds = stationGroup.stations
-                                    local function _getParamName(subfix) return config.paramPrefix .. subfix end
-                                    
-                                    -- the player may have changed the terminal in the construction params
-                                    local chosenTerminalId, chosenStationId = utils.getTerminalAndStationId(config, signCon, signState, _getParamName, stationIds)
-                                    logger.print('chosenTerminalId =', chosenTerminalId, 'chosenStationId =', chosenStationId)
-
-                                    local rawPredictions = nil
-                                    local nextPredictions = getNextPredictions(
-                                        signState.stationGroupId,
-                                        stationGroup,
-                                        config.maxEntries,
-                                        _time,
-                                        predictionsBufferHelpers,
-                                        linesBuffer,
-                                        _problemLineIds
-                                    )
-
-                                    if rawPredictions == nil then
-                                        rawPredictions = nextPredictions
-                                    else
-                                        logger.warn('this concat should never be required')
-                                        arrayUtils.concatValues(rawPredictions, nextPredictions)
-                                    end
-
-                                    formattedPredictions = utils.getFormattedPredictions(config.maxEntries, rawPredictions or {}, _time, chosenStationId, chosenTerminalId)
-                                end
+                                logger.warn('this concat should never be required')
+                                arrayUtils.concatValues(rawPredictions, nextPredictions)
                             end
-                        end
 
-                        -- rename the construction
-                        local newName = utils.getNewSignConName(
-                            formattedPredictions,
-                            config,
-                            utils.formatClockString(_clockTimeSec),
-                            signCon
-                        )
-                        api.cmd.sendCommand(api.cmd.make.setName(signConId, newName))
+                            formattedPredictions = utils.getFormattedPredictions(config.maxEntries, rawPredictions or {}, _mGameTimeMsec, chosenStationId, chosenTerminalId)
+                        end
                     end
                 end
-            end
 
-            local executionTime = math.ceil((os.clock() - _startTick) * 1000)
-            logger.print('Full update took ' .. executionTime .. 'ms')
-        end,
-        logger.xpErrorHandler
+                -- rename the construction
+                local newName = utils.getNewSignConName(
+                    formattedPredictions,
+                    config,
+                    utils.formatClockString(_gameTimeSec),
+                    signCon
+                )
+                api.cmd.sendCommand(api.cmd.make.setName(signConId, newName))
+            end
+        end
+        coroutine.yield()
+    end
+
+    logger.print('Full update took ' .. math.ceil((os.clock() - _startTickSec) * 1000) .. ' msec')
+end
+
+local function update()
+    _mState = stateHelpers.getState()
+    if not(_mState.is_on) then return end
+
+    _mGameTimeMsec = api.engine.getComponent(api.engine.util.getWorld(), api.type.ComponentType.GAME_TIME).gameTime
+    if not(_mGameTimeMsec) then logger.err('update() cannot get time') return end
+
+    -- leave if paused
+    if _mGameTimeMsec == _mState.gameTimeMsec then return end
+    _mState.gameTimeMsec = _mGameTimeMsec
+
+    if _mUpdateSignsCoroutine == nil
+    or (
+        coroutine.status(_mUpdateSignsCoroutine) == 'dead'
+        and _mGameTimeMsec - _mLastRefreshGraph_gameTime_msec > constants.refreshPeriodMsec -- wait a bit before updating the signs again
     )
+    then
+        _mLastRefreshGraph_gameTime_msec = _mGameTimeMsec
+        _mLineFrequencies_indexedBy_lineId = getLineFrequencies_indexedBy_lineId()
+        _mUpdateSignsCoroutine = coroutine.create(updateSigns)
+        logger.print('_mUpdateSignsCoroutine created, its status is ' .. coroutine.status(_mUpdateSignsCoroutine))
+        return -- I already spent time updating the line frequencies, the rest comes at the next ticks
+    end
+    for _ = 1, constants.numUpdateSignsCoroutineResumesPerTick, 1 do
+        if coroutine.status(_mUpdateSignsCoroutine) == 'suspended' then
+            local isSuccess, error = coroutine.resume(_mUpdateSignsCoroutine)
+            -- if an error occurs in the coroutine, it dies.
+            if not(isSuccess) then
+                logger.warn('_mUpdateSignsCoroutine resumed with ERROR') logger.warningDebugPrint(error)
+            end
+        else -- leave it dead for this tick, everything else will have more resources to run through
+            logger.print('_mUpdateSignsCoroutine is not suspended, so I did not resume it')
+            break
+        end
+    end
 end
 
 local function handleEvent(src, id, name, args)

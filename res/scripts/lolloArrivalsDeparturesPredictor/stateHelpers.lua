@@ -3,8 +3,8 @@ local logger = require('lolloArrivalsDeparturesPredictor.logger')
 local persistent_state = {}
 
 local _initState = function()
-    if persistent_state.world_time_sec == nil then
-        persistent_state.world_time_sec = 0
+    if persistent_state.gameTimeMsec == nil then
+        persistent_state.gameTimeMsec = 0
     end
 
     if persistent_state.placed_signs == nil then
