@@ -513,21 +513,31 @@ local getLineStartEndIndexes = function(line)
     return startIndex, endIndex
 end
 
-local function getLineFrequencies_indexedBy_lineId()
+local function updateLineFrequencies_indexedBy_lineId()
     -- LOLLO NOTE I cannot call game.interface in a coroutine, so I make an indexed table first
-    local _startTick_sec = os.clock()
-    local results = {}
+    local _startTick_sec = 0
+    if logger.isExtendedLog() then _startTick_sec = os.clock() end
+
     for _, lineId in pairs(api.engine.system.lineSystem.getLines()) do
         if edgeUtils.isValidAndExistingId(lineId) then
-            -- UG TODO the new API hasn't got this yet, only a dumb fixed waitingTime == 180 seconds
-            local lineEntity = game.interface.getEntity(lineId)
-            if lineEntity ~= nil then
-                results[lineId] = lineEntity.frequency
+            if not(_mLineFrequencies_indexedBy_lineId[lineId]) then
+                -- UG TODO the new API hasn't got this yet, only a dumb fixed waitingTime == 180 seconds
+                local lineEntity = game.interface.getEntity(lineId)
+                if lineEntity ~= nil then
+                    _mLineFrequencies_indexedBy_lineId[lineId] = lineEntity.frequency
+                end
+            -- else
+            --     logger.print('_mLineFrequencies_indexedBy_lineId already contains ' .. tostring(_mLineFrequencies_indexedBy_lineId[lineId]))
             end
+        else
+            _mLineFrequencies_indexedBy_lineId[lineId] = nil
         end
     end
-    logger.print('getLineFrequencies_indexedBy_lineId took ' .. (os.clock() - _startTick_sec) * 1000 .. ' msec')
-    return results
+
+    if logger.isExtendedLog() then
+        logger.print('_mLineFrequencies_indexedBy_lineId =') logger.debugPrint(_mLineFrequencies_indexedBy_lineId)
+        logger.print('updateLineFrequencies_indexedBy_lineId took ' .. (os.clock() - _startTick_sec) * 1000 .. ' msec')
+    end
 end
 
 local function getMyLineData(vehicleIds, line, lineId, lineWaitingTime, buffer)
@@ -1219,7 +1229,7 @@ local function update()
     )
     then
         _mLastUpdateSigns_gameTime_msec = gameTime_msec
-        _mLineFrequencies_indexedBy_lineId = getLineFrequencies_indexedBy_lineId()
+        updateLineFrequencies_indexedBy_lineId()
         _mUpdateSignsCoroutine = coroutine.create(updateSigns)
         logger.print('_mUpdateSignsCoroutine created, its status is ' .. coroutine.status(_mUpdateSignsCoroutine))
         return -- I already spent time updating the line frequencies, the rest comes at the next ticks
