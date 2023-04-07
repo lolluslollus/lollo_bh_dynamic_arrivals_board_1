@@ -1215,7 +1215,7 @@ local function update()
     if _mUpdateSignsCoroutine == nil
     or (
         coroutine.status(_mUpdateSignsCoroutine) == 'dead'
-        and gameTime_msec - _mLastUpdateSigns_gameTime_msec > constants.refreshPeriod_msec -- wait a bit before updating the signs again
+        and gameTime_msec - _mLastUpdateSigns_gameTime_msec > constants.refreshPeriod_msec
     )
     then
         _mLastUpdateSigns_gameTime_msec = gameTime_msec

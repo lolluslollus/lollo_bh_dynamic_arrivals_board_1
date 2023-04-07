@@ -116,7 +116,7 @@ local function handleEvent(id, name, args)
         -- LOLLO NOTE when bulldozing with the game unpaused,
         -- the yes / no dialogue will disappear as soon as the construction is rebuilt.
         -- This is inevitable;
-        -- still, if the user is quick enough and the updatte frequency is low enough,
+        -- still, if the user is quick enough and the update frequency is low enough,
         -- there will be a chance to bulldoze.
         -- LOLLO renaming the constructions instead of rebuilding them at every tick
         -- may be quicker, and it is easy to bulldoze. I checked it: construction can take very long names.
