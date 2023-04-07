@@ -35,7 +35,7 @@ local _vehicleStates = {
 }
 
 ---@type number
-local _mLastUpdateSigns_gameTime_msec = 0
+local _mLastUpdateSigns_gameTime_msec = 0.0
 ---@type table<integer, number>
 local _mLineFrequencies_indexedBy_lineId = {}
 ---@type thread
@@ -1218,6 +1218,8 @@ local updateSigns = function(state, gameTime_msec)
 end
 
 local function update()
+xpcall(
+function()
     local state = stateHelpers.getState()
     if not(state.is_on) then return end
 
@@ -1231,7 +1233,7 @@ local function update()
     if _mUpdateSignsCoroutine == nil
     or (
         coroutine.status(_mUpdateSignsCoroutine) == 'dead'
-        and gameTime_msec - _mLastUpdateSigns_gameTime_msec > constants.refreshPeriod_msec
+        and (gameTime_msec - _mLastUpdateSigns_gameTime_msec) > constants.refreshPeriod_msec
     )
     then
         _mLastUpdateSigns_gameTime_msec = gameTime_msec
@@ -1252,6 +1254,9 @@ local function update()
             break
         end
     end
+end,
+logger.xpErrorHandler
+)
 end
 
 local function handleEvent(src, id, name, args)
