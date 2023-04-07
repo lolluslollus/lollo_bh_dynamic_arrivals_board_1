@@ -521,11 +521,17 @@ local function updateLineFrequencies_indexedBy_lineId()
     for _, lineId in pairs(api.engine.system.lineSystem.getLines()) do
         if edgeUtils.isValidAndExistingId(lineId) then
             if not(_mLineFrequencies_indexedBy_lineId[lineId]) then
-                -- UG TODO the new API hasn't got this yet, only a dumb fixed waitingTime == 180 seconds
-                local lineEntity = game.interface.getEntity(lineId)
-                if lineEntity ~= nil then
-                    _mLineFrequencies_indexedBy_lineId[lineId] = lineEntity.frequency
-                end
+                xpcall(
+                    function()
+                        logger.print('about to call game.interface.getEntity(' .. lineId .. ')')
+                        -- UG TODO the new API hasn't got this yet, only a dumb fixed waitingTime == 180 seconds
+                        local lineEntity = game.interface.getEntity(lineId)
+                        if lineEntity ~= nil then
+                            _mLineFrequencies_indexedBy_lineId[lineId] = lineEntity.frequency
+                        end
+                    end,
+                    logger.xpWarningHandler
+                )
             -- else
             --     logger.print('_mLineFrequencies_indexedBy_lineId already contains ' .. tostring(_mLineFrequencies_indexedBy_lineId[lineId]))
             end
