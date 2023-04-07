@@ -527,7 +527,7 @@ local function updateLineFrequencies_indexedBy_lineId()
                         -- UG TODO the new API hasn't got this yet, only a dumb fixed waitingTime == 180 seconds
                         local lineEntity = game.interface.getEntity(lineId)
                         if lineEntity ~= nil then
-                            _mLineFrequencies_indexedBy_lineId[lineId] = lineEntity.frequency
+                            _mLineFrequencies_indexedBy_lineId[lineId] = lineEntity.frequency or 0.0055556 -- every 180 sec
                         end
                     end,
                     logger.xpWarningHandler
