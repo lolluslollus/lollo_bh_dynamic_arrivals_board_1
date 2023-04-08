@@ -10,7 +10,7 @@ If you add a pair of brackets to your line names, the displays will show the stu
 I have been thinking long and hard whether to publish this mod or not, since I copied the idea from badgerrhax. However, this is my own code and my own models, so I do. If you don't like it, don't use it.
 
 NOTES:
-1) These things can be performance-intensive, so you can switch them on and off from the bottom bar (toggle the orange icon). Some mods such as advanced statistics or priority signals hog game_script.update(). The game can only take so much, so you might need to choose.
+1) These things can be performance-intensive, so you can switch them on and off from the bottom bar (toggle the orange icon). Some other mods, such as advanced statistics, priority signals or shunting, hog game_script.update(). The game can only take so much, so you might need to choose.
 2) If you think they are not working, check your bottom bar (toggle the orange icon), unpause the game and wait a little.
 3) Once you attached a display to a station, it will be tied to it forever. If you bulldoze the station, its displays will disappear automatically, as soon as you unpause the game.
 4) Accuracy improves over time.
