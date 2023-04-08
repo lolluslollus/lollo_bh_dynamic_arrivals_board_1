@@ -1218,45 +1218,45 @@ local updateSigns = function(state, gameTime_msec)
 end
 
 local function update()
-xpcall(
-function()
-    local state = stateHelpers.getState()
-    if not(state.is_on) then return end
+    xpcall(
+        function()
+            local state = stateHelpers.getState()
+            if not(state.is_on) then return end
 
-    local gameTime_msec = api.engine.getComponent(api.engine.util.getWorld(), api.type.ComponentType.GAME_TIME).gameTime
-    if not(gameTime_msec) then logger.err('update() cannot get time') return end
+            local gameTime_msec = api.engine.getComponent(api.engine.util.getWorld(), api.type.ComponentType.GAME_TIME).gameTime
+            if not(gameTime_msec) then logger.err('update() cannot get time') return end
 
-    -- leave if paused
-    if gameTime_msec == state.gameTime_msec then return end
-    state.gameTime_msec = gameTime_msec
+            -- leave if paused
+            if gameTime_msec == state.gameTime_msec then return end
+            state.gameTime_msec = gameTime_msec
 
-    if _mUpdateSignsCoroutine == nil
-    or (
-        coroutine.status(_mUpdateSignsCoroutine) == 'dead'
-        and (gameTime_msec - _mLastUpdateSigns_gameTime_msec) > constants.refreshPeriod_msec
-    )
-    then
-        _mLastUpdateSigns_gameTime_msec = gameTime_msec
-        updateLineFrequencies_indexedBy_lineId()
-        _mUpdateSignsCoroutine = coroutine.create(updateSigns)
-        logger.print('_mUpdateSignsCoroutine created, its status is ' .. coroutine.status(_mUpdateSignsCoroutine))
-        return -- I already spent time updating the line frequencies, the rest comes at the next ticks
-    end
-    for _ = 1, constants.numUpdateSignsCoroutineResumesPerTick, 1 do
-        if coroutine.status(_mUpdateSignsCoroutine) == 'suspended' then
-            local isSuccess, error = coroutine.resume(_mUpdateSignsCoroutine, state, gameTime_msec)
-            -- if an error occurs in the coroutine, it dies.
-            if not(isSuccess) then
-                logger.warn('_mUpdateSignsCoroutine resumed with ERROR') logger.warningDebugPrint(error)
+            if _mUpdateSignsCoroutine == nil
+            or (
+                coroutine.status(_mUpdateSignsCoroutine) == 'dead'
+                and (gameTime_msec - _mLastUpdateSigns_gameTime_msec) > constants.refreshPeriod_msec
+            )
+            then
+                _mLastUpdateSigns_gameTime_msec = gameTime_msec
+                updateLineFrequencies_indexedBy_lineId()
+                _mUpdateSignsCoroutine = coroutine.create(updateSigns)
+                logger.print('_mUpdateSignsCoroutine created, its status is ' .. coroutine.status(_mUpdateSignsCoroutine))
+                return -- I already spent time updating the line frequencies, the rest comes at the next ticks
             end
-        else -- leave it dead for this tick, everything else will have more resources to run through
-            logger.print('_mUpdateSignsCoroutine is not suspended, so I did not resume it')
-            break
-        end
-    end
-end,
-logger.xpErrorHandler
-)
+            for _ = 1, constants.numUpdateSignsCoroutineResumesPerTick, 1 do
+                if coroutine.status(_mUpdateSignsCoroutine) == 'suspended' then
+                    local isSuccess, error = coroutine.resume(_mUpdateSignsCoroutine, state, gameTime_msec)
+                    -- if an error occurs in the coroutine, it dies.
+                    if not(isSuccess) then
+                        logger.warn('_mUpdateSignsCoroutine resumed with ERROR') logger.warningDebugPrint(error)
+                    end
+                else -- leave it dead for this tick, everything else will have more resources to run through
+                    logger.print('_mUpdateSignsCoroutine is not suspended, so I did not resume it')
+                    break
+                end
+            end
+        end,
+        logger.xpErrorHandler
+    )
 end
 
 local function handleEvent(src, id, name, args)
