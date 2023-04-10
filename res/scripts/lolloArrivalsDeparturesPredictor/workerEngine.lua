@@ -1214,7 +1214,8 @@ local updateSigns = function(state, gameTime_msec)
         coroutine.yield()
     end
 
-    logger.print('Full update took ' .. math.ceil((os.clock() - _startTick_sec) * 1000) .. ' msec')
+    logger.print('Updating all signs took ' .. math.ceil((os.clock() - _startTick_sec) * 1000) .. ' msec')
+    _mLastUpdateSigns_gameTime_msec = gameTime_msec
 end
 
 local function update()
@@ -1233,10 +1234,10 @@ local function update()
             if _mUpdateSignsCoroutine == nil
             or (
                 coroutine.status(_mUpdateSignsCoroutine) == 'dead'
-                and (gameTime_msec - _mLastUpdateSigns_gameTime_msec) > constants.refreshPeriod_msec
+                and (gameTime_msec - _mLastUpdateSigns_gameTime_msec) > constants.minPauseEnd2Start_msec
             )
             then
-                _mLastUpdateSigns_gameTime_msec = gameTime_msec
+                -- _mLastUpdateSigns_gameTime_msec = gameTime_msec
                 updateLineFrequencies_indexedBy_lineId()
                 _mUpdateSignsCoroutine = coroutine.create(updateSigns)
                 logger.print('_mUpdateSignsCoroutine created, its status is ' .. coroutine.status(_mUpdateSignsCoroutine))
