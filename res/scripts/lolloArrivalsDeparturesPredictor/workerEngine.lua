@@ -27,7 +27,7 @@ local _texts = {
     to = _('To'),
 }
 
-local _vehicleStates = {
+local _mVehicleStates = {
     atTerminal = 2, -- api.type.enum.TransportVehicleState.AT_TERMINAL, -- 2
     enRoute = 1, -- api.type.enum.TransportVehicleState.EN_ROUTE, -- 1
     goingToDepot = 3, -- api.type.enum.TransportVehicleState.GOING_TO_DEPOT, -- 3
@@ -594,7 +594,7 @@ local function getMyLineData(vehicleIds, line, lineId, lineWaitingTime, buffer)
             if lineStopDepartures_msec[index] == 0
             or lineStopDepartures_msec[prevIndex] == 0
             or lineStopDepartures_msec[index] <= lineStopDepartures_msec[prevIndex]
-            or (vehicle.state ~= _vehicleStates.atTerminal and vehicle.state ~= _vehicleStates.enRoute)
+            or (vehicle.state ~= _mVehicleStates.atTerminal and vehicle.state ~= _mVehicleStates.enRoute)
             then
                 nVehicles4AverageLSD = nVehicles4AverageLSD - 1
             else
@@ -610,7 +610,7 @@ local function getMyLineData(vehicleIds, line, lineId, lineWaitingTime, buffer)
             end
             local sectionTimes_sec = vehicle.sectionTimes
             if sectionTimes_sec[prevIndex] == 0
-            or (vehicle.state ~= _vehicleStates.atTerminal and vehicle.state ~= _vehicleStates.enRoute)
+            or (vehicle.state ~= _mVehicleStates.atTerminal and vehicle.state ~= _mVehicleStates.enRoute)
             then
                 nVehicles4AverageST = nVehicles4AverageST - 1
             else
@@ -848,7 +848,7 @@ local function getNextPredictions(stationGroupId, stationGroup, nEntries, gameTi
                                         local vehicle = myLineData.vehicles[vehicleId]
                                         if not(vehicle) then
                                             logger.warn('vehicle with id ' .. (vehicleId or 'NIL') .. ' not found but it should be there')
-                                        elseif (vehicle.state == _vehicleStates.atTerminal or vehicle.state == _vehicleStates.enRoute) then
+                                        elseif (vehicle.state == _mVehicleStates.atTerminal or vehicle.state == _mVehicleStates.enRoute) then
                                             --[[
                                                 vehicle has:
                                                 state = 1, -- at terminal, en route, going to depot, in depot
