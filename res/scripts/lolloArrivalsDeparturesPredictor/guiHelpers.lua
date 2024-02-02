@@ -13,7 +13,8 @@ local _texts = {
     warningWindowTitle = _('WarningWindowTitle'),
 }
 
-local _windowXShift = -200
+-- local _windowXShift = -200
+local _windowYShift = 40
 
 local utils = {
     moveCamera = function(position123)
@@ -35,6 +36,28 @@ local utils = {
             layout:addItem(img, api.gui.util.Alignment.HORIZONTAL, api.gui.util.Alignment.VERTICAL)
             -- layout:addItem(api.gui.comp.TextView.new(_texts.dynamicOff), api.gui.util.Alignment.HORIZONTAL, api.gui.util.Alignment.VERTICAL)
         end
+    end,
+    ---position window keeping it within the screen
+    ---@param window any
+    ---@param initialPosition {x:number, y:number}|nil
+    setWindowPosition = function(window, initialPosition)
+        local gameContentRect = api.gui.util.getGameUI():getContentRect()
+        local windowContentRect = window:getContentRect()
+        local windowMinimumSize = window:calcMinimumSize()
+
+        local windowHeight = math.max(windowContentRect.h, windowMinimumSize.h)
+        local windowWidth = math.max(windowContentRect.w, windowMinimumSize.w)
+        local positionX = (initialPosition ~= nil and initialPosition.x) or math.max(0, (gameContentRect.w - windowWidth) * 0.5)
+        local positionY = (initialPosition ~= nil and initialPosition.y) or math.max(0, (gameContentRect.h - windowHeight) * 0.5)
+
+        if (positionX + windowWidth) > gameContentRect.w then
+            positionX = math.max(0, gameContentRect.w - windowWidth)
+        end
+        if (positionY + windowHeight) > gameContentRect.h then
+            positionY = math.max(0, gameContentRect.h - windowHeight -100)
+        end
+
+        window:setPosition(math.floor(positionX), math.floor(positionY))
     end
 }
 -- LOLLO TODO in the picker popup, add icons to tell if it is a port, an airport, a train station or a road station
@@ -137,7 +160,10 @@ local guiHelpers = {
 
         -- window:setHighlighted(true)
         local position = api.gui.util.getMouseScreenPos()
-        window:setPosition(position.x + _windowXShift, position.y)
+        -- position.x = position.x + _windowXShift
+        position.y = position.y + _windowYShift
+        utils.setWindowPosition(window, position)
+
         window:onClose(
             function()
                 window:setVisible(false, false)
@@ -159,7 +185,10 @@ local guiHelpers = {
 
         window:setHighlighted(true)
         local position = api.gui.util.getMouseScreenPos()
-        window:setPosition(position.x + _windowXShift, position.y)
+        -- position.x = position.x + _windowXShift
+        position.y = position.y + _windowYShift
+        utils.setWindowPosition(window, position)
+
         -- window:addHideOnCloseHandler()
         window:onClose(
             function()
