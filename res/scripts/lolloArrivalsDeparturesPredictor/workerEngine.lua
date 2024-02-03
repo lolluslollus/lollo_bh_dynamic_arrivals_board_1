@@ -119,6 +119,17 @@ local utils = {
         end
         return results
     end,
+    getCompanyName = function()
+        local companyName = api.engine.getComponent(api.engine.util.getPlayer(), api.type.ComponentType.NAME)
+        if companyName ~= nil then return (companyName.name or '') end
+        return ''
+    end,
+    getStationName = function(stationId, stationGroupId)
+        local stationName = (stationId ~= nil and api.engine.getComponent(stationId, api.type.ComponentType.NAME))
+            or (stationGroupId ~= nil and api.engine.getComponent(stationGroupId, api.type.ComponentType.NAME))
+        if stationName ~= nil then return (stationName.name or '') end
+        return ''
+    end,
     -- getTerminalId = function(config, signCon, signState, getParamName)
     --     if not(config) or not(config.singleTerminal) then return nil end
 
@@ -284,7 +295,7 @@ utils.getFormattedPredictions = function(maxEntries, allRawPredictions, gameTime
     logger.print('getFormattedPredictions about to return results =') logger.debugPrint(results)
     return results
 end
-utils.getNewSignConName = function(formattedPredictions, config, clockString, signCon)
+utils.getNewSignConName = function(formattedPredictions, config, clockString, signCon, stationName)
     local result = ''
     if config.singleTerminal then
         local function _getParamName(subfix) return config.paramPrefix .. subfix end
@@ -340,6 +351,7 @@ utils.getNewSignConName = function(formattedPredictions, config, clockString, si
             end
             result = result .. '@_' .. constants.nameTags.header .. '_@' .. _texts.departuresAllCaps
         end
+        result = result .. '@_' .. constants.nameTags.footer .. '_@' .. (stationName or '')
     end
     return result .. '@'
 end
@@ -1153,6 +1165,7 @@ local updateSigns = function(state, gameTime_msec)
             else
                 local formattedPredictions = {}
                 local config = constructionConfigs.get()[signCon.fileName]
+                local stationName = nil
                 -- LOLLO NOTE config.maxEntries is tied to the construction type,
                 -- and we buffer:
                 -- make sure sign configs with the same singleTerminal have the same maxEntries
@@ -1173,7 +1186,7 @@ local updateSigns = function(state, gameTime_msec)
                         elseif #stationGroup.stations ~= 0 then
                             local stationIds = stationGroup.stations
                             local function _getParamName(subfix) return config.paramPrefix .. subfix end
-                            
+
                             -- the player may have changed the terminal in the construction params
                             local chosenTerminalId, chosenStationId = utils.getTerminalAndStationId(config, signCon, signState, _getParamName, stationIds)
                             logger.print('chosenTerminalId =', chosenTerminalId, 'chosenStationId =', chosenStationId)
@@ -1197,6 +1210,7 @@ local updateSigns = function(state, gameTime_msec)
                             end
 
                             formattedPredictions = utils.getFormattedPredictions(config.maxEntries, rawPredictions or {}, gameTime_msec, chosenStationId, chosenTerminalId)
+                            stationName = utils.getStationName(chosenStationId, signState.stationGroupId)
                         end
                     end
                 end
@@ -1206,7 +1220,8 @@ local updateSigns = function(state, gameTime_msec)
                     formattedPredictions,
                     config,
                     utils.formatClockString(_gameTime_sec),
-                    signCon
+                    signCon,
+                    stationName
                 )
                 api.cmd.sendCommand(api.cmd.make.setName(signConId, newName))
             end
@@ -1291,7 +1306,8 @@ local function handleEvent(src, id, name, args)
                         {},
                         config,
                         utils.formatClockString(math.floor(_times.gameTime / 1000)),
-                        signCon
+                        signCon,
+                        utils.getStationName(nil, args.stationGroupId)
                     )
                     api.cmd.sendCommand(api.cmd.make.setName(args.signConId, newName))
                 end

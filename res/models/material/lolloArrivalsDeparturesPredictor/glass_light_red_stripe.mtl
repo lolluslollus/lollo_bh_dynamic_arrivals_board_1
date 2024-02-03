@@ -3,14 +3,14 @@ function data()
         order = 0,
         params = {
             albedo_scale = {
-                albedoScale = { 2, 2, 2, }, -- very light grey
+                albedoScale = { 1, 1, 1, },
             },
             fade_out_range = {
                 fadeOutEndDist = 20000,
                 fadeOutStartDist = 10000,
             },
             map_albedo = {
-                fileName = "model/lolloArrivalsDeparturesPredictor/glass_light_albedo_bc3_no_premul_alpha.dds",
+                fileName = "model/lolloArrivalsDeparturesPredictor/glass_white_red_albedo_bc3_no_premul_alpha.dds",
                 type = "TWOD",
                 wrapS = "REPEAT",
                 wrapT = "REPEAT",

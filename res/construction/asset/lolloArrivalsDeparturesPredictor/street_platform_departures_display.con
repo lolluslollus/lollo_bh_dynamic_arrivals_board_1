@@ -3,7 +3,7 @@ local constructionConfigs = require('lolloArrivalsDeparturesPredictor.constructi
 local constructionHelpers = require('lolloArrivalsDeparturesPredictor.constructionHelpers')
 
 local _styles = { 'street_platform_departures_board', 'street_platform_departures_board_floating', }
-local _colourSchemes = { 'orange_on_black', 'white_on_blue', 'white_on_blue_black', 'white_on_blue_white', }
+local _colourSchemes = { 'orange_on_black', 'white_on_blue', 'white_on_blue_black', 'white_on_blue_white', 'black_on_white' }
 local _paramPrefix = constructionConfigs.getParamPrefixFromCon()
 
 local function _getParamName(name)
