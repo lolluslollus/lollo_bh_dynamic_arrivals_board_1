@@ -34,6 +34,11 @@ local function _getParams()
             uiType = 'ICON_BUTTON',
             values = constructionHelpers.getIcons(_colourSchemes)
         },
+        {
+            key = _getParamName('showIntermediateDestinations'),
+            name = _('ShowIntermediateDestinations'),
+            values = { _('No'), _('Yes') },
+        },
     }
     constructionHelpers.addTerminalOverrideParam(params, _getParamName)
 

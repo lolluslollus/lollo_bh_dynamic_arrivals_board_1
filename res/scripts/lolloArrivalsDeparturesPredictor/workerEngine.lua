@@ -8,6 +8,7 @@ local stationHelpers = require('lolloArrivalsDeparturesPredictor.stationHelpers'
 local transfUtils = require('lolloArrivalsDeparturesPredictor.transfUtils')
 local transfUtilsUG = require('transf')
 
+---@alias formattedPredictions table<{arrivalTerminal: integer, arrivalTimeString: string, departureTimeString: string, destinationString: string, etaMinutesString: string, etdMinutesString: string, lineName: string, originString: string, nextString: string}>
 local _texts = {
     arrivalsAllCaps = _('ArrivalsAllCaps'),
     companyNamePrefix1 = _('CompanyNamePrefix1'),
@@ -194,7 +195,7 @@ local utils = {
 ---@param gameTime_msec integer
 ---@param stationIdIfAny integer|nil
 ---@param terminalIdIfAny integer|nil
----@return table<{arrivalTerminal: integer, arrivalTimeString: string, departureTimeString: string, destinationString: string, etaMinutesString: string, etdMinutesString: string, lineName: string, originString: string}>
+---@return formattedPredictions
 utils.getFormattedPredictions = function(config, allRawPredictions, gameTime_msec, stationIdIfAny, terminalIdIfAny, stationGroupId)
     if logger.isExtendedLog() then
         local stationGroupName = api.engine.getComponent(stationGroupId, api.type.ComponentType.NAME)
@@ -226,7 +227,7 @@ utils.getFormattedPredictions = function(config, allRawPredictions, gameTime_mse
             table.sort(culledRawPredictions, function(a, b) return a.departureTime_msec < b.departureTime_msec end)
         end
 
-        for i = #culledRawPredictions, 1, -1 do
+        for i = #culledRawPredictions, 1, -1 do -- cull after sorting, not before
             if i > maxEntries then
                 table.remove(culledRawPredictions, i)
             end
@@ -236,6 +237,7 @@ utils.getFormattedPredictions = function(config, allRawPredictions, gameTime_mse
             local fmtPred = {
                 lineName = rawPred.lineName or '-',
                 originString = '-',
+                nextString = '-',
                 destinationString = '-',
                 etaMinutesString = _texts.due,
                 etdMinutesString = _texts.due,
@@ -249,10 +251,12 @@ utils.getFormattedPredictions = function(config, allRawPredictions, gameTime_mse
                 -- sanitize away the characters that we use in the regex in the model
                 fmtPred.destinationString:gsub('_', ' ')
                 fmtPred.destinationString:gsub('@', ' ')
-                fmtPred.originString = _texts.sorryTrouble
-                -- sanitize away the characters that we use in the regex in the model
+                fmtPred.nextString:gsub('_', ' ')
+                fmtPred.nextString:gsub('@', ' ')
                 fmtPred.originString:gsub('_', ' ')
                 fmtPred.originString:gsub('@', ' ')
+                -- announce trouble
+                fmtPred.originString = _texts.sorryTrouble
                 fmtPred.arrivalTimeString = _texts.sorryTroubleShort
                 fmtPred.departureTimeString = _texts.sorryTroubleShort
                 fmtPred.etaMinutesString = _texts.sorryTroubleShort
@@ -265,6 +269,15 @@ utils.getFormattedPredictions = function(config, allRawPredictions, gameTime_mse
                         -- sanitize away the characters that we use in the regex in the model
                         fmtPred.destinationString:gsub('_', ' ')
                         fmtPred.destinationString:gsub('@', ' ')
+                    end
+                end
+                if edgeUtils.isValidAndExistingId(rawPred.nextStationGroupId) then
+                    local nextStationGroupName = api.engine.getComponent(rawPred.nextStationGroupId, api.type.ComponentType.NAME)
+                    if nextStationGroupName and nextStationGroupName.name then
+                        fmtPred.nextString = nextStationGroupName.name
+                        -- sanitize away the characters that we use in the regex in the model
+                        fmtPred.nextString:gsub('_', ' ')
+                        fmtPred.nextString:gsub('@', ' ')
                     end
                 end
                 if edgeUtils.isValidAndExistingId(rawPred.originStationGroupId) then
@@ -296,6 +309,7 @@ utils.getFormattedPredictions = function(config, allRawPredictions, gameTime_mse
         results[#results+1] = {
             lineName = '-',
             originString = _texts.sorryNoService,
+            nextString = ' ',
             destinationString = _texts.sorryNoService,
             etaMinutesString = '-',
             etdMinutesString = '-',
@@ -309,22 +323,46 @@ utils.getFormattedPredictions = function(config, allRawPredictions, gameTime_mse
     logger.print('getFormattedPredictions about to return results =') logger.debugPrint(results)
     return results
 end
+---@param formattedPredictions formattedPredictions
+---@param config any
+---@param clockString string
+---@param signCon any
+---@param stationName string|nil
+---@return string
 utils.getNewSignConName = function(formattedPredictions, config, clockString, signCon, stationName)
     local result = ''
+    local function _getParamName(subfix) return config.paramPrefix .. subfix end
+    local isShowIntermediateDestinations_1 = signCon.params[_getParamName('showIntermediateDestinations')] == 1
     if config.singleTerminal then
-        local function _getParamName(subfix) return config.paramPrefix .. subfix end
         local isAbsoluteTime = signCon.params[_getParamName('absoluteTime')] == 1
         local i = 1
         for _, prediction in ipairs(formattedPredictions) do
+            local isShowIntermediateDestinations = isShowIntermediateDestinations_1 and prediction.nextString ~= prediction.destinationString
             if config.track and i == 1 then
                 result = result .. '@_' .. constants.nameTags.track .. '_@' .. prediction.arrivalTerminal
             end
-            result = result .. '@_' .. i .. '_@' .. prediction.destinationString
-            i = i + 1
-            result = result .. '@_' .. i .. '_@' .. prediction.lineName
-            i = i + 1
-            result = result .. '@_' .. i .. '_@' .. (isAbsoluteTime and prediction.departureTimeString or prediction.etdMinutesString)
-            i = i + 1
+            if isShowIntermediateDestinations then
+                result = result .. '@_' .. i .. '_@' .. '-' .. prediction.nextString
+                i = i + 1
+                result = result .. '@_' .. i .. '_@' .. prediction.lineName
+                i = i + 1
+                result = result .. '@_' .. i .. '_@' .. ''
+                i = i + 1
+                result = result .. '@_' .. i .. '_@' .. prediction.destinationString
+                i = i + 1
+                result = result .. '@_' .. i .. '_@' .. ''
+                i = i + 1
+                result = result .. '@_' .. i .. '_@' .. (isAbsoluteTime and prediction.departureTimeString or prediction.etdMinutesString)
+                i = i + 1
+                break
+            else
+                result = result .. '@_' .. i .. '_@' .. prediction.destinationString
+                i = i + 1
+                result = result .. '@_' .. i .. '_@' .. prediction.lineName
+                i = i + 1
+                result = result .. '@_' .. i .. '_@' .. (isAbsoluteTime and prediction.departureTimeString or prediction.etdMinutesString)
+                i = i + 1
+            end
         end
         if config.clock and clockString then
             result = result .. '@_' .. constants.nameTags.clock .. '_@' .. clockString
@@ -349,16 +387,42 @@ utils.getNewSignConName = function(formattedPredictions, config, clockString, si
             result = result .. '@_' .. constants.nameTags.header .. '_@' .. _texts.arrivalsAllCaps
         else
             result = '@_1_@' .. _texts.to .. '@_2_@' .. _texts.lineName .. '@_3_@' .. _texts.platform .. '@_4_@' .. _texts.time
-            local i = 5
+            local maxEntries = config.maxEntries
+            local i, k = 5, 0
             for _, prediction in ipairs(formattedPredictions) do
-                result = result .. '@_' .. i .. '_@' .. prediction.destinationString
-                i = i + 1
-                result = result .. '@_' .. i .. '_@' .. prediction.lineName
-                i = i + 1
-                result = result .. '@_' .. i .. '_@' .. prediction.arrivalTerminal
-                i = i + 1
-                result = result .. '@_' .. i .. '_@' .. prediction.departureTimeString
-                i = i + 1
+                if k >= maxEntries then break end
+                local isShowIntermediateDestinations = isShowIntermediateDestinations_1
+                    and prediction.nextString ~= prediction.destinationString
+                    and k ~= (maxEntries - 1) -- only one line available: no next stop
+                if isShowIntermediateDestinations then
+                    result = result .. '@_' .. i .. '_@' .. '-' .. prediction.nextString
+                    i = i + 1
+                    result = result .. '@_' .. i .. '_@' .. prediction.lineName
+                    i = i + 1
+                    result = result .. '@_' .. i .. '_@' .. ''
+                    i = i + 1
+                    result = result .. '@_' .. i .. '_@' .. ''
+                    i = i + 1
+                    result = result .. '@_' .. i .. '_@' .. prediction.destinationString
+                    i = i + 1
+                    result = result .. '@_' .. i .. '_@' .. ''
+                    i = i + 1
+                    result = result .. '@_' .. i .. '_@' .. prediction.arrivalTerminal
+                    i = i + 1
+                    result = result .. '@_' .. i .. '_@' .. prediction.departureTimeString
+                    i = i + 1
+                    k = k + 2
+                else
+                    result = result .. '@_' .. i .. '_@' .. prediction.destinationString
+                    i = i + 1
+                    result = result .. '@_' .. i .. '_@' .. prediction.lineName
+                    i = i + 1
+                    result = result .. '@_' .. i .. '_@' .. prediction.arrivalTerminal
+                    i = i + 1
+                    result = result .. '@_' .. i .. '_@' .. prediction.departureTimeString
+                    i = i + 1
+                    k = k + 1
+                end
             end
             if config.clock and clockString then
                 result = result .. '@_' .. constants.nameTags.clock .. '_@' .. clockString
@@ -868,7 +932,7 @@ local function getNextPredictions(stationGroupId, stationGroup, nEntries, gameTi
                                         terminalId = terminalId,
                                         originStationGroupId = nil, --line.stops[1].stationGroup,
                                         destinationStationGroupId = nil, --line.stops[1].stationGroup,
-                                        -- nextStationGroupId = nil,
+                                        nextStationGroupId = nil,
                                         arrivalTime_msec = gameTime_msec + 180000, -- add a dummy 3 minutes
                                         departureTime_msec = gameTime_msec + 180000,
                                         isProblem = true,
@@ -994,7 +1058,7 @@ local function getNextPredictions(stationGroupId, stationGroup, nEntries, gameTi
                                                 terminalId = actualTerminalId,
                                                 originStationGroupId = line.stops[originIndex].stationGroup,
                                                 destinationStationGroupId = line.stops[destIndex].stationGroup,
-                                                -- nextStationGroupId = line.stops[nextIndex].stationGroup,
+                                                nextStationGroupId = line.stops[nextIndex].stationGroup,
                                                 arrivalTime_msec = lastDepartureTime_msec + remainingTimeToPrecedingStop_msec + myLineData.averages[hereIndex].st_msec,
                                                 departureTime_msec = lastDepartureTime_msec + remainingTimeToPrecedingStop_msec + myLineData.averages[hereIndex].lsd_msec,
                                                 lineName = myLineData.name,
@@ -1007,7 +1071,7 @@ local function getNextPredictions(stationGroupId, stationGroup, nEntries, gameTi
                                                     terminalId = actualTerminalId,
                                                     originStationGroupId = line.stops[originIndex].stationGroup,
                                                     destinationStationGroupId = line.stops[destIndex].stationGroup,
-                                                    -- nextStationGroupId = line.stops[nextIndex].stationGroup,
+                                                    nextStationGroupId = line.stops[nextIndex].stationGroup,
                                                     arrivalTime_msec = predictions[#predictions].arrivalTime_msec + myLineData.period_msec,
                                                     departureTime_msec = predictions[#predictions].departureTime_msec + myLineData.period_msec,
                                                     lineName = myLineData.name,
@@ -1208,8 +1272,7 @@ local updateSigns = function(state, gameTime_msec)
                             local stationIds = stationGroup.stations
                             local function _getParamName(subfix) return config.paramPrefix .. subfix end
 
-                            local rawPredictions = nil
-                            local nextPredictions = getNextPredictions(
+                            local rawPredictions = getNextPredictions(
                                 signState.stationGroupId,
                                 stationGroup,
                                 config.maxEntries,
@@ -1218,13 +1281,6 @@ local updateSigns = function(state, gameTime_msec)
                                 linesBuffer,
                                 _problemLineIds_indexed
                             )
-
-                            if rawPredictions == nil then
-                                rawPredictions = nextPredictions
-                            else
-                                logger.warn('this concat should never be required')
-                                arrayUtils.concatValues(rawPredictions, nextPredictions)
-                            end
 
                             -- the player may have changed the terminal in the construction params
                             local chosenTerminalId, chosenStationId = utils.getTerminalAndStationId(config, signCon, signState, _getParamName, stationIds)

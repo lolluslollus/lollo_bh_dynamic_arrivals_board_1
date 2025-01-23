@@ -50,8 +50,9 @@ Another big thank you goes out to badgerrhax for the idea.
             ["No"] = "Nein",
             ["Passengers"] = "Passagiere",
             ["PlatformShort"] = "↑↓", -- ↑ ↓ Plat = ─ ┼ ═
+            ["ShowIntermediateDestinations"] = "Zwischenhalte Anzeigen",
             ["SorryNoService"] = "Kein Dienst",
-            ["SorryTrouble"] = "Es tut uns leid",
+            ["SorryTrouble"] = "Störung",
             ["SorryTroubleShort"] = "!",
             ["StationPickerWindowTitle"] = "Wähle einen Bahnhof",
             ["Style"] = "Stil",
@@ -112,6 +113,7 @@ Another big thank you goes out to badgerrhax for the idea.
             ["No"] = "No",
             ["Passengers"] = "Passengers",
             ["PlatformShort"] = "↑↓", -- ↑ ↓ Plat = ─ ┼ ═
+            ["ShowIntermediateDestinations"] = "Show Intermediate Destinations",
             ["SorryNoService"] = "Sorry no service",
             ["SorryTrouble"] = "We are sorry",
             ["SorryTroubleShort"] = "!",
@@ -174,8 +176,9 @@ Another big thank you goes out to badgerrhax for the idea.
             ["No"] = "No",
             ["Passengers"] = "Passeggeri",
             ["PlatformShort"] = "↑↓", -- ↑ ↓ Plat = ─ ┼ ═
+            ["ShowIntermediateDestinations"] = "Mostra destinazioni intermedie",
             ["SorryNoService"] = "Fuori servizio",
-            ["SorryTrouble"] = "C'è un problema",
+            ["SorryTrouble"] = "Disturbo sulla linea",
             ["SorryTroubleShort"] = "!",
             ["StationPickerWindowTitle"] = "Scegli una stazione",
             ["Style"] = "Stile",
