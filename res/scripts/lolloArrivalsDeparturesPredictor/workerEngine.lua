@@ -8,7 +8,8 @@ local stationHelpers = require('lolloArrivalsDeparturesPredictor.stationHelpers'
 local transfUtils = require('lolloArrivalsDeparturesPredictor.transfUtils')
 local transfUtilsUG = require('transf')
 
----@alias formattedPredictions table<{arrivalTerminal: integer, arrivalTimeString: string, departureTimeString: string, destinationString: string, etaMinutesString: string, etdMinutesString: string, lineName: string, originString: string, nextString: string}>
+---@alias rawPredictions table<{arrivalTime_msec: integer, departureTime_msec: integer, destinationStationGroupId: integer|nil, isProblem: boolean|nil, lineName: string|nil, nextStationGroupId: integer|nil, prevStationGroupId: integer|nil, originStationGroupId: integer|nil, stationId: integer|nil, terminalId: integer|nil}>
+---@alias formattedPredictions table<{arrivalTerminal: integer, arrivalTimeString: string, departureTimeString: string, destinationString: string, etaMinutesString: string, etdMinutesString: string, lineName: string, originString: string, nextString: string, prevString: string}>
 local _texts = {
     arrivalsAllCaps = _('ArrivalsAllCaps'),
     companyNamePrefix1 = _('CompanyNamePrefix1'),
@@ -73,6 +74,36 @@ local utils = {
     formatClockStringHHMM = function(clockTime_sec)
         return string.format('%02d:%02d', (clockTime_sec / 3600) % 24, (clockTime_sec / 60) % 60)
     end,
+    ---gets a name from the buffer or from the api; no name -> false
+    ---@param id integer|nil
+    ---@param buffer table<integer, string>|nil
+    ---@return string|false
+    getAnyNameOrFalse = function(id, buffer)
+        if id == nil then return false end
+
+        if buffer == nil then
+            local nameObject = api.engine.getComponent(id, api.type.ComponentType.NAME)
+            return nameObject and nameObject.name or false
+        end
+
+        local bufferedName = buffer[id]
+        if bufferedName then return bufferedName end
+
+        local nameObject = api.engine.getComponent(id, api.type.ComponentType.NAME)
+        local result = nameObject and nameObject.name or false
+        if not(result) then return false end
+
+        buffer[id] = result
+        return result
+    end,
+    getProblemLineIds_indexed = function()
+        local results = {}
+        local problemLineIds = api.engine.system.lineSystem.getProblemLines(api.engine.util.getPlayer())
+        for _, lineId in pairs(problemLineIds) do
+            if lineId then results[lineId] = true end
+        end
+        return results
+    end,
     getTextBetweenBrackets = function(str, isOnlyBetweenBrackets)
         -- call this with isOnlyBetweenBrackets == true to fully match lennardo's mod
         -- set it false or leave it empty to always display something
@@ -108,25 +139,6 @@ local utils = {
         local str1 = string.gsub(str, '[^(]*%(', '')
         local str2 = string.gsub(str1, '%)[^)]*', '')
         return str2
-    end,
-    getProblemLineIds_indexed = function()
-        local results = {}
-        local problemLineIds = api.engine.system.lineSystem.getProblemLines(api.engine.util.getPlayer())
-        for _, lineId in pairs(problemLineIds) do
-            if lineId then results[lineId] = true end
-        end
-        return results
-    end,
-    getCompanyName = function()
-        local companyName = api.engine.getComponent(api.engine.util.getPlayer(), api.type.ComponentType.NAME)
-        if companyName ~= nil then return (companyName.name or '') end
-        return ''
-    end,
-    getStationName = function(stationId, stationGroupId)
-        local stationName = (stationId ~= nil and api.engine.getComponent(stationId, api.type.ComponentType.NAME))
-            or (stationGroupId ~= nil and api.engine.getComponent(stationGroupId, api.type.ComponentType.NAME))
-        if stationName ~= nil then return (stationName.name or '') end
-        return ''
     end,
     -- getTerminalId = function(config, signCon, signState, getParamName)
     --     if not(config) or not(config.singleTerminal) then return nil end
@@ -189,20 +201,26 @@ local utils = {
         return terminalParamValue, nil
     end,
 }
----comment
+---gets a name from the buffer or from the api
+---@param id integer|nil
+---@param buffer table<integer, string>|nil
+---@return string
+utils.getAnyName = function(id, buffer)
+    return utils.getAnyNameOrFalse(id, buffer) or ''
+end
 ---@param config {singleTerminal: boolean, clock: boolean, isArrivals: boolean, maxEntries: integer, track: boolean, paramPrefix: string}
----@param allRawPredictions table<{arrivalTime_msec: integer, departureTime_msec: integer, destinationStationGroupId: integer, lineName: string, originStationGroupId: integer, stationId: integer, terminalId: integer}>
+---@param allRawPredictions rawPredictions
 ---@param gameTime_msec integer
 ---@param stationIdIfAny integer|nil
 ---@param terminalIdIfAny integer|nil
+---@param namesBuffer table<integer, string>
 ---@return formattedPredictions
-utils.getFormattedPredictions = function(config, allRawPredictions, gameTime_msec, stationIdIfAny, terminalIdIfAny, stationGroupId)
+utils.getFormattedPredictions = function(config, allRawPredictions, gameTime_msec, stationIdIfAny, terminalIdIfAny, stationGroupId, namesBuffer)
     if logger.isExtendedLog() then
-        local stationGroupName = api.engine.getComponent(stationGroupId, api.type.ComponentType.NAME)
-        if stationGroupName ~= nil then
-            logger.print('getFormattedPredictions starting, stationGroup ' .. tostring(stationGroupId) .. ' has name =', tostring(stationGroupName.name))
-            -- 99808 Moneglia Centrale
-        end        logger.print('getFormattedPredictions starting, stationIdIfAny = ' .. tostring(stationIdIfAny) .. ', terminalIdIfAny = ' .. tostring(terminalIdIfAny))
+        local stationGroupName = utils.getAnyName(stationGroupId, namesBuffer)
+        logger.print('getFormattedPredictions starting, stationGroup ' .. tostring(stationGroupId) .. ' has name =', stationGroupName)
+        -- 99808 Moneglia Centrale
+        logger.print('getFormattedPredictions starting, stationIdIfAny = ' .. tostring(stationIdIfAny) .. ', terminalIdIfAny = ' .. tostring(terminalIdIfAny))
         logger.print('getFormattedPredictions starting, config =') logger.debugPrint(config)
         logger.print('getFormattedPredictions starting, allRawPredictions =') logger.debugPrint(allRawPredictions)
     end
@@ -211,39 +229,44 @@ utils.getFormattedPredictions = function(config, allRawPredictions, gameTime_mse
 
     if allRawPredictions ~= nil then
         local maxEntries = config.maxEntries
-        local culledRawPredictions = {}
+        local sortedRawPredictions = {}
 
         for _, pre in ipairs(allRawPredictions) do
             if (not(stationIdIfAny) or stationIdIfAny == pre.stationId)
             and (not(terminalIdIfAny) or terminalIdIfAny == pre.terminalId)
             then
-                culledRawPredictions[#culledRawPredictions+1] = pre
+                sortedRawPredictions[#sortedRawPredictions+1] = pre
             end
         end
 
         if config.isArrivals then
-            table.sort(culledRawPredictions, function(a, b) return a.arrivalTime_msec < b.arrivalTime_msec end)
+            table.sort(sortedRawPredictions, function(a, b) return a.arrivalTime_msec < b.arrivalTime_msec end)
         else
-            table.sort(culledRawPredictions, function(a, b) return a.departureTime_msec < b.departureTime_msec end)
+            table.sort(sortedRawPredictions, function(a, b) return a.departureTime_msec < b.departureTime_msec end)
         end
-
-        for i = #culledRawPredictions, 1, -1 do -- cull after sorting, not before
+--[[
+        for i = #sortedRawPredictions, 1, -1 do -- cull after sorting, not before
             if i > maxEntries then
-                table.remove(culledRawPredictions, i)
+                table.remove(sortedRawPredictions, i)
             end
         end
+]]
+        local i = 0
+        for _, rawPred in ipairs(sortedRawPredictions) do
+            i = i + 1
+            if i > maxEntries then break end
 
-        for _, rawPred in ipairs(culledRawPredictions) do
             local fmtPred = {
-                lineName = rawPred.lineName or '-',
-                originString = '-',
-                nextString = '-',
+                arrivalTerminal = (rawPred.terminalId or '-'), -- the terminal id has base 1
+                arrivalTimeString = _texts.due,
+                departureTimeString = _texts.due,
                 destinationString = '-',
                 etaMinutesString = _texts.due,
                 etdMinutesString = _texts.due,
-                arrivalTimeString = _texts.due,
-                departureTimeString = _texts.due,
-                arrivalTerminal = (rawPred.terminalId or '-'), -- the terminal id has base 1
+                lineName = rawPred.lineName or '-',
+                nextString = '-',
+                originString = '-',
+                prevString = '-',
             }
 
             if rawPred.isProblem then
@@ -255,39 +278,42 @@ utils.getFormattedPredictions = function(config, allRawPredictions, gameTime_mse
                 fmtPred.nextString:gsub('@', ' ')
                 fmtPred.originString:gsub('_', ' ')
                 fmtPred.originString:gsub('@', ' ')
+                fmtPred.prevString:gsub('_', ' ')
+                fmtPred.prevString:gsub('@', ' ')
                 -- announce trouble
-                fmtPred.originString = _texts.sorryTrouble
                 fmtPred.arrivalTimeString = _texts.sorryTroubleShort
                 fmtPred.departureTimeString = _texts.sorryTroubleShort
                 fmtPred.etaMinutesString = _texts.sorryTroubleShort
                 fmtPred.etdMinutesString = _texts.sorryTroubleShort
+                fmtPred.originString = _texts.sorryTrouble
             else
                 if edgeUtils.isValidAndExistingId(rawPred.destinationStationGroupId) then
-                    local destinationStationGroupName = api.engine.getComponent(rawPred.destinationStationGroupId, api.type.ComponentType.NAME)
-                    if destinationStationGroupName and destinationStationGroupName.name then
-                        fmtPred.destinationString = destinationStationGroupName.name
-                        -- sanitize away the characters that we use in the regex in the model
-                        fmtPred.destinationString:gsub('_', ' ')
-                        fmtPred.destinationString:gsub('@', ' ')
-                    end
+                    local stationGroupName = utils.getAnyName(rawPred.destinationStationGroupId, namesBuffer)
+                    fmtPred.destinationString = stationGroupName
+                    -- sanitize away the characters that we use in the regex in the model
+                    fmtPred.destinationString:gsub('_', ' ')
+                    fmtPred.destinationString:gsub('@', ' ')
                 end
                 if edgeUtils.isValidAndExistingId(rawPred.nextStationGroupId) then
-                    local nextStationGroupName = api.engine.getComponent(rawPred.nextStationGroupId, api.type.ComponentType.NAME)
-                    if nextStationGroupName and nextStationGroupName.name then
-                        fmtPred.nextString = nextStationGroupName.name
-                        -- sanitize away the characters that we use in the regex in the model
-                        fmtPred.nextString:gsub('_', ' ')
-                        fmtPred.nextString:gsub('@', ' ')
-                    end
+                    local stationGroupName = utils.getAnyName(rawPred.nextStationGroupId, namesBuffer)
+                    fmtPred.nextString = stationGroupName
+                    -- sanitize away the characters that we use in the regex in the model
+                    fmtPred.nextString:gsub('_', ' ')
+                    fmtPred.nextString:gsub('@', ' ')
+                end
+                if edgeUtils.isValidAndExistingId(rawPred.prevStationGroupId) then
+                    local stationGroupName = utils.getAnyName(rawPred.prevStationGroupId, namesBuffer)
+                    fmtPred.prevString = stationGroupName
+                    -- sanitize away the characters that we use in the regex in the model
+                    fmtPred.prevString:gsub('_', ' ')
+                    fmtPred.prevString:gsub('@', ' ')
                 end
                 if edgeUtils.isValidAndExistingId(rawPred.originStationGroupId) then
-                    local originStationGroupName = api.engine.getComponent(rawPred.originStationGroupId, api.type.ComponentType.NAME)
-                    if originStationGroupName and originStationGroupName.name then
-                        fmtPred.originString = originStationGroupName.name
-                        -- sanitize away the characters that we use in the regex in the model
-                        fmtPred.originString:gsub('_', ' ')
-                        fmtPred.originString:gsub('@', ' ')
-                    end
+                    local stationGroupName = utils.getAnyName(rawPred.originStationGroupId, namesBuffer)
+                    fmtPred.originString = stationGroupName
+                    -- sanitize away the characters that we use in the regex in the model
+                    fmtPred.originString:gsub('_', ' ')
+                    fmtPred.originString:gsub('@', ' ')
                 end
 
                 local expectedMinutesToArrival = math.floor((rawPred.arrivalTime_msec - gameTime_msec) / 60000)
@@ -307,16 +333,16 @@ utils.getFormattedPredictions = function(config, allRawPredictions, gameTime_mse
     end
     if #results < 1 then
         results[#results+1] = {
-            lineName = '-',
-            originString = _texts.sorryNoService,
-            nextString = ' ',
+            arrivalTerminal = tostring(terminalIdIfAny or '-'),
+            arrivalTimeString = '--:--',
+            departureTimeString = '--:--',
             destinationString = _texts.sorryNoService,
             etaMinutesString = '-',
             etdMinutesString = '-',
-            arrivalTimeString = '--:--',
-            departureTimeString = '--:--',
-            -- arrivalStationId = tostring(stationIdIfAny or '-'),
-            arrivalTerminal = tostring(terminalIdIfAny or '-'),
+            lineName = '-',
+            nextString = ' ',
+            originString = _texts.sorryNoService,
+            prevString = ' ',
         }
     end
 
@@ -336,50 +362,110 @@ utils.getNewSignConName = function(formattedPredictions, config, clockString, si
     if config.singleTerminal then
         local isAbsoluteTime = signCon.params[_getParamName('absoluteTime')] == 1
         local i = 1
-        for _, prediction in ipairs(formattedPredictions) do
-            local isShowIntermediateDestinations = isShowIntermediateDestinations_1 and prediction.nextString ~= prediction.destinationString
-            if config.track and i == 1 then
-                result = result .. '@_' .. constants.nameTags.track .. '_@' .. prediction.arrivalTerminal
+        if config.isArrivals then
+            for _, prediction in ipairs(formattedPredictions) do
+                local isShowIntermediateDestinations = isShowIntermediateDestinations_1 and prediction.prevString ~= prediction.originString
+                if config.track and i == 1 then
+                    result = result .. '@_' .. constants.nameTags.track .. '_@' .. prediction.arrivalTerminal
+                end
+                if isShowIntermediateDestinations then
+                    result = result .. '@_' .. i .. '_@' .. prediction.originString
+                    i = i + 1
+                    result = result .. '@_' .. i .. '_@' .. ''
+                    i = i + 1
+                    result = result .. '@_' .. i .. '_@' .. (isAbsoluteTime and prediction.arrivalTimeString or prediction.etaMinutesString)
+                    i = i + 1
+                    result = result .. '@_' .. i .. '_@' .. '-' .. prediction.prevString
+                    i = i + 1
+                    result = result .. '@_' .. i .. '_@' .. prediction.lineName
+                    i = i + 1
+                    result = result .. '@_' .. i .. '_@' .. ''
+                    i = i + 1
+                    break
+                else
+                    result = result .. '@_' .. i .. '_@' .. prediction.originString
+                    i = i + 1
+                    result = result .. '@_' .. i .. '_@' .. prediction.lineName
+                    i = i + 1
+                    result = result .. '@_' .. i .. '_@' .. (isAbsoluteTime and prediction.arrivalTimeString or prediction.etaMinutesString)
+                    i = i + 1
+                end
             end
-            if isShowIntermediateDestinations then
-                result = result .. '@_' .. i .. '_@' .. '-' .. prediction.nextString
-                i = i + 1
-                result = result .. '@_' .. i .. '_@' .. prediction.lineName
-                i = i + 1
-                result = result .. '@_' .. i .. '_@' .. ''
-                i = i + 1
-                result = result .. '@_' .. i .. '_@' .. prediction.destinationString
-                i = i + 1
-                result = result .. '@_' .. i .. '_@' .. ''
-                i = i + 1
-                result = result .. '@_' .. i .. '_@' .. (isAbsoluteTime and prediction.departureTimeString or prediction.etdMinutesString)
-                i = i + 1
-                break
-            else
-                result = result .. '@_' .. i .. '_@' .. prediction.destinationString
-                i = i + 1
-                result = result .. '@_' .. i .. '_@' .. prediction.lineName
-                i = i + 1
-                result = result .. '@_' .. i .. '_@' .. (isAbsoluteTime and prediction.departureTimeString or prediction.etdMinutesString)
-                i = i + 1
+            if config.clock and clockString then
+                result = result .. '@_' .. constants.nameTags.clock .. '_@' .. clockString
             end
-        end
-        if config.clock and clockString then
-            result = result .. '@_' .. constants.nameTags.clock .. '_@' .. clockString
+        else
+            for _, prediction in ipairs(formattedPredictions) do
+                local isShowIntermediateDestinations = isShowIntermediateDestinations_1 and prediction.nextString ~= prediction.destinationString
+                if config.track and i == 1 then
+                    result = result .. '@_' .. constants.nameTags.track .. '_@' .. prediction.arrivalTerminal
+                end
+                if isShowIntermediateDestinations then
+                    result = result .. '@_' .. i .. '_@' .. '-' .. prediction.nextString
+                    i = i + 1
+                    result = result .. '@_' .. i .. '_@' .. prediction.lineName
+                    i = i + 1
+                    result = result .. '@_' .. i .. '_@' .. ''
+                    i = i + 1
+                    result = result .. '@_' .. i .. '_@' .. prediction.destinationString
+                    i = i + 1
+                    result = result .. '@_' .. i .. '_@' .. ''
+                    i = i + 1
+                    result = result .. '@_' .. i .. '_@' .. (isAbsoluteTime and prediction.departureTimeString or prediction.etdMinutesString)
+                    i = i + 1
+                    break
+                else
+                    result = result .. '@_' .. i .. '_@' .. prediction.destinationString
+                    i = i + 1
+                    result = result .. '@_' .. i .. '_@' .. prediction.lineName
+                    i = i + 1
+                    result = result .. '@_' .. i .. '_@' .. (isAbsoluteTime and prediction.departureTimeString or prediction.etdMinutesString)
+                    i = i + 1
+                end
+            end
+            if config.clock and clockString then
+                result = result .. '@_' .. constants.nameTags.clock .. '_@' .. clockString
+            end
         end
     else
+        local maxEntries = config.maxEntries
+        local i, k = 5, 0
         if config.isArrivals then
             result = '@_1_@' .. _texts.from .. '@_2_@' .. _texts.lineName .. '@_3_@' .. _texts.platform .. '@_4_@' .. _texts.time
-            local i = 5
             for _, prediction in ipairs(formattedPredictions) do
-                result = result .. '@_' .. i .. '_@' .. prediction.originString
-                i = i + 1
-                result = result .. '@_' .. i .. '_@' .. prediction.lineName
-                i = i + 1
-                result = result .. '@_' .. i .. '_@' .. prediction.arrivalTerminal
-                i = i + 1
-                result = result .. '@_' .. i .. '_@' .. prediction.arrivalTimeString
-                i = i + 1
+                if k >= maxEntries then break end
+                local isShowIntermediateDestinations = isShowIntermediateDestinations_1
+                    and prediction.prevString ~= prediction.originString
+                    and k ~= (maxEntries - 1) -- only one row available: no previous stop
+                if isShowIntermediateDestinations then
+                    result = result .. '@_' .. i .. '_@' .. prediction.originString
+                    i = i + 1
+                    result = result .. '@_' .. i .. '_@' .. ''
+                    i = i + 1
+                    result = result .. '@_' .. i .. '_@' .. prediction.arrivalTerminal
+                    i = i + 1
+                    result = result .. '@_' .. i .. '_@' .. prediction.arrivalTimeString
+                    i = i + 1
+                    result = result .. '@_' .. i .. '_@' .. '-' .. prediction.prevString
+                    i = i + 1
+                    result = result .. '@_' .. i .. '_@' .. prediction.lineName
+                    i = i + 1
+                    result = result .. '@_' .. i .. '_@' .. ''
+                    i = i + 1
+                    result = result .. '@_' .. i .. '_@' .. ''
+                    i = i + 1
+                    k = k + 2
+                else
+                    result = result .. '@_' .. i .. '_@' .. prediction.originString
+                    i = i + 1
+                    result = result .. '@_' .. i .. '_@' .. prediction.lineName
+                    i = i + 1
+                    result = result .. '@_' .. i .. '_@' .. prediction.arrivalTerminal
+                    i = i + 1
+                    result = result .. '@_' .. i .. '_@' .. prediction.arrivalTimeString
+                    i = i + 1
+                    k = k + 1
+                end
             end
             if config.clock and clockString then
                 result = result .. '@_' .. constants.nameTags.clock .. '_@' .. clockString
@@ -387,13 +473,11 @@ utils.getNewSignConName = function(formattedPredictions, config, clockString, si
             result = result .. '@_' .. constants.nameTags.header .. '_@' .. _texts.arrivalsAllCaps
         else
             result = '@_1_@' .. _texts.to .. '@_2_@' .. _texts.lineName .. '@_3_@' .. _texts.platform .. '@_4_@' .. _texts.time
-            local maxEntries = config.maxEntries
-            local i, k = 5, 0
             for _, prediction in ipairs(formattedPredictions) do
                 if k >= maxEntries then break end
                 local isShowIntermediateDestinations = isShowIntermediateDestinations_1
                     and prediction.nextString ~= prediction.destinationString
-                    and k ~= (maxEntries - 1) -- only one line available: no next stop
+                    and k ~= (maxEntries - 1) -- only one row available: no next stop
                 if isShowIntermediateDestinations then
                     result = result .. '@_' .. i .. '_@' .. '-' .. prediction.nextString
                     i = i + 1
@@ -432,6 +516,25 @@ utils.getNewSignConName = function(formattedPredictions, config, clockString, si
         result = result .. '@_' .. constants.nameTags.footer .. '_@' .. (stationName or '')
     end
     return result .. '@'
+end
+---gets a station name
+---@param stationId integer|nil
+---@param stationGroupId integer|nil
+---@param namesBuffer table<any>|nil
+---@return string
+utils.getStationName = function(stationId, stationGroupId, namesBuffer)
+    local stationName = utils.getAnyNameOrFalse(stationId, namesBuffer)
+    if stationName then return stationName end
+
+    local stationGroupName = utils.getAnyNameOrFalse(stationGroupId, namesBuffer)
+    if stationGroupName then return stationGroupName end
+
+    return ''
+end
+---@param namesBuffer table<any>|nil
+---@return string
+utils.getCompanyName = function(namesBuffer)
+    return utils.getAnyName(api.engine.util.getPlayer(), namesBuffer)
 end
 
 local function getHereStartEndIndexesOLD(line, stationGroupId, stationIndexBase0, terminalIndexBase0)
@@ -530,9 +633,16 @@ local function getHereNextIndexesOLD(line, stationGroupId, stationIndexBase0, te
 
     return hereIndex, nextIndex
 end
-
-local function getHereNextIndexes(nextStopIndexBase0, line, stationGroupId, stationIndexBase0, terminalIndexBase0)
-    -- logger.print('getHereNextIndexes starting, stops =') logger.debugPrint(line.stops)
+---@param nextStopIndexBase0 integer
+---@param line any
+---@param stationGroupId integer
+---@param stationIndexBase0 integer
+---@param terminalIndexBase0 integer
+---@return integer
+---@return integer
+---@return integer
+local function getHereNextPrevIndexes(nextStopIndexBase0, line, stationGroupId, stationIndexBase0, terminalIndexBase0)
+    -- logger.print('getHereNextPrevIndexes starting, stops =') logger.debugPrint(line.stops)
     local stops = line.stops
     local nStops = #line.stops
 
@@ -562,7 +672,12 @@ local function getHereNextIndexes(nextStopIndexBase0, line, stationGroupId, stat
         nextIndex = 1
     end
 
-    return hereIndex, nextIndex
+    local prevIndex = hereIndex - 1
+    if prevIndex < 1 then
+        prevIndex = nStops
+    end
+
+    return hereIndex, nextIndex, prevIndex
 end
 
 local getLineStartEndIndexes = function(line)
@@ -636,18 +751,15 @@ local function updateLineFrequencies_indexedBy_lineId()
     end
 end
 
-local function getMyLineData(vehicleIds, line, lineId, lineWaitingTime, buffer)
+local function getMyLineData(vehicleIds, line, lineId, lineWaitingTime, linesBuffer, namesBuffer)
     -- Here, I average the times across all the trains on this line.
     -- If the trains are wildly different, which is stupid, this could be less accurate;
     -- otherwise, it will be pretty accurate.
     -- buffer
-    if buffer[lineId] then logger.print('using line buffer for lineID =', lineId) return buffer[lineId] end
+    if linesBuffer[lineId] then logger.print('using line buffer for lineID =', lineId) return linesBuffer[lineId] end
     logger.print('NOT using line buffer for lineID =', lineId)
 
-    local name = api.engine.getComponent(lineId, api.type.ComponentType.NAME)
-    if name and name.name then
-        name = utils.getTextBetweenBrackets(name.name)
-    end
+    local name = utils.getTextBetweenBrackets(utils.getAnyName(lineId, namesBuffer))
 
     local startIndex, endIndex = getLineStartEndIndexes(line)
 
@@ -734,7 +846,7 @@ local function getMyLineData(vehicleIds, line, lineId, lineWaitingTime, buffer)
         period_msec = period_msec + averages[index].lsd_msec
     end
 
-    buffer[lineId] = {
+    linesBuffer[lineId] = {
         averages = averages,
         endIndex = endIndex,
         name = name,
@@ -742,7 +854,7 @@ local function getMyLineData(vehicleIds, line, lineId, lineWaitingTime, buffer)
         startIndex = startIndex,
         vehicles = vehicles
     }
-    return buffer[lineId]
+    return linesBuffer[lineId]
 end
 
 local function getLastDepartureTime_msec(vehicle, gameTime_msec)
@@ -793,19 +905,25 @@ local getRemainingTimeToPrecedingStop_msec = function(averages, nextStopIndexBas
 
     return result
 end
-
-local function getNextPredictions(stationGroupId, stationGroup, nEntries, gameTime_msec, predictionsBufferHelpers, lineBuffer, problemLineIds_indexed)
+---@param stationGroupId integer
+---@param stationGroup any
+---@param nEntries integer
+---@param gameTime_msec number
+---@param predictionsBufferHelpers any
+---@param linesBuffer any
+---@param problemLineIds_indexed table<any>
+---@param namesBuffer table<integer, string>
+---@return rawPredictions
+local function getNextPredictions(stationGroupId, stationGroup, nEntries, gameTime_msec, predictionsBufferHelpers, linesBuffer, problemLineIds_indexed, namesBuffer)
     logger.print('getNextPredictions starting, stationGroupId =', stationGroupId or 'NIL')
     local predictions = {}
 
     if not(stationGroupId) or not(stationGroup) or not(stationGroup.stations) or not(nEntries) or nEntries < 1 then return predictions end
 
     if logger.isExtendedLog() then
-        local stationGroupName = api.engine.getComponent(stationGroupId, api.type.ComponentType.NAME)
-        if stationGroupName ~= nil then
-            logger.print('stationGroup ' .. tostring(stationGroupId) .. ' has name =', tostring(stationGroupName.name))
-            -- 99808 Moneglia Centrale
-        end
+        local stationGroupName = utils.getAnyName(stationGroupId, namesBuffer)
+        logger.print('stationGroup ' .. tostring(stationGroupId) .. ' has name =', stationGroupName)
+        -- 99808 Moneglia Centrale
     end
 
     local predictionsBuffer = predictionsBufferHelpers.get(stationGroupId)
@@ -933,12 +1051,13 @@ local function getNextPredictions(stationGroupId, stationGroup, nEntries, gameTi
                                         originStationGroupId = nil, --line.stops[1].stationGroup,
                                         destinationStationGroupId = nil, --line.stops[1].stationGroup,
                                         nextStationGroupId = nil,
+                                        prevStationGroupId = nil,
                                         arrivalTime_msec = gameTime_msec + 180000, -- add a dummy 3 minutes
                                         departureTime_msec = gameTime_msec + 180000,
                                         isProblem = true,
                                     }
                                 else
-                                    local myLineData = getMyLineData(vehicleIds, line, lineId, line.waitingTime, lineBuffer)
+                                    local myLineData = getMyLineData(vehicleIds, line, lineId, line.waitingTime, linesBuffer, namesBuffer)
                                     logger.print('myLineData.averages =') logger.debugPrint(myLineData.averages)
 
                                     for _, vehicleId in pairs(vehicleIds) do
@@ -1023,8 +1142,8 @@ local function getNextPredictions(stationGroupId, stationGroup, nEntries, gameTi
                                             logger.print('vehicle.stopIndex =', vehicle.stopIndex)
                                             logger.print('vehicle.state =', vehicle.state)
 
-                                            local hereIndex, nextIndex = getHereNextIndexes(vehicle.stopIndex, line, stationGroupId, stationIndexInStationGroupBase0, terminalIndexBase0)
-                                            logger.print('hereIndex, nextIndex, nStops =', hereIndex, nextIndex, nStops)
+                                            local hereIndex, nextIndex, prevIndex = getHereNextPrevIndexes(vehicle.stopIndex, line, stationGroupId, stationIndexInStationGroupBase0, terminalIndexBase0)
+                                            logger.print('hereIndex, nextIndex, prevIndex, nStops =', hereIndex, nextIndex, prevIndex, nStops)
 
                                             local lastDepartureTime_msec = getLastDepartureTime_msec(vehicle, gameTime_msec)
                                             logger.print('lastDepartureTime_msec =', lastDepartureTime_msec)
@@ -1054,27 +1173,29 @@ local function getNextPredictions(stationGroupId, stationGroup, nEntries, gameTi
                                             logger.print('actualTerminalId =', actualTerminalId)
 
                                             predictions[#predictions+1] = {
-                                                stationId = actualStationId,
-                                                terminalId = actualTerminalId,
-                                                originStationGroupId = line.stops[originIndex].stationGroup,
-                                                destinationStationGroupId = line.stops[destIndex].stationGroup,
-                                                nextStationGroupId = line.stops[nextIndex].stationGroup,
                                                 arrivalTime_msec = lastDepartureTime_msec + remainingTimeToPrecedingStop_msec + myLineData.averages[hereIndex].st_msec,
                                                 departureTime_msec = lastDepartureTime_msec + remainingTimeToPrecedingStop_msec + myLineData.averages[hereIndex].lsd_msec,
+                                                destinationStationGroupId = line.stops[destIndex].stationGroup,
                                                 lineName = myLineData.name,
+                                                nextStationGroupId = line.stops[nextIndex].stationGroup,
+                                                originStationGroupId = line.stops[originIndex].stationGroup,
+                                                prevStationGroupId = line.stops[prevIndex].stationGroup,
+                                                stationId = actualStationId,
+                                                terminalId = actualTerminalId,
                                             }
 
                                             logger.print('myLineData.period_msec =', myLineData.period_msec)
                                             if #vehicleIds == 1 then -- fill up the display a bit
                                                 predictions[#predictions+1] = {
-                                                    stationId = actualStationId,
-                                                    terminalId = actualTerminalId,
-                                                    originStationGroupId = line.stops[originIndex].stationGroup,
-                                                    destinationStationGroupId = line.stops[destIndex].stationGroup,
-                                                    nextStationGroupId = line.stops[nextIndex].stationGroup,
                                                     arrivalTime_msec = predictions[#predictions].arrivalTime_msec + myLineData.period_msec,
                                                     departureTime_msec = predictions[#predictions].departureTime_msec + myLineData.period_msec,
+                                                    destinationStationGroupId = line.stops[destIndex].stationGroup,
                                                     lineName = myLineData.name,
+                                                    nextStationGroupId = line.stops[nextIndex].stationGroup,
+                                                    originStationGroupId = line.stops[originIndex].stationGroup,
+                                                    prevStationGroupId = line.stops[prevIndex].stationGroup,
+                                                    stationId = actualStationId,
+                                                    terminalId = actualTerminalId,
                                                 }
                                             end
                                         end
@@ -1217,6 +1338,8 @@ local updateSigns = function(state, gameTime_msec)
     local _gameTime_sec = math.floor(gameTime_msec / 1000)
 
     local linesBuffer = {}
+    ---@type table<integer, string>
+    local namesBuffer = {}
     local predictionsBuffer = {
         byStationGroup = {},
     }
@@ -1279,15 +1402,16 @@ local updateSigns = function(state, gameTime_msec)
                                 gameTime_msec,
                                 predictionsBufferHelpers,
                                 linesBuffer,
-                                _problemLineIds_indexed
-                            )
+                                _problemLineIds_indexed,
+                                namesBuffer
+                            ) or {}
 
                             -- the player may have changed the terminal in the construction params
                             local chosenTerminalId, chosenStationId = utils.getTerminalAndStationId(config, signCon, signState, _getParamName, stationIds)
                             logger.print('chosenTerminalId =', chosenTerminalId, 'chosenStationId =', chosenStationId)
 
-                            formattedPredictions = utils.getFormattedPredictions(config, rawPredictions or {}, gameTime_msec, chosenStationId, chosenTerminalId, signState.stationGroupId)
-                            stationName = utils.getStationName(chosenStationId, signState.stationGroupId)
+                            formattedPredictions = utils.getFormattedPredictions(config, rawPredictions, gameTime_msec, chosenStationId, chosenTerminalId, signState.stationGroupId, namesBuffer)
+                            stationName = utils.getStationName(chosenStationId, signState.stationGroupId, namesBuffer)
                         end
                     end
                 end
