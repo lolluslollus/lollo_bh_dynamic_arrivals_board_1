@@ -123,8 +123,9 @@ local guiHelpers = {
             end
 
             if #components > 0 then
-                local guiObjectsTable = api.gui.comp.Table.new(#components, 'NONE')
-                guiObjectsTable:setNumCols(5)
+                -- local guiObjectsTable = api.gui.comp.Table.new(#components, 'NONE')
+                -- guiObjectsTable:setNumCols(5)
+                local guiObjectsTable = api.gui.comp.Table.new(5, 'NONE') -- num of columns, one of "NONE", "SELECTABLE" or "MULTI"
                 for _, value in pairs(components) do
                     guiObjectsTable:addRow(value)
                 end
