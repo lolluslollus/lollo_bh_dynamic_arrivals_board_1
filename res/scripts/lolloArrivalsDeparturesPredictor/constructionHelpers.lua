@@ -1,5 +1,5 @@
 local helpers = {
-    addTerminalOverrideParam = function(params, getParamName)
+    addTerminalOverrideParam = function(params, getParamName, isStreet)
         local terminals = {
             [1] = 'Auto'
         }
@@ -9,8 +9,8 @@ local helpers = {
 
         params[#params+1] = {
             key = getParamName('terminal_override'),
-            name = _('Terminal'),
-            tooltip = _('GuessedTooltip'),
+            name = isStreet and _('Terminal_Street') or _('Terminal'),
+            tooltip = isStreet and _('GuessedTooltip_Street') or _('GuessedTooltip'),
             values = terminals,
             uiType = 'COMBOBOX'
         }

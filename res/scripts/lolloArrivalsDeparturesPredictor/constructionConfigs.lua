@@ -63,7 +63,7 @@ local funcs = {
         end
         assert(
             stringUtils.stringEndsWith(_currentFilePathAbsolute, '.con'),
-            'lolloArrivalsDeparturesPredictor ERROR: getParamPrefixFromCon was called from ' .. (_currentFilePathAbsolute or 'NIL')
+            'lolloArrivalsDeparturesPredictor ERROR: getParamPrefixFromCon was called from ' .. tostring(_currentFilePathAbsolute)
         )
         local _currentFilePathRelative = arrayUtils.getLast(_currentFilePathAbsolute:split('/res/construction/'))
         logger.print('_currentFilePathRelative =') logger.debugPrint(_currentFilePathRelative)

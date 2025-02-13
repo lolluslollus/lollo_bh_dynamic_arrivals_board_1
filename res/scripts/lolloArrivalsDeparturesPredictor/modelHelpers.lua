@@ -28,7 +28,7 @@ local constants = require('lolloArrivalsDeparturesPredictor.constants')
 local _alpha = 1               --0.99
 local _alphaMode = 'CUTOUT'    -- 'BLEND', 'CUTOUT', 'NONE'
 local _renderMode = 'EMISSIVE' -- 'EMISSIVE', 'STD'
-local _font = 'Lato'           -- 'Lato', 'Noto'
+local _font = 'Lato'           -- 'Lato', 'Noto' -- Noto is monospace
 
 -- local _colours = {
 --     white = { 1, 1, 1, },

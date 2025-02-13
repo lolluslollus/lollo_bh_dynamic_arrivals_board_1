@@ -85,145 +85,96 @@ local function _getAdjacentNodeIds(availableNodeIds, startNodeId)
 
     return results
 end
-
-local _getNearestTerminalsWithStationConUNUSED = function(transf, stationConId, isOnlyPassengers)
-    if type(transf) ~= 'table' or not(edgeUtils.isValidAndExistingId(stationConId)) then return nil end
-
-    local pos = {transf[13], transf[14], transf[15]}
-    -- the station can have many forms
-    -- a terminal is not a point but a collection of edges, and edges have nodes.
-    -- I need to iterate across those collections of edges and find the one collection (ie the terminal)
-    -- that contains the edge closest to pos.
-    -- construction.frozenNodes[] and construction.frozenEdges[] only contain tracks;
-    -- there is no telling to which terminal they belong
-    -- station.terminals[].personNodes and station.terminals[].personEdges do not have a position
-    -- station.terminals[].vehicleNodeId.entity is an actual node, and it is in the construction.frozenNodes[]
-    -- starting from it, I can move left and see which nodes I come upon.
-    -- As soon as one node is not frozen, return
-    -- Repeat to the right.
-    -- This way, I can tell which vehicle nodes belong to which terminal
-
-    local stationCon = api.engine.getComponent(stationConId, api.type.ComponentType.CONSTRUCTION)
-    if not(stationCon) or not(stationCon.stations) then return nil end
-
-    local stationTerminalNodesMap = {}
-    for _, stationId in pairs(stationCon.stations) do
-        local station = api.engine.getComponent(stationId, api.type.ComponentType.STATION)
-        if not(station.cargo) or not(isOnlyPassengers) then -- a station construction can have two stations: one for passengers and one for cargo
-            stationTerminalNodesMap[stationId] = {}
-            for terminalId, terminalProps in pairs(station.terminals) do
-                local vehicleNodeId = terminalProps.vehicleNodeId.entity
-                stationTerminalNodesMap[stationId][terminalId] = {
-                    nodeIds = _getAdjacentNodeIds(stationCon.frozenNodes, vehicleNodeId),
-                    tag = terminalProps.tag,
-                }
-            end
-        end
-    end
-    logger.print('stationTerminalNodesMap =') logger.debugPrint(stationTerminalNodesMap)
-
-    local nearestTerminals = {}
-    for stationId, station in pairs(stationTerminalNodesMap) do
-        nearestTerminals[stationId] = {terminalId = nil, terminalTag = nil, cargo = station.cargo, distance = 9999}
-        for terminalId, terminal in pairs(station) do
-            for _, nodeId in pairs(terminal.nodeIds) do
-                local distance = transfUtils.getPositionsDistance(
-                    api.engine.getComponent(nodeId, api.type.ComponentType.BASE_NODE).position,
-                    pos
-                )
-                if distance < nearestTerminals[stationId].distance then
-                    nearestTerminals[stationId].terminalId = terminalId
-                    nearestTerminals[stationId].terminalTag = terminal.tag
-                    nearestTerminals[stationId].cargo = station.cargo or false
-                    nearestTerminals[stationId].distance = distance
-                end
-            end
-        end
-    end
-
-    return nearestTerminals
-end
-
-local _getNearestTerminalsWithStationGroup = function(transf, stationGroupId, isOnlyPassengers)
-    logger.print('_getNearestTerminalsWithStationGroup starting, stationGroupId =', stationGroupId or 'NIL')
-    if type(transf) ~= 'table' or not(edgeUtils.isValidAndExistingId(stationGroupId)) then return nil end
+---@param signTransf table<integer>
+---@param stationGroupId integer
+---@param isOnlyPassengers boolean
+---@return nil|nearest_terminal_streetside|table<integer, nearest_terminal_generic>
+local _getNearestTerminalsWithStationGroup = function(signTransf, stationGroupId, isOnlyPassengers)
+    logger.print('_getNearestTerminalsWithStationGroup starting, stationGroupId =', tostring(stationGroupId))
+    if type(signTransf) ~= 'table' or not(edgeUtils.isValidAndExistingId(stationGroupId)) then return nil end
 
     local _stationGroup = api.engine.getComponent(stationGroupId, api.type.ComponentType.STATION_GROUP)
     if not(_stationGroup) or not(_stationGroup.stations) then return nil end
 
-    local _refPosition123 = {transf[13], transf[14], transf[15]}
+    local _signPosition123 = {signTransf[13], signTransf[14], signTransf[15]}
     local stationTerminalPositionsMap = {}
     for _, stationId in pairs(_stationGroup.stations) do
-        logger.print('stationId =', stationId or 'NIL')
-        local station = api.engine.getComponent(stationId, api.type.ComponentType.STATION)
-        if not(station.cargo) or not(isOnlyPassengers) then -- a station construction can have two stations: one for passengers and one for cargo
-            stationTerminalPositionsMap[stationId] = {}
-            for terminalId, terminal in pairs(station.terminals) do
-                logger.print('terminalId =', terminalId or 'NIL')
-                if terminal and terminal.vehicleNodeId and terminal.vehicleNodeId.entity
-                and edgeUtils.isValidAndExistingId(terminal.vehicleNodeId.entity) then
-                    -- entity is an edge with street stations,
-                    -- a node with train stations,
-                    -- a con with street station constructions
-                    local edgeOrNodeOrConId = terminal.vehicleNodeId.entity
-                    if edgeUtils.isValidAndExistingId(edgeOrNodeOrConId) then
-                        logger.print('edgeOrNodeOrConId =', edgeOrNodeOrConId or 'NIL')
-                        local positions = {}
-                        local baseNode = api.engine.getComponent(edgeOrNodeOrConId, api.type.ComponentType.BASE_NODE)
-                        if baseNode then
-                            logger.print('it is a node')
-                            -- train stations, they can have a lot of frozen nodes
-                            local conId = api.engine.system.streetConnectorSystem.getConstructionEntityForStation(stationId)
-                            if edgeUtils.isValidAndExistingId(conId) then
-                                logger.print('con found')
-                                local con = api.engine.getComponent(conId, api.type.ComponentType.CONSTRUCTION)
-                                if con and con.frozenNodes then
-                                    for _, nodeId in pairs(_getAdjacentNodeIds(con.frozenNodes, edgeOrNodeOrConId)) do
-                                        local adjacentNode = api.engine.getComponent(nodeId, api.type.ComponentType.BASE_NODE)
-                                        if adjacentNode then
-                                            positions[#positions+1] = adjacentNode.position
-                                        end
-                                    end
-                                else
-                                    logger.warn('this should not happen, _getNearestTerminalsWithStationGroup got conId =', conId)
-                                end
-                            end
-                        else
-                            local baseEdge = api.engine.getComponent(edgeOrNodeOrConId, api.type.ComponentType.BASE_EDGE)
-                            if baseEdge then
-                                logger.print('it is an edge')
-                                -- streetside stations
-                                return {
-                                    isMultiStationGroup = true,
-                                    refPosition123 = _refPosition123
-                                }
-                            else
-                                local con = api.engine.getComponent(edgeOrNodeOrConId, api.type.ComponentType.CONSTRUCTION)
-                                if con then
-                                    logger.print('it is a con')
-                                    -- road stations with construction: they only freeze one node
-                                    -- custom road stations with construction: they can freeze more nodes
-                                    -- ports: they freeze no nodes
-                                    -- in both cases, I cannot assign a terminal automatically
-                                    if con.frozenNodes and #con.frozenNodes > 1 then
-                                        for _, nodeId in pairs(con.frozenNodes) do
-                                            local frozenNode = api.engine.getComponent(nodeId, api.type.ComponentType.BASE_NODE)
-                                            if frozenNode and frozenNode.position then
-                                                positions[#positions+1] = frozenNode.position
+        logger.print('stationId =', tostring(stationId))
+        if edgeUtils.isValidAndExistingId(stationId) then
+            local station = api.engine.getComponent(stationId, api.type.ComponentType.STATION)
+            if not(station.cargo) or not(isOnlyPassengers) then -- a station construction can have two stations: one for passengers and one for cargo
+                stationTerminalPositionsMap[stationId] = {}
+                for terminalId, terminal in pairs(station.terminals) do
+                    logger.print('terminalId =', tostring(terminalId))
+                    if terminal ~= nil and terminal.vehicleNodeId ~= nil
+                    and edgeUtils.isValidAndExistingId(terminal.vehicleNodeId.entity) then
+                        -- vehicleNodeId.entity is an edge with street stations,
+                        -- a node with train stations,
+                        -- a con with street station constructions
+                        local edgeOrNodeOrConId = terminal.vehicleNodeId.entity
+                        if edgeUtils.isValidAndExistingId(edgeOrNodeOrConId) then
+                            logger.print('edgeOrNodeOrConId =', tostring(edgeOrNodeOrConId))
+                            local positions = {}
+                            local baseNode = api.engine.getComponent(edgeOrNodeOrConId, api.type.ComponentType.BASE_NODE)
+                            if baseNode ~= nil then
+                                logger.print('it is a node')
+                                -- train stations; they can have a lot of frozen nodes
+                                local conId = api.engine.system.streetConnectorSystem.getConstructionEntityForStation(stationId)
+                                if edgeUtils.isValidAndExistingId(conId) then
+                                    logger.print('con found')
+                                    local con = api.engine.getComponent(conId, api.type.ComponentType.CONSTRUCTION)
+                                    if con ~= nil and con.frozenNodes ~= nil then
+                                        for _, nodeId in pairs(_getAdjacentNodeIds(con.frozenNodes, edgeOrNodeOrConId)) do
+                                            -- logger.print('#nodeId ' .. tostring(nodeId) .. ' is in terminal ' .. tostring(terminalId))
+                                            local adjacentNode = api.engine.getComponent(nodeId, api.type.ComponentType.BASE_NODE)
+                                            if adjacentNode ~= nil then
+                                                positions[#positions+1] = adjacentNode.position
                                             end
                                         end
-                                    elseif con.transf then
-                                        positions[#positions+1] = con.transf:cols(3)
+                                    else
+                                        logger.warn('this should not happen, _getNearestTerminalsWithStationGroup got conId =', tostring(conId))
                                     end
+                                end
+                            else
+                                local baseEdge = api.engine.getComponent(edgeOrNodeOrConId, api.type.ComponentType.BASE_EDGE)
+                                if baseEdge ~= nil then
+                                    logger.print('it is an edge')
+                                    -- streetside stations
+                                    return {
+                                        isMultiStationGroup = true,
+                                        refPosition123 = _signPosition123
+                                    }
                                 else
-                                    logger.warn('_getNearestTerminalsWithStationGroup found no base node no base edge and no con!')
+                                    local con = api.engine.getComponent(edgeOrNodeOrConId, api.type.ComponentType.CONSTRUCTION)
+                                    if con ~= nil then
+                                        logger.print('it is a con')
+                                        -- airports freeze more nodes
+                                        -- road stations freeze 1 or more nodes
+                                        -- ports freeze 0 nodes
+                                        -- in all cases, I cannot assign a terminal automatically
+                                        -- if con.frozenNodes ~= nil and #con.frozenNodes > 1 then
+                                        --     for _, nodeId in pairs(con.frozenNodes) do
+                                        --         local frozenNode = api.engine.getComponent(nodeId, api.type.ComponentType.BASE_NODE)
+                                        --         if frozenNode ~= nil and frozenNode.position ~= nil then
+                                        --             positions[#positions+1] = frozenNode.position
+                                        --         end
+                                        --     end
+                                        -- elseif con.transf ~= nil then
+                                        --     positions[#positions+1] = con.transf:cols(3)
+                                        -- end
+                                        if con.transf ~= nil then
+                                            positions[#positions+1] = con.transf:cols(3)
+                                        end
+                                    else
+                                        logger.warn('_getNearestTerminalsWithStationGroup found no base node no base edge and no con!')
+                                    end
                                 end
                             end
+                            stationTerminalPositionsMap[stationId][terminalId] = {
+                                positions = positions or {},
+                                tag = terminal.tag, -- these tags can be nil and cannot be relied upon
+                            }
                         end
-                        stationTerminalPositionsMap[stationId][terminalId] = {
-                            positions = positions or {},
-                            tag = terminal.tag, -- these tags can be nil and cannot be relied upon
-                        }
                     end
                 end
             end
@@ -240,7 +191,7 @@ local _getNearestTerminalsWithStationGroup = function(transf, stationGroupId, is
             for _, position in pairs(terminal.positions) do
                 local distance = transfUtils.getPositionsDistance(
                     position,
-                    _refPosition123
+                    _signPosition123
                 )
                 if distance < nearestTerminals[stationId].distance then
                     nearestTerminals[stationId].terminalId = terminalId
@@ -255,9 +206,12 @@ local _getNearestTerminalsWithStationGroup = function(transf, stationGroupId, is
     logger.print('nearestTerminals =') logger.debugPrint(nearestTerminals)
     return nearestTerminals
 end
-
+---@param transf table<integer>
+---@param searchRadius number
+---@param isOnlyPassengers boolean
+---@return table<integer, {id: integer, isCargo: boolean, isPassenger: boolean, name: string, position: table<integer>}>
 local _getNearbyTrainStationGroupsIndexed = function(transf, searchRadius, isOnlyPassengers)
-    logger.print('_getNearbyTrainStationGroupsIndexed starting, isOnlyPassengers =', isOnlyPassengers or 'NIL')
+    logger.print('_getNearbyTrainStationGroupsIndexed starting, isOnlyPassengers =', tostring(isOnlyPassengers))
     if type(transf) ~= 'table' then return {} end
     if tonumber(searchRadius) == nil then searchRadius = constants.searchRadius4NearbyStation2JoinMetres end
 
@@ -334,85 +288,12 @@ local _getNearbyTrainStationGroupsIndexed = function(transf, searchRadius, isOnl
 end
 
 local utils = {
-    getNearbyStationConsUNUSED = function(transf, searchRadius, isOnlyPassengers)
-        if type(transf) ~= 'table' then return {} end
-        if tonumber(searchRadius) == nil then searchRadius = constants.searchRadius4NearbyStation2JoinMetres end
-
-        -- LOLLO NOTE in the game and in this mod, there is one train station for each station group
-        -- and viceversa. Station groups hold some information that stations don't, tho.
-        -- Multiple station groups can share a construction.
-        -- Road stations instead can have more stations in a station group.
-        -- What I really want here is a list with one item each construction, but that could be an expensive loop,
-        -- so I check the stations instead and index by the construction.
-
-        local stationIdsIndexed = {}
-        local _edgeIds = edgeUtils.getNearbyObjectIds(transf, searchRadius, api.type.ComponentType.BASE_EDGE_TRACK)
-        for key, edgeId in pairs(_edgeIds) do
-            local conId = api.engine.system.streetConnectorSystem.getConstructionEntityForEdge(edgeId)
-            if edgeUtils.isValidAndExistingId(conId) then
-                local con = api.engine.getComponent(conId, api.type.ComponentType.CONSTRUCTION)
-                if con and con.stations then
-                    for _, stationId in pairs(con.stations) do
-                        stationIdsIndexed[stationId] = true
-                    end
-                end
-            end
-        end
-        logger.print('stationIdsIndexed =') logger.debugPrint(stationIdsIndexed)
-
-        local _station2ConstructionMap = api.engine.system.streetConnectorSystem.getStation2ConstructionMap()
-        local _resultsIndexed = {}
-        for stationId, _ in pairs(stationIdsIndexed) do
-            if edgeUtils.isValidAndExistingId(stationId) then
-                local conId = _station2ConstructionMap[stationId]
-                if edgeUtils.isValidAndExistingId(conId) then
-                    logger.print('found conId =', conId)
-                    local con = api.engine.getComponent(conId, api.type.ComponentType.CONSTRUCTION)
-                    local station = api.engine.getComponent(stationId, api.type.ComponentType.STATION)
-                    if con and station then
-                        local isCargo = station.cargo or false
-                        logger.print('isCargo =', isCargo)
-                        logger.print('isOnlyPassengers =', isOnlyPassengers)
-                        if not(isCargo) or not(isOnlyPassengers) then
-                            local stationGroupId = api.engine.system.stationGroupSystem.getStationGroup(stationId)
-                            local name = ''
-                            local stationGroupName = api.engine.getComponent(stationGroupId, api.type.ComponentType.NAME)
-                            if stationGroupName ~= nil then name = stationGroupName.name end
-
-                            local isTwinCargo = false
-                            local isTwinPassenger = false
-
-                            if _resultsIndexed[conId] ~= nil then
-                                -- logger.print('found a twin, it is') logger.debugPrint(resultsIndexed[conId])
-                                if stringUtils.isNullOrEmptyString(name) then
-                                    name = _resultsIndexed[conId].name or ''
-                                end
-                                if _resultsIndexed[conId].isCargo then isTwinCargo = true end
-                                if _resultsIndexed[conId].isPassenger then isTwinPassenger = true end
-                            end
-                            _resultsIndexed[conId] = {
-                                id = conId,
-                                isCargo = isCargo or isTwinCargo,
-                                isPassenger = not(isCargo) or isTwinPassenger,
-                                name = name,
-                                position = transfUtils.xYZ2OneTwoThree(con.transf:cols(3))
-                            }
-                        end
-                    end
-                end
-            end
-        end
-        -- logger.print('resultsIndexed =') logger.debugPrint(_resultsIndexed)
-        local results = {}
-        for _, value in pairs(_resultsIndexed) do
-            results[#results+1] = value
-        end
-        -- logger.print('# nearby freestyle stations = ', #results)
-        -- logger.print('nearby freestyle stations = ') logger.debugPrint(results)
-        return results
-    end,
+    ---@param transf table<integer>
+    ---@param searchRadius number
+    ---@param isOnlyPassengers boolean
+    ---@return table<{id: integer, isCargo: boolean, isPassenger: boolean, name: string, position: table<integer>}>
     getNearbyStationGroups = function(transf, searchRadius, isOnlyPassengers)
-        logger.print('getNearbyStationGroups starting, isOnlyPassengers =', isOnlyPassengers or 'NIL')
+        logger.print('getNearbyStationGroups starting, isOnlyPassengers =', tostring(isOnlyPassengers))
         if type(transf) ~= 'table' then return {} end
         if tonumber(searchRadius) == nil then searchRadius = constants.searchRadius4NearbyStation2JoinMetres end
 
@@ -426,7 +307,7 @@ local utils = {
         local _stationGroupIds = edgeUtils.getNearbyObjectIds(transf, searchRadius, api.type.ComponentType.STATION_GROUP)
         local _resultsIndexed = {}
         for _, stationGroupId in pairs(_stationGroupIds) do
-            logger.print('stationGroupId =', stationGroupId or 'NIL')
+            logger.print('stationGroupId =', tostring(stationGroupId))
             if edgeUtils.isValidAndExistingId(stationGroupId) then
                 local stationGroup = api.engine.getComponent(stationGroupId, api.type.ComponentType.STATION_GROUP)
                 if stationGroup and stationGroup.stations then
@@ -437,7 +318,7 @@ local utils = {
                     local position = { x = 0, y = 0, z = 0 }
                     local nSamples4Average = 0
                     for _, stationId in pairs(stationGroup.stations) do
-                        logger.print('stationId =', stationId or 'NIL')
+                        logger.print('stationId =', tostring(stationId))
                         if edgeUtils.isValidAndExistingId(stationId) then
                             local station = api.engine.getComponent(stationId, api.type.ComponentType.STATION)
                             if station and station.terminals then
@@ -456,7 +337,7 @@ local utils = {
                                             -- a con with street station constructions
                                             local edgeOrNodeOrConId = terminal.vehicleNodeId.entity
                                             if edgeUtils.isValidAndExistingId(edgeOrNodeOrConId) then
-                                                logger.print('edgeOrNodeOrConId =', edgeOrNodeOrConId or 'NIL')
+                                                logger.print('edgeOrNodeOrConId =', tostring(edgeOrNodeOrConId))
                                                 local baseNode = api.engine.getComponent(edgeOrNodeOrConId, api.type.ComponentType.BASE_NODE)
                                                 if baseNode then
                                                     logger.print('it is a node')
@@ -517,7 +398,7 @@ local utils = {
                                 end
                             end
                         end
-                    end
+                    end -- loop over stations
                     if nSamples4Average > 0 then
                         _resultsIndexed[stationGroupId] = {
                             id = stationGroupId,
@@ -536,6 +417,7 @@ local utils = {
             end
         end
         logger.print('resultsIndexed before adding train stations =') logger.debugPrint(_resultsIndexed)
+        -- add more nearby train stations
         -- this may be a little redundant but train stations can be really huge
         -- and we never know how far our panels are meant to be located.
         arrayUtils.concatKeysValues(_resultsIndexed, _getNearbyTrainStationGroupsIndexed(transf, 1.5 * searchRadius, isOnlyPassengers))
@@ -548,32 +430,26 @@ local utils = {
         -- logger.print('nearby freestyle stations = ') logger.debugPrint(results)
         return results
     end,
-    getNearestTerminalWithStationConUNUSED = function(transf, stationConId, isOnlyPassengers)
-        local nearestTerminals = _getNearestTerminalsWithStationConUNUSED(transf, stationConId, isOnlyPassengers)
+    ---@param signTransf table<integer>
+    ---@param stationGroupId integer
+    ---@param isOnlyPassengers boolean
+    ---@return nil|nearest_terminal_streetside|nearest_terminal_generic
+    getNearestTerminalWithStationGroup = function(signTransf, stationGroupId, isOnlyPassengers)
+        logger.print('getNearestTerminalWithStationGroup starting, isOnlyPassengers =', tostring(isOnlyPassengers))
+        local nearestTerminals = _getNearestTerminalsWithStationGroup(signTransf, stationGroupId, isOnlyPassengers)
         if not(nearestTerminals) then return nil end
 
-        local result = nil
-        for stationId, station in pairs(nearestTerminals) do
-            if not(result) or result.distance > station.distance then
-                result = station
-                result.stationId = stationId
-            end
-        end
-
-        return result
-    end,
-    getNearestTerminalWithStationGroup = function(transf, stationGroupId, isOnlyPassengers)
-        logger.print('getNearestTerminalWithStationGroup starting, isOnlyPassengers =', isOnlyPassengers or 'NIL')
-        local nearestTerminals = _getNearestTerminalsWithStationGroup(transf, stationGroupId, isOnlyPassengers)
-        if not(nearestTerminals) then return nil end
-
+        -- streetside station: we check the terminal at every iteration, we only write away the sign position
         if nearestTerminals.isMultiStationGroup then
-            return {
-                isMultiStationGroup = true,
-                refPosition123 = nearestTerminals.refPosition123
-            }
+            -- return {
+            --     isMultiStationGroup = true,
+            --     refPosition123 = nearestTerminals.refPosition123
+            -- }
+            return nearestTerminals
         end
 
+        -- other stations: we check it now and, if the station changes, there won't be adjustments to auto terminals - too expensive
+        -- LOLLO TODO find a way to do it quickly
         local result = {distance = 9999}
         for stationId, myStationData in pairs(nearestTerminals) do
             if result.distance > myStationData.distance then

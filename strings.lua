@@ -12,7 +12,7 @@ I have been thinking long and hard whether to publish this mod or not, since I c
 NOTES:
 1) These things can be performance-intensive, so you can switch them on and off from the bottom bar (toggle the orange icon). Some other mods, such as advanced statistics, priority signals or shunting, hog game_script.update(). The game can only take so much, so you might need to choose.
 2) If you think they are not working, check your bottom bar (toggle the orange icon), unpause the game and wait a little.
-3) Once you attached a display to a station, it will be tied to it forever. If you bulldoze the station, its displays will disappear automatically, as soon as you unpause the game.
+3) Once you attached a display to a station, it will be tied to it forever. If you bulldoze the station, its displays will disappear automatically, as soon as you unpause the game and the station dies.
 4) Accuracy improves over time.
 5) Accuracy goes down when you add or remove vehicles, it picks up again after a bit.
 6) Rearrange these at any time with https://steamcommunity.com/sharedfiles/filedetails/?id=2748222965.
@@ -25,38 +25,40 @@ Another big thank you goes out to badgerrhax for the idea.
             ["ArrivalsAllCaps"] = "ANKUNFT",
             ["Auto"] = "Auto",
             ["ColourScheme"] = "Farbauswahl",
-            ["displays"] = "Tafeln",
-            ["DynamicDisplaysOff"] = "Dynamische Tafeln AUS",
-            ["DynamicDisplaysOn"] = "Dynamische Tafeln EIN",
+            ["displays"] = "Anzeigen",
+            ["DynamicDisplaysOff"] = "Dynamische Anzeigen AUS",
+            ["DynamicDisplaysOn"] = "Dynamische Anzeigen EIN",
             ["Cargo"] = "Fracht",
             ["CompanyNamePrefix1"] = "Ein Dienst von ",
             ["DeparturesAllCaps"] = "ABFAHRT",
             ["Due"] = "!!!",
-            ["PlatformDeparturesDisplayName"] = "Dynamic Departures Display for a Train Terminal",
+            ["PlatformDeparturesDisplayName"] = "Dynamische Gleisabfahrtsanzeige",
             ["PlatformDeparturesDisplayDesc"] = "A digital display showing the next two trains approaching a terminal. It will be bulldozed if the station is bulldozed and you unpause the game.",
-            ["StationArrivalsDisplayName"] = "Dynamic Arrivals Display for a Station",
+            ["StationArrivalsDisplayName"] = "Dynamische Bahnhofsankunftsanzeige",
             ["StationArrivalsDisplayDesc"] = "A digital display showing vehicles approaching all terminals at a nearby station. It will be bulldozed if the station is bulldozed and you unpause the game.",
-            ["StationDeparturesDisplayName"] = "Dynamic Departures Display for a Station",
+            ["StationDeparturesDisplayName"] = "Dynamische Bahnhofsabfahrtsanzeige",
             ["StationDeparturesDisplayDesc"] = "A digital display showing vehicles departing from all terminals at a nearby station. It will be bulldozed if the station is bulldozed and you unpause the game.",
-            ["StreetPlatformDeparturesDisplayName"] = "Dynamic Departures Display for a Street Terminal",
+            ["StreetPlatformDeparturesDisplayName"] = "Dynamische Haltestellenabfahrtsanzeige",
             ["StreetPlatformDeparturesDisplayDesc"] = "A digital display showing the next two vehicles approaching a terminal. It will be bulldozed if the station is bulldozed and you unpause the game.",
-            ["CannotFindStationToJoin"] = "Cannot find a nearby station to join",
+            ["CannotFindStationToJoin"] = "Keinen Bahnhof in der Nähe gefunden",
             ["From"] = "Von",
             ["GoBack"] = "Zurück",
             ["GoThere"] = "Guck",
-            ["GuessedTooltip"] = "Ändere es wenn nötig",
-            ["Join"] = "Stelle es zusammen",
+            ["GuessedTooltip"] = "\"Auto\" justiert das Gleis automatisch, wenn ein Bahnhof-Konfig-Menü, oder diese Menü, geschlossen wird.",
+            ["GuessedTooltip_Street"] = "\"Auto\" justiert die Haltestelle automatisch, wenn diese Menü geschlossen wird. Es funktioniert mit Haltestellenkonstruktionen nicht.",
+            ["Join"] = "Verknüpfen",
             ["MinutesShort"] = "'",
             ["No"] = "Nein",
             ["Passengers"] = "Passagiere",
-            ["PlatformShort"] = "↑↓", -- ↑ ↓ Plat = ─ ┼ ═
-            ["ShowIntermediateDestinations"] = "Zwischenhalte Anzeigen",
+            ["PlatformShort"] = "↑↓", -- ↑ ↓ Gls = ─ ┼ ═
+            ["ShowIntermediateDestinations"] = "Zwischenhalte anzeigen",
             ["SorryNoService"] = "Kein Dienst",
             ["SorryTrouble"] = "Störung",
             ["SorryTroubleShort"] = "!",
             ["StationPickerWindowTitle"] = "Wähle einen Bahnhof",
             ["Style"] = "Stil",
-            ["Terminal"] = "Terminal",
+            ["Terminal"] = "Gleis",
+            ["Terminal_Street"] = "Haltestelle",
             ["Time"] = "Zeit",
             ["TimeDisplay"] = "Zeitformat",
             ["To"] = "Nach",
@@ -75,7 +77,7 @@ I have been thinking long and hard whether to publish this mod or not, since I c
 NOTES:
 1) These things can be performance-intensive, so you can switch them on and off from the bottom bar (toggle the orange icon). Some other mods, such as advanced statistics, priority signals or shunting, hog game_script.update(). The game can only take so much, so you might need to choose.
 2) If you think they are not working, check your bottom bar (toggle the orange icon), unpause the game and wait a little.
-3) Once you attached a display to a station, it will be tied to it forever. If you bulldoze the station, its displays will disappear automatically, as soon as you unpause the game.
+3) Once you attached a display to a station, it will be tied to it forever. If you bulldoze the station, its displays will disappear automatically, as soon as you unpause the game and the station dies.
 4) Accuracy improves over time.
 5) Accuracy goes down when you add or remove vehicles, it picks up again after a bit.
 6) Rearrange these at any time with https://steamcommunity.com/sharedfiles/filedetails/?id=2748222965.
@@ -107,7 +109,8 @@ Another big thank you goes out to badgerrhax for the idea.
             ["From"] = "From",
             ["GoBack"] = "Go back",
             ["GoThere"] = "Go there",
-            ["GuessedTooltip"] = "Adjust this if required",
+            ["GuessedTooltip"] = "\"Auto\" changes the terminal automatically, when you close a station config menu, or this menu.",
+            ["GuessedTooltip_Street"] = "\"Auto\" changes the kerb automatically, when you close this menu; it does not work with station constructions.",
             ["Join"] = "Join",
             ["MinutesShort"] = "'",
             ["No"] = "No",
@@ -120,6 +123,7 @@ Another big thank you goes out to badgerrhax for the idea.
             ["StationPickerWindowTitle"] = "Pick a station to join",
             ["Style"] = "Style",
             ["Terminal"] = "Terminal",
+            ["Terminal_Street"] = "Kerb",
             ["Time"] = "Time",
             ["TimeDisplay"] = "Time Display",
             ["To"] = "To",
@@ -138,7 +142,7 @@ I have been thinking long and hard whether to publish this mod or not, since I c
 NOTES:
 1) These things can be performance-intensive, so you can switch them on and off from the bottom bar (toggle the orange icon). Some other mods, such as advanced statistics, priority signals or shunting, hog game_script.update(). The game can only take so much, so you might need to choose.
 2) If you think they are not working, check your bottom bar (toggle the orange icon), unpause the game and wait a little.
-3) Once you attached a display to a station, it will be tied to it forever. If you bulldoze the station, its displays will disappear automatically, as soon as you unpause the game.
+3) Once you attached a display to a station, it will be tied to it forever. If you bulldoze the station, its displays will disappear automatically, as soon as you unpause the game and the station dies.
 4) Accuracy improves over time.
 5) Accuracy goes down when you add or remove vehicles, it picks up again after a bit.
 6) Rearrange these at any time with https://steamcommunity.com/sharedfiles/filedetails/?id=2748222965.
@@ -158,31 +162,33 @@ Another big thank you goes out to badgerrhax for the idea.
             ["CompanyNamePrefix1"] = "Un servizio di ",
             ["DeparturesAllCaps"] = "PARTENZE",
             ["Due"] = "!!!",
-            ["PlatformDeparturesDisplayName"] = "Tabelloni dinamici per terminali ferroviari",
+            ["PlatformDeparturesDisplayName"] = "Tabellone dinamico per binari ferroviari",
             ["PlatformDeparturesDisplayDesc"] = "A digital display showing the next two trains approaching a terminal. It will be bulldozed if the station is bulldozed and you unpause the game.",
-            ["StationArrivalsDisplayName"] = "Dynamic Arrivals Display for a Station",
+            ["StationArrivalsDisplayName"] = "Tabellone dinamico per arrivi",
             ["StationArrivalsDisplayDesc"] = "A digital display showing vehicles approaching all terminals at a nearby station. It will be bulldozed if the station is bulldozed and you unpause the game.",
-            ["StationDeparturesDisplayName"] = "Dynamic Departures Display for a Station",
+            ["StationDeparturesDisplayName"] = "Tabellone dinamico per partenze",
             ["StationDeparturesDisplayDesc"] = "A digital display showing vehicles departing from all terminals at a nearby station. It will be bulldozed if the station is bulldozed and you unpause the game.",
-            ["StreetPlatformDeparturesDisplayName"] = "Dynamic Departures Display for a Street Terminal",
+            ["StreetPlatformDeparturesDisplayName"] = "Tabellone dinamico per fermate",
             ["StreetPlatformDeparturesDisplayDesc"] = "A digital display showing the next two vehicles approaching a terminal. It will be bulldozed if the station is bulldozed and you unpause the game.",
-            ["CannotFindStationToJoin"] = "Cannot find a nearby station to join",
+            ["CannotFindStationToJoin"] = "Non vedo stazioni qui vicino",
             ["From"] = "Origine",
             ["GoBack"] = "Indietro",
             ["GoThere"] = "Guarda",
-            ["GuessedTooltip"] = "Cambialo se necessario",
+            ["GuessedTooltip"] = "\"Auto\" cambia il binario automaticamente quando chiudi il menu di configurazione della stazione, oppure questo menu.",
+            ["GuessedTooltip_Street"] = "\"Auto\" cambia il marciapiede automaticamente quando chiudi questo menu; non funziona con costruzioni-stazione.",
             ["Join"] = "Unisci",
             ["MinutesShort"] = "'",
             ["No"] = "No",
             ["Passengers"] = "Passeggeri",
-            ["PlatformShort"] = "↑↓", -- ↑ ↓ Plat = ─ ┼ ═
+            ["PlatformShort"] = "↑↓", -- ↑ ↓ Bin = ─ ┼ ═
             ["ShowIntermediateDestinations"] = "Mostra destinazioni intermedie",
             ["SorryNoService"] = "Fuori servizio",
             ["SorryTrouble"] = "Disturbo sulla linea",
             ["SorryTroubleShort"] = "!",
             ["StationPickerWindowTitle"] = "Scegli una stazione",
             ["Style"] = "Stile",
-            ["Terminal"] = "Terminale",
+            ["Terminal"] = "Binario",
+            ["Terminal_Street"] = "Marciapiede",
             ["Time"] = "Ora",
             ["TimeDisplay"] = "Formato dell'ora",
             ["To"] = "Destinazione",

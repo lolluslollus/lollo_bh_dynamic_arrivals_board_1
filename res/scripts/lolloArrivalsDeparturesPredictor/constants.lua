@@ -19,6 +19,7 @@ local constants = {
     events = {
         hide_warnings = 'hide_warnings',
         join_sign_to_station_group = 'join_sign_to_station_group',
+        refresh_sign_of_station_group = 'refresh_sign_of_station_group',
         remove_display_construction = 'remove_display_construction',
         toggle_notaus = 'toggle_notaus'
     },

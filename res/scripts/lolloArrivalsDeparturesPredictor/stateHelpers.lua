@@ -1,5 +1,11 @@
 local logger = require('lolloArrivalsDeparturesPredictor.logger')
 
+---@alias nearest_terminal_streetside {isMultiStationGroup: true, refPosition123: table<integer>}
+---@alias nearest_terminal_generic {cargo: boolean, distance: number, terminalId: integer, terminalTag: integer}
+---@alias placed_sign {stationGroupId: integer, nearestTerminal: nearest_terminal_generic|nearest_terminal_streetside|nil}
+---@alias state {gameTime_msec: integer, is_on: boolean, placed_signs: table<integer, placed_sign>}
+
+---@type state
 local persistent_state = {}
 
 local _initState = function()
@@ -18,6 +24,7 @@ end
 
 local funcs = {
     initState = _initState,
+    ---@param state state
     loadState = function(state)
         if state then
             persistent_state = state
@@ -25,12 +32,14 @@ local funcs = {
 
         _initState()
     end,
+    ---@return state
     getState = function()
         return persistent_state
     end,
+    ---@param key integer
     removePlacedSign = function(key)
         if not(key) or not(persistent_state.placed_signs) then
-            logger.err('cannot remove placed_signs with key '.. (key or 'NIL') ..' from state')
+            logger.err('cannot remove placed_signs with key '.. tostring(key) ..' from state')
             logger.errorDebugPrint(persistent_state)
             return
         end
@@ -41,6 +50,8 @@ local funcs = {
         _initState()
         return persistent_state
     end,
+    ---@param key integer
+    ---@param value placed_sign
     setPlacedSign = function(key, value)
         if not(key) then return end
 

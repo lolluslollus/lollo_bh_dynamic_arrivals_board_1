@@ -5,6 +5,7 @@ local guiHelpers = require('lolloArrivalsDeparturesPredictor.guiHelpers')
 local logger = require('lolloArrivalsDeparturesPredictor.logger')
 local stateHelpers = require ("lolloArrivalsDeparturesPredictor.stateHelpers")
 local stationHelpers = require('lolloArrivalsDeparturesPredictor.stationHelpers')
+local stringUtils = require('lolloArrivalsDeparturesPredictor.stringUtils')
 local transfUtils = require('lolloArrivalsDeparturesPredictor.transfUtils')
 local transfUtilsUG = require('transf')
 
@@ -27,7 +28,7 @@ local function _joinSignBase(signConId, id)
     )
 end
 
-local function _tryJoinSign(signConId, tentativeObjectId)
+local function _tryJoinSign(signConId, tentativeStationGroupId)
     if not(edgeUtils.isValidAndExistingId(signConId)) then return false end
 
     local con = api.engine.getComponent(signConId, api.type.ComponentType.CONSTRUCTION)
@@ -41,20 +42,19 @@ local function _tryJoinSign(signConId, tentativeObjectId)
     if signTransf_lua == nil then return false end
 
     -- logger.print('signTransf_lua =') logger.debugPrint(signTransf_lua)
-    local nearbyObjects = stationHelpers.getNearbyStationGroups(signTransf_lua, constants.searchRadius4NearbyStation2JoinMetres, false)
-    logger.print('_tryJoinSign running, #nearbyObjects =', #nearbyObjects)
-    -- logger.print('nearbyObjects =') logger.debugPrint(nearbyObjects)
-    if #nearbyObjects == 0 then
+    local nearbyStationGroups = stationHelpers.getNearbyStationGroups(signTransf_lua, constants.searchRadius4NearbyStation2JoinMetres, false)
+    logger.print('_tryJoinSign running, #nearbyStationGroups =', #nearbyStationGroups)
+    if #nearbyStationGroups == 0 then
         guiHelpers.showWarningWindowWithMessage(_('CannotFindStationToJoin'))
         return false
-    elseif #nearbyObjects == 1 then
-        _joinSignBase(signConId, nearbyObjects[1].id)
+    elseif #nearbyStationGroups == 1 then
+        _joinSignBase(signConId, nearbyStationGroups[1].id)
     else
-        table.sort(nearbyObjects, function(a, b) return a.name < b.name end)
+        table.sort(nearbyStationGroups, function(a, b) return a.name < b.name end)
         guiHelpers.showNearbyObjectPicker(
-            nearbyObjects,
+            nearbyStationGroups,
             transfUtils.transf2Position(signTransf_lua),
-            tentativeObjectId,
+            tentativeStationGroupId,
             function(objectId)
                 _joinSignBase(signConId, objectId)
             end
@@ -78,7 +78,7 @@ local function handleEvent(id, name, args)
             function()
                 local _state = stateHelpers.getState()
                 local stationGroupId = (_state.placed_signs and _state.placed_signs[args]) and _state.placed_signs[args].stationGroupId or nil
-                if stationGroupId then return end
+                if edgeUtils.isValidAndExistingId(stationGroupId) then return end
 
                 _tryJoinSign(args, stationGroupId) -- args here is the sign construction id
             end,
@@ -86,7 +86,6 @@ local function handleEvent(id, name, args)
         )
     elseif id == 'constructionBuilder' and name == 'builder.apply' then
         -- logger.print('LOLLO caught gui event, id = ', id, ' name = ', name, ' args = ') -- logger.debugPrint(args)
-        -- logger.print('construction.get() =') logger.debugPrint(construction.get())
 
         if args and args.proposal then
             local _toAdd = args.proposal.toAdd
@@ -132,8 +131,55 @@ local function handleEvent(id, name, args)
                 _sendScriptEvent(constants.events.remove_display_construction, {signConId = _signConId})
             end
         end
-    -- else
-        -- logger.print('LOLLO caught gui event, id = ', id, ' name = ', name, ' args = ') logger.debugPrint(args)
+    elseif name == 'destroy' and type(id) == 'string' and stringUtils.stringStartsWith(id, 'temp.addModuleComp.params.entity_') then
+        -- logger.print('### destroy fired, id = ' .. id)
+        local conId = tonumber(id:sub(34), 10)
+        if not(edgeUtils.isValidAndExistingId(conId)) then return end
+
+        local con = api.engine.getComponent(conId, api.type.ComponentType.CONSTRUCTION)
+        logger.print('config menu of conId ' .. tostring(conId) .. ' was closed')
+        if con == nil or type(con.fileName) ~= 'string' then return end
+
+        -- prevent a crash if loading a game when the con config menu is open.
+        local _ingameMenu = api.gui.util.getById('ingameMenu')
+        if _ingameMenu ~= nil and _ingameMenu:isVisible() then return end
+
+        if stringUtils.stringContains(con.fileName, 'station/rail/') and con.stations ~= nil then
+            -- logger.print('conId ' .. tostring(conId) .. ' is a train station')
+            local stationGroupId = api.engine.system.stationGroupSystem.getStationGroup(con.stations[1])
+            if not(edgeUtils.isValidAndExistingId(stationGroupId)) then return end
+
+            local _state = stateHelpers.getState()
+            if not(_state) or not(_state.placed_signs) then return end
+            for signConId, signProps in pairs(_state.placed_signs) do
+                if signProps.stationGroupId == stationGroupId then
+                    logger.print('the con config menu was closed, about to send command refresh_sign_of_station_group, signConId = ' .. tostring(signConId) .. ', stationGroupId = ' .. tostring(stationGroupId))
+                    _sendScriptEvent(
+                        constants.events.refresh_sign_of_station_group,
+                        {
+                            signConId = signConId,
+                            stationGroupId = stationGroupId,
+                        }
+                    )
+                end
+            end
+        elseif stringUtils.stringContains(con.fileName, 'asset/lolloArrivalsDeparturesPredictor/') then
+            -- logger.print('conId ' .. tostring(conId) .. ' is a dynamic display')
+            local _state = stateHelpers.getState()
+            if not(_state) or not(_state.placed_signs) or not(_state.placed_signs[conId]) then return end
+
+            local stationGroupId = _state.placed_signs[conId].stationGroupId
+            if not(edgeUtils.isValidAndExistingId(stationGroupId)) then return end
+
+            logger.print('the display config menu was closed, about to send command refresh_sign_of_station_group, signConId = ' .. tostring(conId) .. ', stationGroupId = ' .. tostring(stationGroupId))
+            _sendScriptEvent(
+                constants.events.refresh_sign_of_station_group,
+                {
+                    signConId = conId,
+                    stationGroupId = stationGroupId,
+                }
+            )
+        end
     end
 end
 

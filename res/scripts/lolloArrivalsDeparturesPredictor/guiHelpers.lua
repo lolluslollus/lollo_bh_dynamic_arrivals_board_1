@@ -63,7 +63,7 @@ local utils = {
 -- LOLLO TODO in the picker popup, add icons to tell if it is a port, an airport, a train station or a road station
 -- UG TODO there is no obvious way of doing this
 local guiHelpers = {
-    showNearbyObjectPicker = function(objects2Pick, startPosition123, tentativeObjectId, joinCallback)
+    showNearbyObjectPicker = function(objects2Pick, startPosition123, tentativeStationGroupId, joinCallback)
         -- logger.print('showNearbyObjectPicker starting')
         local list = api.gui.comp.List.new(false, api.gui.util.Orientation.VERTICAL, false)
         list:setDeselectAllowed(false)
@@ -115,7 +115,7 @@ local guiHelpers = {
                         window:setVisible(false, false)
                     end
                 )
-                if object.id == tentativeObjectId then
+                if object.id == tentativeStationGroupId then
                     joinButton:setEnabled(false)
                 end
 

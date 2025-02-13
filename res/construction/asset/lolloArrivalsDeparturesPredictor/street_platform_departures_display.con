@@ -40,7 +40,7 @@ local function _getParams()
             values = { _('No'), _('Yes') },
         },
     }
-    constructionHelpers.addTerminalOverrideParam(params, _getParamName)
+    constructionHelpers.addTerminalOverrideParam(params, _getParamName, true)
 
     return params
 end

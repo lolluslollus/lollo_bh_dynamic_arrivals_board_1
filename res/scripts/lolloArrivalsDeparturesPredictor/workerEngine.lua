@@ -43,7 +43,7 @@ local _mUpdateSignsCoroutine
 local utils = {
     bulldozeConstruction = function(conId)
         if not(edgeUtils.isValidAndExistingId(conId)) then
-            -- logger.print('bulldozeConstruction cannot bulldoze construction with id =', conId or 'NIL', 'because it is not valid or does not exist')
+            -- logger.print('bulldozeConstruction cannot bulldoze construction with id =', tostring(conId), 'because it is not valid or does not exist')
             return
         end
 
@@ -79,7 +79,7 @@ local utils = {
     ---@param buffer table<integer, string>|nil
     ---@return string|false
     getAnyNameOrFalse = function(id, buffer)
-        if id == nil then return false end
+        if not(edgeUtils.isValidAndExistingId(id)) then return false end
 
         if buffer == nil then
             local nameObject = api.engine.getComponent(id, api.type.ComponentType.NAME)
@@ -149,16 +149,23 @@ local utils = {
     --             result = signState.nearestTerminal.terminalId
     --         else
     --             result = 1
-    --             logger.warn('cannot find signState.nearestTerminal.terminalId for signCon', signCon or 'NIL')
+    --             logger.warn('cannot find signState.nearestTerminal.terminalId for signCon', tostring(signCon))
     --         end
     --     end
     --     return result
     -- end,
+    ---comment
+    ---@param config any
+    ---@param signCon any
+    ---@param signState placed_sign
+    ---@param getParamName function
+    ---@param stationIds table<integer>
+    ---@return integer|nil, integer|nil
     getTerminalAndStationId = function(config, signCon, signState, getParamName, stationIds)
         if not(config) or not(config.singleTerminal) then return nil, nil end
 
         if not(signState) or not(signState.nearestTerminal) then
-            logger.warn('cannot find signState.nearestTerminal for signCon', signCon or 'NIL')
+            logger.warn('cannot find signState.nearestTerminal for signCon', tostring(signCon))
             return nil, nil
         end
 
@@ -536,6 +543,57 @@ end
 utils.getCompanyName = function(namesBuffer)
     return utils.getAnyName(api.engine.util.getPlayer(), namesBuffer)
 end
+---writes the sign properties in the persistent state
+---@param eventName string
+---@param signConId integer
+---@param stationGroupId integer
+utils.setSignProperties = function(eventName, signConId, stationGroupId)
+    logger.print('setSignProperties fired')
+    if type(eventName) ~= 'string'
+    or not(edgeUtils.isValidAndExistingId(signConId))
+    or not(edgeUtils.isValidAndExistingId(stationGroupId))
+    then return end
+
+    local signCon = api.engine.getComponent(signConId, api.type.ComponentType.CONSTRUCTION)
+    if not(signCon) then return end
+
+    -- logger.print('constructionConfigs.get() =') logger.debugPrint(constructionConfigs.get())
+    -- logger.print('signCon.fileName =', signCon.fileName)
+    local config = constructionConfigs.get()[signCon.fileName]
+    if not(config) then return end
+
+    -- rename the sign construction so it shows something at once
+    if eventName == constants.events.join_sign_to_station_group then
+        local _times = api.engine.getComponent(api.engine.util.getWorld(), api.type.ComponentType.GAME_TIME)
+        if _times and type(_times.gameTime) == 'number' then
+            local newName = utils.getNewSignConName(
+                {},
+                config,
+                utils.formatClockString(math.floor(_times.gameTime / 1000)),
+                signCon,
+                utils.getStationName(nil, stationGroupId)
+            )
+            api.cmd.sendCommand(api.cmd.make.setName(signConId, newName))
+        end
+    end
+
+    local nearestTerminal = config.singleTerminal
+        and stationHelpers.getNearestTerminalWithStationGroup(
+            transfUtilsUG.new(signCon.transf:cols(0), signCon.transf:cols(1), signCon.transf:cols(2), signCon.transf:cols(3)),
+            stationGroupId,
+            false -- not only passengers
+        )
+        or nil
+    logger.print('freshly calculated nearestTerminal =') logger.debugPrint(nearestTerminal)
+    stateHelpers.setPlacedSign(
+        signConId,
+        {
+            -- stationConId = stationConId,
+            stationGroupId = stationGroupId,
+            nearestTerminal = nearestTerminal,
+        }
+    )
+end
 
 local function getHereStartEndIndexesOLD(line, stationGroupId, stationIndexBase0, terminalIndexBase0)
     -- logger.print('getHereStartEndIndexesOLD starting, line =') logger.debugPrint(line)
@@ -874,7 +932,7 @@ local function getLastDepartureTime_msec(vehicle, gameTime_msec)
             end
         else
             result = gameTime_msec
-            logger.print('lastDepartureTime == 0 AND vehicle.doorsTime == ' .. (vehicle.doorsTime or 'NIL') .. ', a train has just left the depot')
+            logger.print('lastDepartureTime == 0 AND vehicle.doorsTime == ' .. tostring(vehicle.doorsTime) .. ', a train has just left the depot')
         end
         -- logger.print('vehicle.lineStopDepartures =') logger.debugPrint(vehicle.lineStopDepartures)
         -- logger.print('vehicle.doorsTime =') logger.debugPrint(vehicle.doorsTime)
@@ -915,7 +973,7 @@ end
 ---@param namesBuffer table<integer, string>
 ---@return rawPredictions
 local function getNextPredictions(stationGroupId, stationGroup, nEntries, gameTime_msec, predictionsBufferHelpers, linesBuffer, problemLineIds_indexed, namesBuffer)
-    logger.print('getNextPredictions starting, stationGroupId =', stationGroupId or 'NIL')
+    logger.print('getNextPredictions starting, stationGroupId =', tostring(stationGroupId))
     local predictions = {}
 
     if not(stationGroupId) or not(stationGroup) or not(stationGroup.stations) or not(nEntries) or nEntries < 1 then return predictions end
@@ -950,7 +1008,7 @@ local function getNextPredictions(stationGroupId, stationGroup, nEntries, gameTi
 
                 local terminalIndexBase0 = 0
                 for _, terminalId in pairs(terminalIds) do
-                    logger.print('terminalId =', terminalId or 'NIL')
+                    logger.print('terminalId =', tostring(terminalId))
                     -- this does not account for alternative terminals
                     -- neither does api.engine.system.lineSystem.getLineStopsForStation(stationId)
                     -- neither does api.engine.system.lineSystem.getLineStops(stationGroupId)
@@ -966,7 +1024,7 @@ local function getNextPredictions(stationGroupId, stationGroup, nEntries, gameTi
                         lineIdsIndexed[lineId] = true
                     end
                     for lineId, _ in pairs(lineIdsIndexed) do
-                        logger.print('lineId =', lineId or 'NIL')
+                        logger.print('lineId =', tostring(lineId))
                         local line = api.engine.getComponent(lineId, api.type.ComponentType.LINE)
                         if line then
                             --[[
@@ -1061,10 +1119,10 @@ local function getNextPredictions(stationGroupId, stationGroup, nEntries, gameTi
                                     logger.print('myLineData.averages =') logger.debugPrint(myLineData.averages)
 
                                     for _, vehicleId in pairs(vehicleIds) do
-                                        logger.print('-- -- vehicleId =', vehicleId or 'NIL')
+                                        logger.print('-- -- vehicleId =', tostring(vehicleId))
                                         local vehicle = myLineData.vehicles[vehicleId]
                                         if not(vehicle) then
-                                            logger.warn('vehicle with id ' .. (vehicleId or 'NIL') .. ' not found but it should be there')
+                                            logger.warn('vehicle with id ' .. tostring(vehicleId) .. ' not found but it should be there')
                                         elseif (vehicle.state == _mVehicleStates.atTerminal or vehicle.state == _mVehicleStates.enRoute) then
                                             --[[
                                                 vehicle has:
@@ -1159,8 +1217,8 @@ local function getNextPredictions(stationGroupId, stationGroup, nEntries, gameTi
                                                 or myLineData.startIndex
                                             logger.print('destIndex =', destIndex)
                                             logger.print('vehicle.arrivalStationTerminalLocked =', vehicle.arrivalStationTerminalLocked)
-                                            logger.print('vehicle.arrivalStationTerminal.station =', vehicle.arrivalStationTerminal and vehicle.arrivalStationTerminal.station or 'NIL')
-                                            logger.print('vehicle.arrivalStationTerminal.terminal =', vehicle.arrivalStationTerminal and vehicle.arrivalStationTerminal.terminal or 'NIL')
+                                            logger.print('vehicle.arrivalStationTerminal.station =', vehicle.arrivalStationTerminal and tostring(vehicle.arrivalStationTerminal.station) or 'NIL')
+                                            logger.print('vehicle.arrivalStationTerminal.terminal =', vehicle.arrivalStationTerminal and tostring(vehicle.arrivalStationTerminal.terminal) or 'NIL')
                                             local actualStationId = (vehicle.arrivalStationTerminalLocked and vehicle.stopIndex + 1 == hereIndex)
                                                 and stationIds[vehicle.arrivalStationTerminal.station + 1]
                                                 or stationId
@@ -1273,30 +1331,31 @@ local function tryUpgradeState(state)
     state.gameTime_msec = nil
 
     for signConId, signState in pairs(state.placed_signs) do
-        if not(edgeUtils.isValidAndExistingId(signConId)) then
+        if not(edgeUtils.isValidAndExistingId(signConId)) or not(signState) then
             -- sign is no more around: clean the state
-            logger.warn('signConId' .. (signConId or 'NIL') .. ' is no more around ONE')
+            logger.warn('signConId ' .. tostring(signConId) .. ' is no more around ONE')
             stateHelpers.removePlacedSign(signConId)
         else
             -- an entity with the id of our sign is still around
             local signCon = api.engine.getComponent(signConId, api.type.ComponentType.CONSTRUCTION)
             if not(signCon) or not(constructionConfigs.get()[signCon.fileName]) then
                 -- sign is no more around or no more supported: clean the state
-                logger.warn('signConId' .. (signConId or 'NIL') .. ' is no more around TWO')
+                logger.warn('signConId ' .. tostring(signConId) .. ' is no more around TWO')
                 stateHelpers.removePlacedSign(signConId)
+                utils.bulldozeConstruction(signConId)
             else
                 logger.print('signState.stationConId =', signState.stationConId)
                 if signState.stationConId then -- was removed with version 1
                     if not(edgeUtils.isValidAndExistingId(signState.stationConId)) then
                         -- station is no more around: bulldoze its signs
-                        logger.warn('signConId' .. (signConId or 'NIL') .. ' is no more around THREE')
+                        logger.warn('signState.stationConId ' .. tostring(signState.stationConId) .. ' is no more around THREE')
                         stateHelpers.removePlacedSign(signConId)
                         utils.bulldozeConstruction(signConId)
                     else
                         local stationCon = api.engine.getComponent(signState.stationConId, api.type.ComponentType.CONSTRUCTION)
                         if not(stationCon) or not(stationCon.stations) then
                             -- station is no more around: bulldoze its signs
-                            logger.warn('signConId' .. (signConId or 'NIL') .. ' is no more around FOUR')
+                            logger.warn('signState.stationConId ' .. tostring(signState.stationConId) .. ' is no more around FOUR')
                             stateHelpers.removePlacedSign(signConId)
                             utils.bulldozeConstruction(signConId)
                         else
@@ -1359,28 +1418,26 @@ local updateSigns = function(state, gameTime_msec)
     for signConId, signState in pairs(state.placed_signs) do
         -- logger.print('signConId =') logger.debugPrint(signConId)
         -- logger.print('signState =') logger.debugPrint(signState)
-        if not(edgeUtils.isValidAndExistingId(signConId)) then
+        if not(edgeUtils.isValidAndExistingId(signConId)) or not(signState) then
             -- sign is no more around: clean the state
-            logger.warn('signConId' .. (signConId or 'NIL') .. ' is no more around ONE')
+            logger.warn('signConId ' .. tostring(signConId) .. ' is no more around ONE')
             stateHelpers.removePlacedSign(signConId)
         else
             -- an entity with the id of our sign is still around
             local signCon = api.engine.getComponent(signConId, api.type.ComponentType.CONSTRUCTION)
-            -- logger.print('signCon =') logger.debugPrint(signCon)
             if not(signCon) or not(constructionConfigs.get()[signCon.fileName]) then
                 -- sign is no more around or no more supported: clean the state
-                logger.warn('signConId' .. (signConId or 'NIL') .. ' is no more around TWO')
+                logger.warn('signConId ' .. tostring(signConId) .. ' is no more around TWO')
                 stateHelpers.removePlacedSign(signConId)
+                utils.bulldozeConstruction(signConId)
             else
-                local formattedPredictions = {}
                 local config = constructionConfigs.get()[signCon.fileName]
-                local stationName = nil
                 -- LOLLO NOTE config.maxEntries is tied to the construction type, and we buffer:
                 -- make sure sign configs with the same singleTerminal have the same maxEntries
                 if (config.maxEntries or 0) > 0 then
-                    if not(signState) or not(edgeUtils.isValidAndExistingId(signState.stationGroupId)) then
+                    if not(edgeUtils.isValidAndExistingId(signState.stationGroupId)) then
                         -- station is no more around: bulldoze its signs
-                        logger.warn('signConId' .. (signConId or 'NIL') .. ' is no more around THREE')
+                        logger.warn('signState.stationGroupId ' .. tostring(signState.stationGroupId) .. ' is no more around THREE')
                         stateHelpers.removePlacedSign(signConId)
                         utils.bulldozeConstruction(signConId)
                     else
@@ -1388,7 +1445,7 @@ local updateSigns = function(state, gameTime_msec)
                         local stationGroup = api.engine.getComponent(signState.stationGroupId, api.type.ComponentType.STATION_GROUP)
                         if not(stationGroup) or not(stationGroup.stations) then
                             -- station is no more around: bulldoze its signs
-                            logger.warn('signConId' .. (signConId or 'NIL') .. ' is no more around FOUR')
+                            logger.warn('signState.stationGroupId ' .. tostring(signState.stationGroupId) .. ' is no more around FOUR')
                             stateHelpers.removePlacedSign(signConId)
                             utils.bulldozeConstruction(signConId)
                         elseif #stationGroup.stations ~= 0 then
@@ -1410,27 +1467,28 @@ local updateSigns = function(state, gameTime_msec)
                             local chosenTerminalId, chosenStationId = utils.getTerminalAndStationId(config, signCon, signState, _getParamName, stationIds)
                             logger.print('chosenTerminalId =', chosenTerminalId, 'chosenStationId =', chosenStationId)
 
-                            formattedPredictions = utils.getFormattedPredictions(config, rawPredictions, gameTime_msec, chosenStationId, chosenTerminalId, signState.stationGroupId, namesBuffer)
-                            stationName = utils.getStationName(chosenStationId, signState.stationGroupId, namesBuffer)
+                            local formattedPredictions = utils.getFormattedPredictions(config, rawPredictions, gameTime_msec, chosenStationId, chosenTerminalId, signState.stationGroupId, namesBuffer)
+                            local stationName = utils.getStationName(chosenStationId, signState.stationGroupId, namesBuffer)
+
+                            -- rename the construction
+                            local newName = utils.getNewSignConName(
+                                formattedPredictions,
+                                config,
+                                utils.formatClockString(_gameTime_sec),
+                                signCon,
+                                stationName
+                            )
+                            api.cmd.sendCommand(api.cmd.make.setName(signConId, newName))
                         end
                     end
                 end
-
-                -- rename the construction
-                local newName = utils.getNewSignConName(
-                    formattedPredictions,
-                    config,
-                    utils.formatClockString(_gameTime_sec),
-                    signCon,
-                    stationName
-                )
-                api.cmd.sendCommand(api.cmd.make.setName(signConId, newName))
             end
         end
+
         coroutine.yield()
     end
 
-    logger.print('Updating all signs took ' .. math.ceil((os.clock() - _startTick_sec) * 1000) .. ' msec')
+    logger.print('Updating all signs took ' .. tostring(math.ceil((os.clock() - _startTick_sec) * 1000)) .. ' msec')
     _mLastUpdateSigns_gameTime_msec = gameTime_msec
 end
 
@@ -1484,51 +1542,17 @@ local function handleEvent(src, id, name, args)
             logger.print('handleEvent firing, src =', src, ', id =', id, ', name =', name, ', args =') logger.debugPrint(args)
 
             if name == constants.events.remove_display_construction then
+                if not(args) then return end
+
                 logger.print('state before =') logger.debugPrint(stateHelpers.getState())
                 stateHelpers.removePlacedSign(args.signConId)
                 utils.bulldozeConstruction(args.signConId)
                 logger.print('state after =') logger.debugPrint(stateHelpers.getState())
-            elseif name == constants.events.join_sign_to_station_group then
+            elseif name == constants.events.join_sign_to_station_group or name == constants.events.refresh_sign_of_station_group then
+                if not(args) then return end
+
                 logger.print('state before =') logger.debugPrint(stateHelpers.getState())
-                if not(args) or not(edgeUtils.isValidAndExistingId(args.signConId)) then return end
-
-                local signCon = api.engine.getComponent(args.signConId, api.type.ComponentType.CONSTRUCTION)
-                if not(signCon) then return end
-
-                -- logger.print('constructionConfigs.get() =') logger.debugPrint(constructionConfigs.get())
-                -- logger.print('signCon.fileName =', signCon.fileName)
-                local config = constructionConfigs.get()[signCon.fileName]
-                if not(config) then return end
-
-                -- rename the sign construction so it shows something at once
-                local _times = api.engine.getComponent(api.engine.util.getWorld(), api.type.ComponentType.GAME_TIME)
-                if _times and type(_times.gameTime) == 'number' then
-                    local newName = utils.getNewSignConName(
-                        {},
-                        config,
-                        utils.formatClockString(math.floor(_times.gameTime / 1000)),
-                        signCon,
-                        utils.getStationName(nil, args.stationGroupId)
-                    )
-                    api.cmd.sendCommand(api.cmd.make.setName(args.signConId, newName))
-                end
-
-                local nearestTerminal = config.singleTerminal
-                    and stationHelpers.getNearestTerminalWithStationGroup(
-                        transfUtilsUG.new(signCon.transf:cols(0), signCon.transf:cols(1), signCon.transf:cols(2), signCon.transf:cols(3)),
-                        args.stationGroupId, -- in fact, it is a station group id
-                        false -- not only passengers
-                    )
-                    or nil
-                logger.print('freshly calculated nearestTerminal =') logger.debugPrint(nearestTerminal)
-                stateHelpers.setPlacedSign(
-                    args.signConId,
-                    {
-                        -- stationConId = args.stationConId,
-                        stationGroupId = args.stationGroupId,
-                        nearestTerminal = nearestTerminal,
-                    }
-                )
+                utils.setSignProperties(name, args.signConId, args.stationGroupId)
                 logger.print('state after =') logger.debugPrint(stateHelpers.getState())
             elseif name == constants.events.toggle_notaus then
                 logger.print('state before =') logger.debugPrint(stateHelpers.getState())
