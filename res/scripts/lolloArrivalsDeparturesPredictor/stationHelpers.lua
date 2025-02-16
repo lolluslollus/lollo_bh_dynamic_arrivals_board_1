@@ -39,7 +39,24 @@ local function _getNodeIdsOfEdge(edgeId)
 
     return {baseEdge.node0, baseEdge.node1} -- an edge always has 2 nodes
 end
--- LOLLO TODO with certain configurations, the nearest terminal estimator
+local function _getNodePositionsOfEdge(edgeId)
+    local nodeIds = _getNodeIdsOfEdge(edgeId)
+    local result = {position0 = nil, position1 = nil}
+    for i = 1, 2, 1 do
+        if edgeUtils.isValidId(nodeIds[i]) then
+            local baseNode = api.engine.getComponent(nodeIds[i], api.type.ComponentType.BASE_NODE)
+            if baseNode ~= nil then
+                if i == 1 then
+                    result.position0 = baseNode.position
+                else
+                    result.position1 = baseNode.position
+                end
+            end
+        end
+    end
+    return result
+end
+-- LOLLO NOTE with certain configurations, the nearest terminal estimator
 -- may be more accurate if you check the distance between point and edge,
 -- rather than point and point.
 local function _getAdjacentNodeIds(availableNodeIds, startNodeId)
@@ -47,42 +64,89 @@ local function _getAdjacentNodeIds(availableNodeIds, startNodeId)
     local _map = api.engine.system.streetSystem.getNode2TrackEdgeMap()
     local visitedNodeIds_Indexed = {}
 
-    local function _getNextNodes(nodeId)
+    local function _getNextNodeIds(nodeId)
         if visitedNodeIds_Indexed[nodeId] or not(_nodeIdsIndexed[nodeId]) then return {} end
 
         local adjacentEdgeIds_c = _map[nodeId] -- userdata
         visitedNodeIds_Indexed[nodeId] = true
 
         if adjacentEdgeIds_c == nil then
-            logger.warn('FOUR')
+            logger.warn('_getAdjacentNodeIds FOUR')
             return {}
-        else
-            local nextNodes = {}
-            for _, edgeId in pairs(adjacentEdgeIds_c) do -- cannot use adjacentEdge1Ids_c[index] here
-                local newNodeIds = _getNodeIdsOfEdge(edgeId)
-                for i = 1, 2, 1 do
-                    if newNodeIds[i] and not(visitedNodeIds_Indexed[newNodeIds[i]]) and _nodeIdsIndexed[newNodeIds[i]] then nextNodes[#nextNodes+1] = newNodeIds[i] end
-                end
-            end
-            -- logger.print('FIVE')
-            return nextNodes
         end
+
+        local nextNodes = {}
+        for _, edgeId in pairs(adjacentEdgeIds_c) do -- cannot use adjacentEdge1Ids_c[index] here
+            local newNodeIds = _getNodeIdsOfEdge(edgeId)
+            for i = 1, 2, 1 do
+                if newNodeIds[i] and not(visitedNodeIds_Indexed[newNodeIds[i]]) and _nodeIdsIndexed[newNodeIds[i]] then nextNodes[#nextNodes+1] = newNodeIds[i] end
+            end
+        end
+        -- logger.print('FIVE')
+        return nextNodes
     end
 
     local results = {startNodeId}
-    local nextResults = _getNextNodes(startNodeId)
+    local nextResults = _getNextNodeIds(startNodeId)
     local isExit = false
     while not(isExit) do
         local tempResults = {}
         isExit = true
         for _, nodeId in pairs(nextResults) do
             results[#results+1] = nodeId
-            arrayUtils.concatValues(tempResults, _getNextNodes(nodeId))
+            arrayUtils.concatValues(tempResults, _getNextNodeIds(nodeId))
             isExit = false
         end
         nextResults = tempResults
     end
+    return results
+end
+local function _getAdjacentEdgeIds(availableEdgeIds, startNodeId)
+    local _edgeIdsIndexed = _getIdsIndexed(availableEdgeIds)
+    local _map = api.engine.system.streetSystem.getNode2TrackEdgeMap()
+    local visitedEdgeIds_Indexed = {}
+    local visitedNodeIds_Indexed = {}
 
+    local function _getNextNodeIds(nodeId)
+        if visitedNodeIds_Indexed[nodeId] then return {} end
+
+        local adjacentEdgeIds_c = _map[nodeId] -- userdata
+        visitedNodeIds_Indexed[nodeId] = true
+
+        if adjacentEdgeIds_c == nil then
+            logger.warn('_getAdjacentEdgeIds FOUR')
+            return {}
+        end
+
+        local nextNodes = {}
+        for _, edgeId in pairs(adjacentEdgeIds_c) do -- cannot use adjacentEdge1Ids_c[index] here
+            if not(visitedEdgeIds_Indexed[edgeId]) and _edgeIdsIndexed[edgeId] then
+                visitedEdgeIds_Indexed[edgeId] = true
+                local newNodeIds = _getNodeIdsOfEdge(edgeId)
+                for i = 1, 2, 1 do
+                    if newNodeIds[i] and not(visitedNodeIds_Indexed[newNodeIds[i]]) then nextNodes[#nextNodes+1] = newNodeIds[i] end
+                end
+            end
+        end
+        -- logger.print('FIVE')
+        return nextNodes
+    end
+
+    local nextNodeIds = _getNextNodeIds(startNodeId)
+    local isExit = false
+    while not(isExit) do
+        local tempNodeIds = {}
+        isExit = true
+        for _, nodeId in pairs(nextNodeIds) do
+            arrayUtils.concatValues(tempNodeIds, _getNextNodeIds(nodeId))
+            isExit = false
+        end
+        nextNodeIds = tempNodeIds
+    end
+    local results = {}
+    for edgeId, _ in pairs(visitedEdgeIds_Indexed) do
+        results[#results+1] = edgeId
+    end
     return results
 end
 ---@param signTransf table<integer>
@@ -115,6 +179,7 @@ local _getNearestTerminalsWithStationGroup = function(signTransf, stationGroupId
                         if edgeUtils.isValidAndExistingId(edgeOrNodeOrConId) then
                             logger.print('edgeOrNodeOrConId =', tostring(edgeOrNodeOrConId))
                             local positions = {}
+                            local segments = {}
                             local baseNode = api.engine.getComponent(edgeOrNodeOrConId, api.type.ComponentType.BASE_NODE)
                             if baseNode ~= nil then
                                 logger.print('it is a node')
@@ -124,13 +189,20 @@ local _getNearestTerminalsWithStationGroup = function(signTransf, stationGroupId
                                     logger.print('con found')
                                     local con = api.engine.getComponent(conId, api.type.ComponentType.CONSTRUCTION)
                                     if con ~= nil and con.frozenNodes ~= nil then
-                                        for _, nodeId in pairs(_getAdjacentNodeIds(con.frozenNodes, edgeOrNodeOrConId)) do
-                                            -- logger.print('#nodeId ' .. tostring(nodeId) .. ' is in terminal ' .. tostring(terminalId))
-                                            local adjacentNode = api.engine.getComponent(nodeId, api.type.ComponentType.BASE_NODE)
-                                            if adjacentNode ~= nil then
-                                                positions[#positions+1] = adjacentNode.position
+                                        for _, edgeId in pairs(_getAdjacentEdgeIds(con.frozenEdges, edgeOrNodeOrConId)) do
+                                            local adjacentEdge = api.engine.getComponent(edgeId, api.type.ComponentType.BASE_EDGE)
+                                            if adjacentEdge ~= nil then
+                                                segments[#segments+1] = _getNodePositionsOfEdge(edgeId)
                                             end
                                         end
+                                        -- for _, nodeId in pairs(_getAdjacentNodeIds(con.frozenNodes, edgeOrNodeOrConId)) do
+                                        --     -- logger.print('#nodeId ' .. tostring(nodeId) .. ' is in terminal ' .. tostring(terminalId))
+                                        --     local adjacentNode = api.engine.getComponent(nodeId, api.type.ComponentType.BASE_NODE)
+                                        --     if adjacentNode ~= nil then
+                                        --         positions[#positions+1] = adjacentNode.position
+                                        --     end
+                                        -- end
+                                        -- print('positions =') debugPrint(positions)
                                     else
                                         logger.warn('this should not happen, _getNearestTerminalsWithStationGroup got conId =', tostring(conId))
                                     end
@@ -172,6 +244,7 @@ local _getNearestTerminalsWithStationGroup = function(signTransf, stationGroupId
                             end
                             stationTerminalPositionsMap[stationId][terminalId] = {
                                 positions = positions or {},
+                                segments = segments or {},
                                 tag = terminal.tag, -- these tags can be nil and cannot be relied upon
                             }
                         end
@@ -188,8 +261,23 @@ local _getNearestTerminalsWithStationGroup = function(signTransf, stationGroupId
     for stationId, myStationData in pairs(stationTerminalPositionsMap) do
         nearestTerminals[stationId] = {terminalId = nil, terminalTag = nil, cargo = myStationData.cargo, distance = 9999}
         for terminalId, terminal in pairs(myStationData) do
+            for _, segment in pairs(terminal.segments) do
+                if segment ~= nil and segment.position0 ~= nil and segment.position1 ~= nil then
+                    local distance = transfUtils.getDistanceBetweenPointAndStraight(
+                        segment.position0,
+                        segment.position1,
+                        _signPosition123
+                    )
+                    if distance < nearestTerminals[stationId].distance then
+                        nearestTerminals[stationId].terminalId = terminalId
+                        nearestTerminals[stationId].terminalTag = terminal.tag
+                        nearestTerminals[stationId].cargo = myStationData.cargo or false
+                        nearestTerminals[stationId].distance = distance
+                    end
+                end
+            end
             for _, position in pairs(terminal.positions) do
-                local distance = transfUtils.getPositionsDistance(
+                local distance = transfUtils.getPositionsDistance_onlyXY(
                     position,
                     _signPosition123
                 )
