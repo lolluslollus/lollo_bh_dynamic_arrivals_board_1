@@ -3,12 +3,13 @@ local constants = require('lolloArrivalsDeparturesPredictor.constants')
 local edgeUtils = require('lolloArrivalsDeparturesPredictor.edgeUtils')
 local guiHelpers = require('lolloArrivalsDeparturesPredictor.guiHelpers')
 local logger = require('lolloArrivalsDeparturesPredictor.logger')
+local soundeffectsutil = require('soundeffectsutil')
+-- local soundEffectsUtilOverride = require('lolloArrivalsDeparturesPredictor.soundEffectsUtilOverride')
 local stateHelpers = require ("lolloArrivalsDeparturesPredictor.stateHelpers")
 local stationHelpers = require('lolloArrivalsDeparturesPredictor.stationHelpers')
 local stringUtils = require('lolloArrivalsDeparturesPredictor.stringUtils')
 local transfUtils = require('lolloArrivalsDeparturesPredictor.transfUtils')
 local transfUtilsUG = require('transf')
-
 
 -- LOLLO NOTE that the state must be read-only here coz we are in the GUI thread
 
@@ -71,6 +72,19 @@ local function handleEvent(id, name, args)
         local con = api.engine.getComponent(args, api.type.ComponentType.CONSTRUCTION)
         if not(con) or not(con.fileName) then return end
 
+        -- if not(soundeffectsutil.get('lolloArrivalsDeparturesPredictor_test')) then
+        --     print('### about to call override')
+        --     soundEffectsUtilOverride()
+        --     print('### soundeffectsutil.get(\'lolloArrivalsDeparturesPredictor_test\') = ') debugPrint(soundeffectsutil.get('lolloArrivalsDeparturesPredictor_test'))
+        -- end
+        print('### about to play effects')
+        -- api.gui.util.getGameUI():playSoundEffect("lolloArrivalsDeparturesPredictor/car_idle") -- does nowt
+        -- api.gui.util.getGameUI():playSoundEffect("lolloArrivalsDeparturesPredictor/car_horn") -- does nowt
+        api.gui.util.getGameUI():playSoundEffect("lolloArrivalsDeparturesPredictor_car_idle") -- does nowt
+        api.gui.util.getGameUI():playSoundEffect("lolloArrivalsDeparturesPredictor_car_horn") -- does nowt
+        -- api.gui.util.getGameUI():playSoundEffect("construct") -- works because this effect comes with the game
+        -- api.gui.util.getGameUI():playTrack('lolloArrivalsDeparturesPredictor/car_idle.wav', 0.0) -- this starts the music but does not play my effect
+        -- api.gui.util.getGameUI():playTrack('lolloArrivalsDeparturesPredictor/car_horn.wav', 0.0) -- this starts the music but does not play my effect
         local config = constructionConfigs.get()[con.fileName]
         if not(config) then return end
 
@@ -196,6 +210,8 @@ local function guiInit()
             _sendScriptEvent(constants.events.toggle_notaus, isOn)
         end
     )
+
+    -- initSoundEffects()
 end
 
 return {

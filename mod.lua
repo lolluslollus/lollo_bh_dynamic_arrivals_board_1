@@ -1,3 +1,5 @@
+-- local soundEffectsUtilOverride = require('lolloArrivalsDeparturesPredictor.soundEffectsUtilOverride')
+
 function data()
 	-- local function _addModel(oldFileName, newFileName)
 	-- 	-- UG TODO the api does not support this
@@ -30,11 +32,11 @@ function data()
 				},
 			}
 		},
+		-- runFn = function (settings, modParams)
+		-- 	soundEffectsUtilOverride()
+		-- end,
 		-- postRunFn = function(settings, params)
-        --     _addModel(
-        --         'lolloArrivalsDeparturesPredictor/platform_departures_board_floating.mdl',
-        --         'lolloArrivalsDeparturesPredictor/platform_departures_board_floating_2.mdl'
-        --     )
+		-- 	soundEffectsUtilOverride()
         -- end
 	}
 end
